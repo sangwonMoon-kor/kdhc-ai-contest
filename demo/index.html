@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>직무 메모리 · AI 업무 승계 비서 (시연용 프로토타입)</title>
+<style>
+  /* ============ tokens ============ */
+  :root{
+    --bg:#f3f4f6; --surface:#ffffff; --ink:#1d2126; --muted:#6b7280; --faint:#9ca3af;
+    --line:#e5e7eb; --line-soft:#eef0f2;
+    --accent:#e8590c; --accent-deep:#c2410c; --accent-soft:#fdf0e7; --accent-line:#f5c9ac;
+    --warn:#d97706; --warn-soft:#fef6e7;
+    --danger:#dc2626; --danger-soft:#fdeeee;
+    --info:#2563eb; --info-soft:#eef3fd;
+    --ok:#15803d;
+    --dark-bg:#15181d; --dark-ink:#f4f5f6; --dark-muted:#a3aab4;
+    --hl:#fff3bf; --hl-line:#f5d76a;
+    --r-card:12px; --r-input:8px;
+    --shadow:0 1px 2px rgba(29,33,38,.05), 0 4px 16px rgba(29,33,38,.06);
+    --shadow-lift:0 8px 30px rgba(29,33,38,.14);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  button:active{transform:translateY(1px)}
+
+  /* ============ screen router ============ */
+  .screen{position:fixed;inset:0;display:none;overflow:auto}
+  .screen.active{display:block;animation:screenIn .35s cubic-bezier(.16,1,.3,1)}
+  @keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    .screen.active{animation:none}
+    *,*::before,*::after{animation-duration:.001s !important;transition-duration:.001s !important}
+  }
+
+  /* ============ presenter dots ============ */
+  #presenter{position:fixed;right:18px;bottom:16px;z-index:90;display:flex;gap:8px;align-items:center;
+    background:rgba(29,33,38,.72);backdrop-filter:blur(6px);padding:8px 12px;border-radius:999px}
+  #presenter .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35);transition:all .2s}
+  #presenter .dot.on{background:#fff;transform:scale(1.25)}
+  #presenter .hint{color:rgba(255,255,255,.55);font-size:11px;margin-left:4px;letter-spacing:.02em}
+
+  /* ============ dark curtain screens (S0 / S5) ============ */
+  .curtain{background:var(--dark-bg);color:var(--dark-ink)}
+  .screen.curtain.active{display:flex;align-items:center;justify-content:center}
+  .curtain .inner{max-width:1020px;padding:0 48px;width:100%}
+
+  /* S0 */
+  #s0 .eyebrow0{font-size:15px;color:var(--dark-muted);letter-spacing:.01em;margin-bottom:26px;opacity:0;animation:rise .7s .1s forwards cubic-bezier(.16,1,.3,1)}
+  #s0 h1{font-size:clamp(44px,5.2vw,74px);line-height:1.16;font-weight:800;letter-spacing:-.02em;opacity:0;animation:rise .7s .25s forwards cubic-bezier(.16,1,.3,1)}
+  #s0 h1 .accent{color:var(--accent)}
+  #s0 .sub{margin-top:22px;font-size:19px;color:var(--dark-muted);opacity:0;animation:rise .7s .45s forwards cubic-bezier(.16,1,.3,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  #s0 .persona{margin-top:44px;display:flex;align-items:center;gap:18px;background:#1d2127;border:1px solid #2a2f37;
+    border-radius:var(--r-card);padding:20px 24px;max-width:560px;opacity:0;animation:rise .7s .65s forwards cubic-bezier(.16,1,.3,1)}
+  #s0 .persona .face{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#3b4757,#232a33);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#dfe4ea;flex-shrink:0}
+  #s0 .persona .who{font-weight:700;font-size:16.5px}
+  #s0 .persona .desc{color:var(--dark-muted);font-size:14px;margin-top:2px}
+  #s0 .cta{margin-top:36px;opacity:0;animation:rise .7s .85s forwards cubic-bezier(.16,1,.3,1)}
+  .btn-primary{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#fff;font-weight:700;
+    font-size:16.5px;padding:15px 28px;border-radius:999px;transition:background .2s, transform .15s}
+  .btn-primary:hover{background:var(--accent-deep)}
+  .btn-primary .arr{transition:transform .2s}
+  .btn-primary:hover .arr{transform:translateX(3px)}
+
+  /* ============ app shell (S1~S4) ============ */
+  .shell{display:grid;grid-template-rows:56px 1fr;height:100%}
+  .topbar{display:flex;align-items:center;gap:14px;background:var(--surface);border-bottom:1px solid var(--line);
+    padding:0 22px;position:relative;z-index:20}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16.5px;letter-spacing:-.01em}
+  .brand .mark{width:26px;height:26px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+  .brand .mark span{width:12px;height:12px;border:2.5px solid #fff;border-radius:3px;display:block}
+  .brand small{font-weight:600;color:var(--muted);font-size:12.5px;margin-left:2px}
+  .topnav{display:flex;gap:2px;margin-left:26px}
+  .topnav button{padding:8px 14px;border-radius:8px;font-size:14px;color:var(--muted);font-weight:600}
+  .topnav button:hover{background:var(--line-soft)}
+  .topnav button.on{color:var(--accent-deep);background:var(--accent-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .proto-chip{font-size:12px;color:var(--muted);border:1px dashed var(--faint);border-radius:999px;padding:4px 11px}
+  .userchip{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600}
+  .userchip .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#4a5a6d,#2b3540);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+  .userchip .team{color:var(--muted);font-weight:500}
+
+  .content{overflow:auto;padding:26px 34px 90px}
+  .content-inner{max-width:1400px;margin:0 auto}
+  .pagehead{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+  .pagehead h2{font-size:23px;font-weight:800;letter-spacing:-.01em}
+  .pagehead .meta{font-size:13px;color:var(--muted)}
+  .pagesub{color:var(--muted);font-size:14px;margin-bottom:22px}
+  .ai-badge{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent-deep);
+    border:1px solid var(--accent-line);font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 11px}
+  .ai-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow)}
+  .card .card-h{padding:15px 20px 0;font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:10px}
+  .card .card-h .cnt{font-size:12.5px;color:var(--muted);font-weight:600}
+  .card .card-b{padding:14px 20px 18px}
+
+  .evidence{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--info);
+    background:var(--info-soft);border-radius:6px;padding:2px 8px;white-space:nowrap;cursor:pointer}
+  .evidence.none{color:var(--muted);background:var(--line-soft)}
+
+  /* ============ S1 briefing ============ */
+  .grid-brief{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
+  .duty-list{display:grid;gap:10px;margin-top:4px}
+  .duty-list .duty{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border:1px solid var(--line-soft);
+    border-radius:10px;background:#fafbfc}
+  .duty .no{width:24px;height:24px;border-radius:7px;background:var(--accent-soft);color:var(--accent-deep);
+    font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .duty b{font-size:14px}
+  .duty p{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .yearcal{display:grid;grid-template-columns:repeat(12,1fr);gap:7px;margin-top:6px}
+  .yearcal .m{border-radius:8px;padding:9px 0 8px;text-align:center;background:#f4f5f7;border:1px solid var(--line-soft)}
+  .yearcal .m .mn{font-size:11.5px;color:var(--muted);font-weight:700}
+  .yearcal .m .bar{height:34px;display:flex;align-items:flex-end;justify-content:center;margin-top:6px}
+  .yearcal .m .bar i{display:block;width:16px;border-radius:4px 4px 2px 2px;background:#dcdfe4}
+  .yearcal .m.lv1 .bar i{height:12px;background:#f7c59a}
+  .yearcal .m.lv2 .bar i{height:22px;background:#f0904a}
+  .yearcal .m.lv3 .bar i{height:32px;background:var(--accent)}
+  .yearcal .m.lv0 .bar i{height:6px}
+  .yearcal .m .tag{font-size:10px;color:var(--accent-deep);font-weight:700;margin-top:4px;height:13px}
+  .issue{display:grid;grid-template-columns:14px 1fr;gap:12px;padding:12px 2px}
+  .issue+.issue{border-top:1px solid var(--line-soft)}
+  .issue .rail{position:relative}
+  .issue .rail::before{content:"";position:absolute;left:5px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .issue.gray .rail::before{background:var(--faint)}
+  .issue h4{font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .issue .when{font-size:12px;color:var(--muted);font-weight:600}
+  .issue p{font-size:13px;color:var(--muted);margin-top:3px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .chip{font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:#fafbfc}
+  .chip b{color:var(--accent-deep)}
+  .foot-note{margin-top:16px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .foot-note::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--info);flex-shrink:0}
+
+  /* ============ S2 forecast ============ */
+  .fc-head{display:flex;align-items:center;margin-bottom:14px}
+  .viewtoggle{margin-left:auto;display:flex;background:var(--line-soft);border-radius:999px;padding:3px}
+  .viewtoggle button{padding:6px 16px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted)}
+  .viewtoggle button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+  .fc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+  .fc-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:18px 20px;
+    box-shadow:var(--shadow);position:relative;transition:transform .18s, box-shadow .18s;cursor:pointer}
+  .fc-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}
+  .fc-card .row1{display:flex;align-items:center;gap:10px}
+  .fc-card .wx{font-size:26px;line-height:1}
+  .fc-card .dday{margin-left:auto;font-size:12.5px;font-weight:800;border-radius:999px;padding:3px 11px}
+  .fc-card.hot .dday{background:var(--danger-soft);color:var(--danger)}
+  .fc-card.mid .dday{background:var(--warn-soft);color:var(--warn)}
+  .fc-card.far .dday{background:var(--info-soft);color:var(--info)}
+  .fc-card h3{font-size:15.5px;margin-top:10px;letter-spacing:-.01em}
+  .fc-card .base{font-size:12.5px;color:var(--muted);margin-top:5px}
+  .fc-card .act{margin-top:12px;font-size:13px;font-weight:700;color:var(--accent-deep);display:flex;align-items:center;gap:5px}
+  .fc-card.hot{border-top:3px solid var(--danger)}
+  .fc-card.mid{border-top:3px solid var(--warn)}
+  .fc-card.far{border-top:3px solid var(--info)}
+
+  .cal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow);padding:18px 20px}
+  .cal .cal-t{display:flex;align-items:center;gap:12px;font-weight:800;font-size:16px;margin-bottom:12px}
+  .cal .cal-t .legend{margin-left:auto;display:flex;gap:14px;font-size:12px;color:var(--muted);font-weight:600}
+  .legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal-grid .dow{text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:4px 0}
+  .cal-grid .dow.sun{color:var(--danger)}
+  .cal-grid .dow.sat{color:var(--info)}
+  .day{min-height:74px;border:1px solid var(--line-soft);border-radius:9px;padding:6px 8px;font-size:12.5px;background:#fbfcfd;position:relative}
+  .day.blank{border:none;background:none}
+  .day .n{font-weight:700;color:var(--muted);font-size:12px}
+  .day.today{border:2px solid var(--ink);background:#fff}
+  .day.today .n::after{content:"오늘";font-size:10px;font-weight:800;background:var(--ink);color:#fff;border-radius:4px;padding:1px 5px;margin-left:5px}
+  .day .ev{margin-top:5px;font-size:11px;font-weight:700;border-radius:6px;padding:3px 6px;line-height:1.3}
+  .day .ev.hot{background:var(--danger-soft);color:var(--danger)}
+  .day .ev.mid{background:var(--warn-soft);color:var(--warn)}
+  .day .ev.far{background:var(--info-soft);color:var(--info)}
+
+  /* alert banner */
+  #alertbar{position:fixed;top:-200px;left:50%;transform:translateX(-50%);z-index:80;width:min(720px,92vw);
+    background:#20242b;color:#fff;border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);
+    display:flex;align-items:center;gap:16px;padding:16px 20px;opacity:0;pointer-events:none;
+    transition:top .5s cubic-bezier(.2,.9,.3,1.1), opacity .35s}
+  #alertbar.show{top:14px;opacity:1;pointer-events:auto}
+  #alertbar .bell{width:42px;height:42px;border-radius:11px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;animation:ring .8s ease 1}
+  @keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(11deg)}60%{transform:rotate(-7deg)}80%{transform:rotate(4deg)}}
+  #alertbar .txt b{font-size:15px}
+  #alertbar .txt p{font-size:12.5px;color:#aab1bb;margin-top:2px}
+  #alertbar .go{margin-left:auto;background:var(--accent);color:#fff;font-weight:800;font-size:14px;border-radius:999px;padding:10px 20px;white-space:nowrap}
+  #alertbar .go:hover{background:var(--accent-deep)}
+
+  /* ============ S3 draft ============ */
+  .draft-banner{position:sticky;top:0;z-index:15;background:var(--hl);border:1px solid var(--hl-line);border-radius:10px;
+    padding:10px 16px;font-size:13.5px;font-weight:800;color:#7a5b00;display:flex;align-items:center;gap:9px;margin-bottom:18px}
+  .grid-draft{display:grid;grid-template-columns:1fr 330px;gap:18px;align-items:start}
+  .docpaper{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow);padding:34px 42px;min-height:560px}
+  .docpaper .doc-title{text-align:center;font-size:21px;font-weight:800;letter-spacing:.01em;padding-bottom:14px;border-bottom:2px solid var(--ink);margin-bottom:20px}
+  .docsec{margin-bottom:20px}
+  .docsec h4{font-size:15.5px;font-weight:800;margin-bottom:7px}
+  .docsec p, .docsec li{font-size:14px;line-height:1.8}
+  .docsec ul{list-style:none;padding-left:6px}
+  .docsec li::before{content:"○";font-size:10px;margin-right:8px;color:var(--muted);vertical-align:1px}
+  .docsec li.dash::before{content:"-";color:var(--muted)}
+  .docsec li.dash{padding-left:18px}
+  .hl-y{background:var(--hl);border-bottom:2px solid var(--hl-line);border-radius:3px;padding:0 3px;font-weight:700;cursor:text}
+  .cite{font-size:11px;font-weight:800;color:var(--info);background:var(--info-soft);border-radius:5px;padding:1px 6px;margin-left:5px;vertical-align:1px;white-space:nowrap}
+  .skel{height:13px;border-radius:6px;background:linear-gradient(90deg,#eceef1 25%,#f6f7f8 50%,#eceef1 75%);background-size:200% 100%;animation:sh 1.1s infinite;margin:9px 0}
+  @keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+  .gen-status{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;color:var(--accent-deep);margin-bottom:6px}
+  .gen-status .spin{width:14px;height:14px;border:2.5px solid var(--accent-line);border-top-color:var(--accent);border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+  .side-panel{position:sticky;top:0}
+  .checklist{display:grid;gap:9px;margin-top:4px}
+  .checklist label{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border:1px solid var(--line-soft);border-radius:10px;background:#fafbfc;font-size:13px;cursor:pointer;transition:background .15s}
+  .checklist label:hover{background:#f3f5f7}
+  .checklist input{margin-top:3px;accent-color:var(--accent);width:15px;height:15px}
+  .checklist b{font-size:13.5px}
+  .checklist p{color:var(--muted);font-size:12px;margin-top:1px}
+  .side-actions{margin-top:14px;display:grid;gap:9px}
+  .btn-block{display:block;width:100%;text-align:center;font-weight:800;font-size:14.5px;border-radius:10px;padding:13px}
+  .btn-block.primary{background:var(--accent);color:#fff}
+  .btn-block.primary:hover{background:var(--accent-deep)}
+  .btn-block.ghost{border:1.5px solid var(--line);color:var(--muted);background:var(--surface)}
+  .btn-block.ghost:hover{border-color:var(--faint)}
+  .side-note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6}
+
+  /* ============ S4 check ============ */
+  .grid-check{display:grid;grid-template-columns:1fr 350px;gap:18px;align-items:start}
+  .checkdoc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow);padding:30px 38px;position:relative}
+  .checkdoc .doc-title{text-align:center;font-size:19px;font-weight:800;padding-bottom:12px;border-bottom:2px solid var(--ink);margin-bottom:18px}
+  .checkdoc p,.checkdoc li{font-size:14px;line-height:1.9}
+  .checkdoc ul{list-style:none;padding-left:6px}
+  .checkdoc li::before{content:"○";font-size:10px;margin-right:8px;color:var(--muted);vertical-align:1px}
+  .risk{border-radius:4px;padding:1px 4px;cursor:pointer;font-weight:700;transition:box-shadow .15s;position:relative}
+  .risk.warn2{background:var(--warn-soft);border-bottom:2.5px solid var(--warn)}
+  .risk.danger2{background:var(--danger-soft);border-bottom:2.5px solid var(--danger)}
+  .risk:hover{box-shadow:0 0 0 3px rgba(217,119,6,.18)}
+  .risk.danger2:hover{box-shadow:0 0 0 3px rgba(220,38,38,.16)}
+  .risk .lbl{display:inline-block;font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px;margin-right:7px;white-space:nowrap;letter-spacing:.02em;vertical-align:2px}
+  .risk.warn2 .lbl{background:var(--warn);color:#fff}
+  .risk.danger2 .lbl{background:var(--danger);color:#fff}
+  .risk{scroll-margin:120px}
+  .scanwrap{margin-bottom:16px;display:flex;align-items:center;gap:14px}
+  .scanbar{flex:1;height:8px;border-radius:999px;background:var(--line-soft);overflow:hidden;display:none}
+  .scanbar i{display:block;height:100%;width:0%;background:var(--accent);border-radius:999px;transition:width .3s}
+  .risk-summary{display:none;gap:10px}
+  .risk-pill{font-size:12.5px;font-weight:800;border-radius:999px;padding:5px 13px}
+  .risk-pill.w{background:var(--warn-soft);color:var(--warn)}
+  .risk-pill.d{background:var(--danger-soft);color:var(--danger)}
+  .why-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow);padding:20px;position:sticky;top:0}
+  .why-panel .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:44px 10px;line-height:1.7}
+  .why-item{display:none}
+  .why-item.show{display:block;animation:screenIn .3s cubic-bezier(.16,1,.3,1)}
+  .why-item .grade{font-size:12px;font-weight:800;border-radius:999px;padding:3px 12px;display:inline-block;margin-bottom:10px}
+  .why-item .grade.w{background:var(--warn-soft);color:var(--warn)}
+  .why-item .grade.d{background:var(--danger-soft);color:var(--danger)}
+  .why-item h4{font-size:15.5px;margin-bottom:9px;letter-spacing:-.01em}
+  .why-item .why-b{font-size:13.5px;color:#3c4552;line-height:1.75}
+  .why-item .basis{margin-top:13px;border-top:1px solid var(--line-soft);padding-top:12px;display:grid;gap:8px}
+  .basis .b-row{display:flex;gap:9px;font-size:13px;align-items:baseline}
+  .basis .b-row .k{font-size:11px;font-weight:800;color:var(--muted);background:var(--line-soft);border-radius:5px;padding:1px 7px;flex-shrink:0}
+  .basis .b-row a{color:var(--info);font-weight:700;text-decoration:none}
+  .human-note{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#20242b;color:#c9cfd7;text-align:center;
+    font-size:13px;font-weight:600;padding:11px}
+  .human-note b{color:#fff}
+
+  /* ============ S5 vision ============ */
+  #s5 .inner{max-width:1100px;text-align:center}
+  #orgmap{display:grid;grid-template-columns:repeat(12,52px);gap:14px;justify-content:center;margin:0 auto 40px}
+  .seat{width:52px;height:52px;border-radius:12px;background:#20242b;border:1px solid #2c313a;position:relative;transition:all .45s}
+  .seat::after{content:"";position:absolute;inset:0;margin:auto;width:14px;height:14px;border-radius:50%;background:#343b46;transition:all .45s}
+  .seat.lit{background:#2a2015;border-color:var(--accent-deep);box-shadow:0 0 22px rgba(232,89,12,.35)}
+  .seat.lit::after{background:var(--accent);box-shadow:0 0 12px rgba(232,89,12,.9)}
+  .seat.equip{border-radius:50%;grid-column:span 1}
+  .seat.equip::after{width:18px;height:18px;border-radius:4px;transform:rotate(45deg)}
+  .seat.equip.lit{background:#132015;border-color:#2f7d43;box-shadow:0 0 24px rgba(47,158,68,.4)}
+  .seat.equip.lit::after{background:#40c057;box-shadow:0 0 13px rgba(64,192,87,.9)}
+  #s5 .cap{min-height:120px}
+  #s5 .cap .line1{font-size:clamp(30px,3.4vw,46px);font-weight:800;letter-spacing:-.02em;opacity:0;transition:opacity .8s, transform .8s;transform:translateY(14px)}
+  #s5 .cap .line2{font-size:19px;color:var(--dark-muted);margin-top:14px;opacity:0;transition:opacity .8s .15s, transform .8s .15s;transform:translateY(14px)}
+  #s5 .cap.show .line1,#s5 .cap.show .line2{opacity:1;transform:none}
+  #s5 .cap .accent{color:var(--accent)}
+  #s5 .equip-note{font-size:14.5px;color:#7fca8e;font-weight:700;margin:0 0 26px;opacity:0;transition:opacity .6s}
+  #s5 .equip-note.show{opacity:1}
+  #s5 .restart{margin-top:38px;opacity:0;transition:opacity .6s .4s}
+  #s5 .restart.show{opacity:1}
+  .btn-ghost-d{border:1.5px solid #3a414c;color:var(--dark-muted);border-radius:999px;padding:11px 24px;font-weight:700;font-size:14px}
+  .btn-ghost-d:hover{border-color:var(--dark-muted);color:var(--dark-ink)}
+</style>
+</head>
+<body>
+
+<!-- ================= S0 인트로 ================= -->
+<section class="screen curtain active" id="s0">
+  <div class="inner">
+    <div class="eyebrow0">사내 AI 경진대회 제안 · 직무 메모리</div>
+    <h1>사람은 떠나도,<br>업무는 <span class="accent">남게.</span></h1>
+    <p class="sub">순환근무 조직의 업무 기억을 자리에 남기는 AI 업무 승계 비서입니다.</p>
+    <div class="persona">
+      <div class="face">김</div>
+      <div>
+        <div class="who">김민준 과장</div>
+        <div class="desc">1월 2일 자 발령 · ○○지사 요금정산팀 · 전임자는 이미 본사로 이동</div>
+      </div>
+    </div>
+    <div class="cta">
+      <button class="btn-primary" onclick="go(1)">김 과장의 첫 출근 따라가기 <span class="arr">→</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= S1 브리핑북 ================= -->
+<section class="screen" id="s1">
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark"><span></span></span>직무 메모리 <small>업무 승계 비서</small></div>
+      <nav class="topnav">
+        <button class="on">브리핑북</button>
+        <button onclick="go(2)">업무 일기예보</button>
+        <button onclick="go(3)">초안 작성</button>
+        <button onclick="go(4)">사전 점검</button>
+      </nav>
+      <div class="right">
+        <span class="proto-chip">시연용 프로토타입 · 샘플 데이터</span>
+        <div class="userchip"><span class="avatar">김</span>김민준 과장 <span class="team">· 요금정산팀</span></div>
+      </div>
+    </header>
+    <main class="content"><div class="content-inner">
+      <div class="pagehead">
+        <h2>요금담당 직무 브리핑북</h2>
+        <span class="ai-badge">AI 자동 생성</span>
+        <span class="meta">생성일 2026-01-02 · 최근 3년 문서 47건 기반</span>
+      </div>
+      <p class="pagesub">발령 확인과 동시에 준비된 신임자용 요약 리포트입니다. 모든 항목은 근거 문서 링크와 함께 제공됩니다.</p>
+      <div class="grid-brief">
+        <div style="display:grid;gap:18px">
+          <div class="card">
+            <div class="card-h">직무 개요 · 핵심 업무</div>
+            <div class="card-b duty-list">
+              <div class="duty"><span class="no">1</span><div><b>지역냉난방 요금 정산 총괄</b> <span class="evidence">근거 12건</span><p>월별 사용요금 정산 및 이의신청 처리</p></div></div>
+              <div class="duty"><span class="no">2</span><div><b>연간 요금정산 계획 수립</b> <span class="evidence">근거 6건</span><p>매년 3월 기안, 상반기 이사회 보고 연계</p></div></div>
+              <div class="duty"><span class="no">3</span><div><b>정산시스템 운영·개선 협조</b> <span class="evidence">근거 9건</span><p>정보화부서 공동 과제, 연 2회 정기 점검</p></div></div>
+              <div class="duty"><span class="no">4</span><div><b>고객 정산민원 2차 대응</b> <span class="evidence">근거 7건</span><p>콜센터 이관 건 검토 및 회신</p></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h">연간 업무 달력 <span class="cnt">문서 기안량 기준</span></div>
+            <div class="card-b">
+              <div class="yearcal">
+                <div class="m lv1"><div class="mn">1월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+                <div class="m lv1"><div class="mn">2월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+                <div class="m lv3"><div class="mn">3월</div><div class="bar"><i></i></div><div class="tag">계획 수립</div></div>
+                <div class="m lv1"><div class="mn">4월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+                <div class="m lv1"><div class="mn">5월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+                <div class="m lv2"><div class="mn">6월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+                <div class="m lv3"><div class="mn">7월</div><div class="bar"><i></i></div><div class="tag">중간보고</div></div>
+                <div class="m lv1"><div class="mn">8월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+                <div class="m lv1"><div class="mn">9월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+                <div class="m lv2"><div class="mn">10월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+                <div class="m lv3"><div class="mn">11월</div><div class="bar"><i></i></div><div class="tag">연간 정산</div></div>
+                <div class="m lv0"><div class="mn">12월</div><div class="bar"><i></i></div><div class="tag"></div></div>
+              </div>
+              <div class="foot-note">막대가 높은 달이 이 자리의 성수기입니다. 3월 · 7월 · 11월에 반복 기안이 집중됩니다.</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;gap:18px;align-content:start">
+          <div class="card">
+            <div class="card-h">최근 주요 이슈 <span class="cnt">처리 경과 포함 3건</span></div>
+            <div class="card-b">
+              <div class="issue">
+                <div class="rail"></div>
+                <div>
+                  <h4>정산시스템 차세대 전환 <span class="when">2025.09 ~ 진행 중</span> <span class="evidence">근거 4건</span></h4>
+                  <p>병행 운영 중 정산 오차 검증 절차 신설. 올해 3월 계획 수립 시 전환 일정 반영 필요.</p>
+                </div>
+              </div>
+              <div class="issue">
+                <div class="rail"></div>
+                <div>
+                  <h4>공동주택 이의신청 급증 건 <span class="when">2025.07 종결</span> <span class="evidence">근거 3건</span></h4>
+                  <p>검침 주기 안내문 개정으로 재발 방지. 회신 표준 문안이 문서함에 정리되어 있음.</p>
+                </div>
+              </div>
+              <div class="issue gray">
+                <div class="rail"></div>
+                <div>
+                  <h4>정산 단가 산정 기준 개정 논의 <span class="when">2024 하반기</span> <span class="evidence none">문서 근거 없음</span></h4>
+                  <p>구두 협의만 확인됩니다. 근거 문서가 없어 요약을 제공하지 않습니다. 전임자 확인이 필요한 항목입니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h">주요 협조처</div>
+            <div class="card-b">
+              <div class="chips">
+                <span class="chip"><b>사내</b> 정보화부서 · 정산시스템</span>
+                <span class="chip"><b>사내</b> 고객지원부 · 민원 이관</span>
+                <span class="chip"><b>사내</b> 재무처 · 미수금 정리</span>
+                <span class="chip"><b>외부</b> ○○시 에너지과</span>
+                <span class="chip"><b>외부</b> 공동주택 관리사무소 협의회</span>
+              </div>
+              <div class="foot-note">협조처별 최근 공문 이력은 각 항목에서 원문으로 연결됩니다.</div>
+            </div>
+          </div>
+          <button class="btn-block primary" onclick="go(2)">이 자리의 업무 일기예보 보기</button>
+        </div>
+      </div>
+    </div></main>
+  </div>
+</section>
+
+<!-- ================= S2 업무 일기예보 ================= -->
+<section class="screen" id="s2">
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark"><span></span></span>직무 메모리 <small>업무 승계 비서</small></div>
+      <nav class="topnav">
+        <button onclick="go(1)">브리핑북</button>
+        <button class="on">업무 일기예보</button>
+        <button onclick="go(3)">초안 작성</button>
+        <button onclick="go(4)">사전 점검</button>
+      </nav>
+      <div class="right">
+        <span class="proto-chip">시연용 프로토타입 · 샘플 데이터</span>
+        <div class="userchip"><span class="avatar">김</span>김민준 과장 <span class="team">· 요금정산팀</span></div>
+      </div>
+    </header>
+    <main class="content"><div class="content-inner">
+      <div class="fc-head">
+        <div>
+          <div class="pagehead" style="margin-bottom:2px"><h2>업무 일기예보</h2><span class="meta">2026년 7월 · 요금정산팀</span></div>
+          <p class="pagesub" style="margin-bottom:0">과거 기안 주기를 근거로 다가오는 반복 업무를 예보합니다. 날씨 예보처럼, 업무도 예보가 됩니다.</p>
+        </div>
+        <div class="viewtoggle">
+          <button class="on" id="vt-team" onclick="setView('team')">부서 뷰</button>
+          <button id="vt-me" onclick="setView('me')">내 자리 뷰</button>
+        </div>
+      </div>
+      <div class="fc-cards" id="fcCards">
+        <div class="fc-card hot" data-scope="me" onclick="go(3)">
+          <div class="row1"><span class="wx">⛈️</span><span class="dday">D-4</span></div>
+          <h3>요금정산 중간보고 기안</h3>
+          <div class="base">작년 7/10 기안 · 3년 연속 반복 · 근거 문서 3건</div>
+          <div class="act">초안 준비하기 →</div>
+        </div>
+        <div class="fc-card mid" data-scope="team">
+          <div class="row1"><span class="wx">🌧️</span><span class="dday">D-9</span></div>
+          <h3>하절기 설비 안전점검 결과 보고</h3>
+          <div class="base">작년 7/16 기안 · 2년 연속 반복 · 근거 문서 2건 · 담당 박수연 대리</div>
+          <div class="act">근거 문서 보기 →</div>
+        </div>
+        <div class="fc-card far" data-scope="team">
+          <div class="row1"><span class="wx">☁️</span><span class="dday">D-14</span></div>
+          <h3>이사회 보고 안건 자료 제출</h3>
+          <div class="base">작년 7/21 제출 · 2년 연속 반복 · 근거 문서 2건 · 담당 팀 공통</div>
+          <div class="act">근거 문서 보기 →</div>
+        </div>
+      </div>
+      <div class="cal">
+        <div class="cal-t">2026년 7월
+          <div class="legend">
+            <span><i style="background:var(--danger)"></i>임박 (D-7 이내)</span>
+            <span><i style="background:var(--warn)"></i>접근 (D-14 이내)</span>
+            <span><i style="background:var(--info)"></i>예보</span>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid">
+          <div class="dow sun">일</div><div class="dow">월</div><div class="dow">화</div><div class="dow">수</div><div class="dow">목</div><div class="dow">금</div><div class="dow sat">토</div>
+        </div>
+      </div>
+    </div></main>
+  </div>
+</section>
+
+<!-- ================= S3 초안 생성 ================= -->
+<section class="screen" id="s3">
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark"><span></span></span>직무 메모리 <small>업무 승계 비서</small></div>
+      <nav class="topnav">
+        <button onclick="go(1)">브리핑북</button>
+        <button onclick="go(2)">업무 일기예보</button>
+        <button class="on">초안 작성</button>
+        <button onclick="go(4)">사전 점검</button>
+      </nav>
+      <div class="right">
+        <span class="proto-chip">시연용 프로토타입 · 샘플 데이터</span>
+        <div class="userchip"><span class="avatar">김</span>김민준 과장 <span class="team">· 요금정산팀</span></div>
+      </div>
+    </header>
+    <main class="content"><div class="content-inner">
+      <div class="draft-banner">⚠️ AI 생성 초안입니다. 반드시 검토 후 기안하세요. 수치와 금액은 작년 원문에서 그대로 인용되었습니다.</div>
+      <div class="grid-draft">
+        <div class="docpaper" id="docpaper">
+          <div class="gen-status" id="genStatus"><span class="spin"></span><span id="genLabel">작년 문서를 불러오는 중…</span></div>
+          <div id="docBody"></div>
+        </div>
+        <div class="side-panel">
+          <div class="card">
+            <div class="card-h">작년 대비 확인 체크리스트</div>
+            <div class="card-b checklist">
+              <label><input type="checkbox"><div><b>보고 기준월 변경</b><p>작년 6월 말 기준 → 올해 기준월 확인</p></div></label>
+              <label><input type="checkbox"><div><b>정산 실적 수치 갱신</b><p>노란 하이라이트 4곳 · 원문 인용값을 올해 값으로</p></div></label>
+              <label><input type="checkbox"><div><b>차세대 시스템 전환 일정 반영</b><p>브리핑북 이슈 1번 · 올해 신규 변수</p></div></label>
+              <label><input type="checkbox"><div><b>보고 라인 확인</b><p>조직개편으로 결재선 변경 여부 확인</p></div></label>
+            </div>
+          </div>
+          <div class="side-actions">
+            <button class="btn-block primary" onclick="go(4)">검토 마치고 사전 점검 →</button>
+            <button class="btn-block ghost" onclick="runGen()">초안 다시 생성</button>
+          </div>
+          <p class="side-note">노란 표시는 연도·수치·일정 등 올해 값으로 바꿔야 하는 항목입니다. 클릭하면 바로 수정할 수 있습니다.</p>
+        </div>
+      </div>
+    </div></main>
+  </div>
+</section>
+
+<!-- ================= S4 사전 점검 ================= -->
+<section class="screen" id="s4">
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark"><span></span></span>직무 메모리 <small>업무 승계 비서</small></div>
+      <nav class="topnav">
+        <button onclick="go(1)">브리핑북</button>
+        <button onclick="go(2)">업무 일기예보</button>
+        <button onclick="go(3)">초안 작성</button>
+        <button class="on">사전 점검</button>
+      </nav>
+      <div class="right">
+        <span class="proto-chip">시연용 프로토타입 · 샘플 데이터</span>
+        <div class="userchip"><span class="avatar">김</span>김민준 과장 <span class="team">· 요금정산팀</span></div>
+      </div>
+    </header>
+    <main class="content" style="padding-bottom:120px"><div class="content-inner">
+      <div class="pagehead">
+        <h2>기안 전 사전 점검</h2>
+        <span class="meta">지식베이스: 감사 지적사례 · 반려 이력 · 사규</span>
+      </div>
+      <p class="pagesub">제출 전에 과거 지적·반려 패턴과 대조합니다. 점검은 참고 정보이며 판단을 대신하지 않습니다.</p>
+      <div class="scanwrap">
+        <button class="btn-primary" id="scanBtn" style="font-size:14.5px;padding:11px 22px" onclick="runScan()">사전 점검 실행</button>
+        <div class="scanbar" id="scanBar"><i></i></div>
+        <div class="risk-summary" id="riskSummary">
+          <span class="risk-pill w">주의 1건</span><span class="risk-pill d">확인요망 1건</span>
+        </div>
+      </div>
+      <div class="grid-check">
+        <div class="checkdoc">
+          <div class="doc-title">긴급 배관 보수공사 계약 추진(안)</div>
+          <ul>
+            <li>○○구간 열수송관 누수 징후에 따라 긴급 보수공사를 추진하고자 함.</li>
+            <li>공사 지연 시 하절기 공급 차질이 우려되어 <span class="risk warn2" id="risk1" onclick="showWhy(1)"><span class="lbl" style="display:none">주의</span>긴급한 사유로 수의계약으로 추진</span>하고자 함.</li>
+            <li>소요 예산은 지난해 유사 공사 계약금액을 준용하여 편성함.</li>
+            <li>공사 완료 후 정산은 <span class="risk danger2" id="risk2" onclick="showWhy(2)"><span class="lbl" style="display:none">확인요망</span>정산 기준일을 6월 30일로 하여</span> 처리하고자 함.</li>
+            <li>행정사항: 계약 체결 후 7일 이내 착공, 관련 부서 통보.</li>
+          </ul>
+        </div>
+        <div class="why-panel">
+          <div class="empty" id="whyEmpty">점검 실행 후,<br>표시된 문구를 클릭하면<br>지적 근거가 여기에 나타납니다.</div>
+          <div class="why-item" id="why1">
+            <span class="grade w">주의</span>
+            <h4>수의계약 사유의 구체성 부족</h4>
+            <p class="why-b">"긴급한 사유"만으로는 수의계약 요건이 성립하지 않습니다. 2023년 종합감사에서 동일한 표현 패턴이 지적된 이력이 있습니다. 긴급성의 객관적 근거(누수 측정값, 공급 차질 예상 규모)를 본문에 명시하는 것이 안전합니다.</p>
+            <div class="basis">
+              <div class="b-row"><span class="k">규정</span><span>계약사무처리규정 제12조(수의계약의 사유) <a href="#" onclick="return false">원문</a></span></div>
+              <div class="b-row"><span class="k">사례</span><span>2023년 종합감사 지적 제7호 · 유사 표현 <a href="#" onclick="return false">사례 보기</a></span></div>
+            </div>
+          </div>
+          <div class="why-item" id="why2">
+            <span class="grade d">확인요망</span>
+            <h4>정산 기준일 표기 방식</h4>
+            <p class="why-b">정산 기준일을 특정 날짜로 고정하면 준공일 변동 시 재기안 사유가 됩니다. 2024년에 동일 유형의 기안이 반려된 이력이 있습니다. "준공검사 완료일 기준"으로 표기하는 것이 지침과 일치합니다.</p>
+            <div class="basis">
+              <div class="b-row"><span class="k">지침</span><span>공사정산업무지침 제8조(정산 기준) <a href="#" onclick="return false">원문</a></span></div>
+              <div class="b-row"><span class="k">이력</span><span>2024.05 유사 기안 반려 · 사유 동일 <a href="#" onclick="return false">이력 보기</a></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></main>
+  </div>
+  <div class="human-note">본 결과는 참고 정보입니다. <b>"문제 없음" 판정은 제공하지 않으며, 최종 판단은 담당자에게 있습니다.</b> &nbsp;&nbsp;<button style="text-decoration:underline;color:#fff;font-weight:700" onclick="go(5)">비전 보기 →</button></div>
+</section>
+
+<!-- ================= S5 비전 ================= -->
+<section class="screen curtain" id="s5">
+  <div class="inner">
+    <div id="orgmap"></div>
+    <p class="equip-note" id="equipNote">설비에도 메모리를. 다음 단계, 설비 카르테.</p>
+    <div class="cap" id="cap1">
+      <div class="line1">모든 자리에 하나씩, <span class="accent">1자리 1메모리.</span></div>
+      <div class="line2">여러분이 문서를 쌓을수록, 여러분의 후임이 편해집니다.</div>
+    </div>
+    <div class="cap" id="cap2" style="display:none">
+      <div class="line1">당신의 다음 발령지에도,<br>이게 <span class="accent">먼저 가</span> 있습니다.</div>
+    </div>
+    <div class="restart" id="restart">
+      <button class="btn-ghost-d" onclick="go(0)">처음으로</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 알림 배너 ================= -->
+<div id="alertbar">
+  <div class="bell">🔔</div>
+  <div class="txt">
+    <b>요금정산 중간보고 시즌이 도래했습니다</b>
+    <p>작년 7/10 기안 · 3년 연속 반복 업무 · 근거 문서 3건</p>
+  </div>
+  <button class="go" onclick="fromAlert()">초안 준비하기 →</button>
+</div>
+
+<!-- ================= presenter ================= -->
+<div id="presenter">
+  <span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  <span class="hint">← → 이동 · A 알림</span>
+</div>
+
+<script>
+/* ---------- router ---------- */
+var cur = 0, N = 6;
+var alertTimer = null, s5Timers = [];
+function go(n){
+  if(n<0||n>=N) return;
+  document.querySelectorAll('.screen')[cur].classList.remove('active');
+  cur = n;
+  try{ history.replaceState(null,'','#s'+n); }catch(e){}
+  document.querySelectorAll('.screen')[cur].classList.add('active');
+  document.querySelectorAll('#presenter .dot').forEach(function(d,i){d.classList.toggle('on',i===cur);});
+  hideAlert();
+  if(n===2){ scheduleAlert(); }
+  if(n===3){ runGen(); }
+  if(n===4){ resetScan(); }
+  if(n===5){ runVision(); } else { stopVision(); }
+}
+document.addEventListener('keydown', function(e){
+  if(e.key==='ArrowRight') go(cur+1);
+  else if(e.key==='ArrowLeft') go(cur-1);
+  else if(e.key>='0'&&e.key<='5') go(parseInt(e.key,10));
+  else if(e.key==='a'||e.key==='A'){ if(cur===2) showAlert(); }
+});
+
+/* ---------- chime (WebAudio, no asset) ---------- */
+function chime(){
+  try{
+    var ctx = new (window.AudioContext||window.webkitAudioContext)();
+    [880, 1174.7].forEach(function(f,i){
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime+i*0.12);
+      g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime+i*0.12+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+i*0.12+0.7);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime+i*0.12); o.stop(ctx.currentTime+i*0.12+0.75);
+    });
+  }catch(e){}
+}
+
+/* ---------- S2: alert + calendar + view toggle ---------- */
+function scheduleAlert(){ clearTimeout(alertTimer); alertTimer=setTimeout(showAlert, 2600); }
+function showAlert(){ document.getElementById('alertbar').classList.add('show'); chime(); }
+function hideAlert(){ clearTimeout(alertTimer); document.getElementById('alertbar').classList.remove('show'); }
+function fromAlert(){ hideAlert(); go(3); }
+
+(function buildCal(){
+  var grid = document.getElementById('calGrid');
+  var firstDow = 3, days = 31, today = 6;            /* 2026-07-01 = Wed */
+  var ev = {10:{c:'hot',t:'⛈️ 중간보고 기안'},16:{c:'mid',t:'🌧️ 안전점검 보고'},21:{c:'far',t:'☁️ 이사회 안건'}};
+  for(var b=0;b<firstDow;b++){ grid.insertAdjacentHTML('beforeend','<div class="day blank"></div>'); }
+  for(var d=1;d<=days;d++){
+    var cls='day'+(d===today?' today':'');
+    var inner='<div class="n">'+d+'</div>';
+    if(ev[d]) inner+='<div class="ev '+ev[d].c+'">'+ev[d].t+'</div>';
+    grid.insertAdjacentHTML('beforeend','<div class="'+cls+'">'+inner+'</div>');
+  }
+})();
+function setView(v){
+  document.getElementById('vt-team').classList.toggle('on', v==='team');
+  document.getElementById('vt-me').classList.toggle('on', v==='me');
+  document.querySelectorAll('#fcCards .fc-card').forEach(function(c){
+    c.style.display = (v==='team' || c.dataset.scope==='me') ? '' : 'none';
+  });
+}
+
+/* ---------- S3: sectioned generation ---------- */
+var SECS = [
+ {h:null, html:'<div class="doc-title">2026년 상반기 요금정산 중간보고(안)</div>'},
+ {h:'Ⅰ. 개요', html:'<ul>'+
+   '<li>지역냉난방 요금정산 업무의 <span class="hl-y" contenteditable>2026년 상반기</span> 추진 실적을 보고하고, 하반기 계획을 확정하고자 함.</li>'+
+   '<li>근거: 요금정산업무지침 제5조(반기 보고) <span class="cite">원문</span></li></ul>'},
+ {h:'Ⅱ. 추진 경과', html:'<ul>'+
+   '<li>상반기 정산 처리: <span class="hl-y" contenteditable>18,240건</span> <span class="cite">작년 원문 인용</span>, 처리 기한 내 완료율 <span class="hl-y" contenteditable>99.2%</span> <span class="cite">작년 원문 인용</span></li>'+
+   '<li class="dash">이의신청 <span class="hl-y" contenteditable>127건</span> 접수, 전량 회신 완료 <span class="cite">작년 원문 인용</span></li>'+
+   '<li>정산시스템 정기 점검 1회 실시(정보화부서 합동)</li></ul>'},
+ {h:'Ⅲ. 주요 검토사항', html:'<ul>'+
+   '<li>차세대 정산시스템 병행 운영에 따른 오차 검증 절차 운영 결과 점검 필요</li>'+
+   '<li>공동주택 검침 주기 안내문 개정 효과: 이의신청 전년 동기 대비 감소 추세</li></ul>'},
+ {h:'Ⅳ. 향후 계획', html:'<ul>'+
+   '<li><span class="hl-y" contenteditable>7월 3주</span>: 하반기 정산 일정 부서 공유</li>'+
+   '<li><span class="hl-y" contenteditable>8월 중</span>: 차세대 시스템 전환 리허설 참여(정보화부서 주관)</li>'+
+   '<li>행정사항: 본 보고 후 이사회 안건 자료에 요약 반영</li></ul>'}
+];
+var genTimers=[];
+function runGen(){
+  genTimers.forEach(clearTimeout); genTimers=[];
+  var body=document.getElementById('docBody');
+  var st=document.getElementById('genStatus'), lb=document.getElementById('genLabel');
+  body.innerHTML=''; st.style.display='flex'; lb.textContent='작년 문서를 불러오는 중…';
+  var t=400;
+  SECS.forEach(function(sec,i){
+    genTimers.push(setTimeout(function(){
+      lb.textContent = sec.h ? sec.h+' 섹션 생성 중…' : '제목 구성 중…';
+      var wrap=document.createElement('div'); wrap.className='docsec';
+      wrap.innerHTML=(sec.h?'<h4>'+sec.h+'</h4>':'')+'<div class="skel"></div><div class="skel" style="width:78%"></div>';
+      body.appendChild(wrap);
+      genTimers.push(setTimeout(function(){
+        wrap.innerHTML=(sec.h?'<h4>'+sec.h+'</h4>':'')+sec.html;
+        wrap.style.animation='screenIn .3s cubic-bezier(.16,1,.3,1)';
+        if(i===SECS.length-1){ st.style.display='none'; }
+      }, 620));
+    }, t));
+    t+=780;
+  });
+}
+
+/* ---------- S4: scan ---------- */
+function resetScan(){
+  document.getElementById('scanBtn').style.display='';
+  document.getElementById('scanBar').style.display='none';
+  document.getElementById('scanBar').querySelector('i').style.width='0%';
+  document.getElementById('riskSummary').style.display='none';
+  ['risk1','risk2'].forEach(function(id){
+    var el=document.getElementById(id);
+    el.style.background='none'; el.style.borderBottom='none';
+    el.querySelector('.lbl').style.display='none';
+    el.style.pointerEvents='none';
+  });
+  document.getElementById('whyEmpty').style.display='';
+  document.querySelectorAll('.why-item').forEach(function(w){w.classList.remove('show');});
+}
+function runScan(){
+  var btn=document.getElementById('scanBtn'), bar=document.getElementById('scanBar');
+  btn.style.display='none'; bar.style.display='block';
+  var fill=bar.querySelector('i'), p=0;
+  var iv=setInterval(function(){
+    p+=Math.random()*22+10; if(p>100)p=100;
+    fill.style.width=p+'%';
+    if(p>=100){
+      clearInterval(iv);
+      setTimeout(function(){
+        bar.style.display='none';
+        document.getElementById('riskSummary').style.display='flex';
+        ['risk1','risk2'].forEach(function(id){
+          var el=document.getElementById(id);
+          el.style.background=''; el.style.borderBottom='';
+          el.removeAttribute('style');
+          el.querySelector('.lbl').style.display='';
+        });
+        chime();
+      }, 250);
+    }
+  }, 180);
+}
+function showWhy(n){
+  document.getElementById('whyEmpty').style.display='none';
+  document.querySelectorAll('.why-item').forEach(function(w){w.classList.remove('show');});
+  document.getElementById('why'+n).classList.add('show');
+}
+
+/* ---------- S5: vision ---------- */
+(function buildOrg(){
+  var map=document.getElementById('orgmap');
+  for(var i=0;i<35;i++){ map.insertAdjacentHTML('beforeend','<div class="seat"></div>'); }
+  map.insertAdjacentHTML('beforeend','<div class="seat equip" title="열수송 설비"></div>');
+})();
+function stopVision(){ s5Timers.forEach(clearTimeout); s5Timers=[]; }
+/* deep link: #s0 ~ #s5 (+ ?auto=1 : S4 점검 자동 실행) */
+(function initHash(){
+  var m = (location.hash||'').match(/^#s([0-5])$/);
+  if(m){ var n=parseInt(m[1],10); if(n!==0){ go(n); } }
+  if(/[?&]auto=1/.test(location.search) && m && m[1]==='4'){
+    setTimeout(runScan, 300);
+    setTimeout(function(){ showWhy(2); }, 3400);
+  }
+})();
+
+function runVision(){
+  stopVision();
+  var seats=[].slice.call(document.querySelectorAll('#orgmap .seat'));
+  seats.forEach(function(s){s.classList.remove('lit');});
+  document.getElementById('equipNote').classList.remove('show');
+  document.getElementById('cap1').classList.remove('show'); document.getElementById('cap1').style.display='';
+  document.getElementById('cap2').classList.remove('show'); document.getElementById('cap2').style.display='none';
+  document.getElementById('restart').classList.remove('show');
+  var normal=seats.filter(function(s){return !s.classList.contains('equip');});
+  var equip=seats.filter(function(s){return s.classList.contains('equip');})[0];
+  var order=normal.slice().sort(function(){return Math.random()-.5;});
+  order.forEach(function(s,i){ s5Timers.push(setTimeout(function(){s.classList.add('lit');}, 350+i*95)); });
+  var tAll=350+order.length*95;
+  s5Timers.push(setTimeout(function(){ document.getElementById('cap1').classList.add('show'); }, tAll+200));
+  s5Timers.push(setTimeout(function(){ equip.classList.add('lit'); document.getElementById('equipNote').classList.add('show'); }, tAll+2400));
+  s5Timers.push(setTimeout(function(){
+    document.getElementById('cap1').style.display='none';
+    var c2=document.getElementById('cap2'); c2.style.display='';
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ c2.classList.add('show'); }); });
+    document.getElementById('restart').classList.add('show');
+  }, tAll+5200));
+}
+</script>
+</body>
+</html>
