@@ -17,6 +17,15 @@ const checks = [
   ['resizeS0Three is defined', () => /function resizeS0Three\(\)/.test(html)],
   ['WebGLRenderer is constructed', () => /new THREE\.WebGLRenderer/.test(html)],
   ['s0Update drives Three.js progress', () => /updateS0Three\(p\)/.test(html)],
+  ['S0 has knowledge-graph connection caption', () => html.includes('흩어진 문서가 서로 연결됩니다')],
+  ['S0 has organic graph motion caption', () => html.includes('연결된 업무 맥락이 살아 움직입니다')],
+  ['knowledge graph nodes are constructed', () => /var graphNodes = \[\]/.test(html) && /new THREE\.SphereGeometry/.test(html)],
+  ['knowledge graph links are rendered', () => /new THREE\.LineSegments/.test(html)],
+  ['knowledge graph opacity is scroll-driven', () => /var network = easeInOut\(segment\(p,\s*\.30,\s*\.58\)\)/.test(html)],
+  ['graph does not collapse into the core', () => !/graphCollapse\s*=/.test(html) && !/\.lerp\(d\.sink,\s*graphCollapse\)/.test(html)],
+  ['core does not expand into a sun-like stage', () => !/coreScale\s*=\s*mix\(coreScale,\s*2\.8/.test(html) && !/coreScale\s*=\s*mix\(coreScale/.test(html)],
+  ['S0 scales graph down on narrow screens', () => /var viewportFit = s\.mount\.clientWidth < 600 \? \.58 : 1;/.test(html)],
+  ['S0 mobile caption avoids bottom controls', () => /#s0 \.s0-caption\{bottom:13vh\}/.test(html) && /#s0 \.s0-hint\{display:none\}/.test(html)],
 ];
 
 const failures = checks.filter(([, test]) => {

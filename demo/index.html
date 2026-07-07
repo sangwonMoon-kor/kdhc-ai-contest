@@ -51,7 +51,7 @@
   .screen.curtain.active{display:flex;align-items:center;justify-content:center}
   .curtain .inner{max-width:1020px;padding:0 48px;width:100%}
 
-  /* S0 — Three.js 업무 기억 코어 오프닝 */
+  /* S0 — Three.js 업무 연결 그래프 오프닝 */
   #s0.active{display:block}
   #s0{scrollbar-width:none}
   #s0::-webkit-scrollbar{display:none}
@@ -98,6 +98,15 @@
   #s0 h1 .accent{color:var(--accent)}
   #s0 .sub{margin-top:22px;font-size:19px;color:var(--dark-muted);opacity:0}
   #s0 .s0-stage.done .sub{animation:rise .7s .45s forwards cubic-bezier(.16,1,.3,1)}
+  @media (max-width:600px){
+    #s0 .s0-phase{top:72px;left:20px;right:18px;gap:8px;font-size:12px;line-height:1.35}
+    #s0 .s0-phase small{font-size:12px}
+    #s0 .s0-caption{bottom:13vh}
+    #s0 .s0-caption .cap-step{width:min(340px,84vw)}
+    #s0 .s0-caption b{font-size:30px;line-height:1.16}
+    #s0 .s0-caption span{margin:10px auto 0;max-width:310px;font-size:14px;line-height:1.45}
+    #s0 .s0-hint{display:none}
+  }
   @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
   #s0 .persona{margin-top:44px;display:flex;align-items:center;gap:18px;background:#1d2127;border:1px solid #2a2f37;
     border-radius:var(--r-card);padding:20px 24px;max-width:560px;opacity:0}
@@ -398,12 +407,16 @@
           <span>전임자가 남긴 기안문 · 회의록 · 메일 · 파일 더미</span>
         </div>
         <div class="cap-step" data-step="1">
+          <b>흩어진 문서가 서로 연결됩니다</b>
+          <span>기안문 · 회의록 · 메일이 하나의 업무 맥락으로 이어집니다</span>
+        </div>
+        <div class="cap-step" data-step="2">
           <b>흩어진 기록이 업무 단위로 모입니다</b>
           <span>요금 정산 · 민원 대응 · 시스템 전환 · 계획 보고가 하나의 구조를 갖습니다</span>
         </div>
-        <div class="cap-step" data-step="2">
-          <b>문서는 사라지지 않고, 자리의 기억이 됩니다</b>
-          <span>평소의 업무 기록이 다음 담당자를 위한 직무 메모리로 축적됩니다</span>
+        <div class="cap-step" data-step="3">
+          <b>연결된 업무 맥락이 살아 움직입니다</b>
+          <span>요금 정산 · 민원 대응 · 시스템 전환 · 계획 보고가 서로 영향을 주고받습니다</span>
         </div>
       </div>
       <div class="s0-three-fallback">
@@ -860,7 +873,7 @@ function chime(){
   }catch(e){}
 }
 
-/* ---------- S0: Three.js 업무 기억 코어 오프닝 ---------- */
+/* ---------- S0: Three.js 업무 연결 그래프 오프닝 ---------- */
 var s0ThreeState = null;
 var s0LitPlayed = false;
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
@@ -961,6 +974,67 @@ function initS0Three(){
       world.add(mesh); cards.push(mesh);
     }
 
+    var graph = new THREE.Group();
+    var graphNodes = [];
+    var graphEdges = [];
+    var graphNodeGeo = new THREE.SphereGeometry(.09, 16, 10);
+    var graphClusters = [
+      {name:'요금 정산', color:0xe8590c, center:new THREE.Vector3(-1.35,.62,.18), count:13},
+      {name:'민원 메일', color:0x2b7fff, center:new THREE.Vector3(1.18,.46,.08), count:12},
+      {name:'감사 시스템', color:0x9b5de5, center:new THREE.Vector3(-.62,-.72,.28), count:11},
+      {name:'계획 보고', color:0x00a88f, center:new THREE.Vector3(.9,-.58,-.12), count:12}
+    ];
+    graphClusters.forEach(function(cluster, ci){
+      var startIndex = graphNodes.length;
+      for(var gi=0; gi<cluster.count; gi++){
+        var local = graphNodes.length;
+        var a2 = (gi / cluster.count) * Math.PI * 2 + seeded(local+140) * .7;
+        var spread = .42 + seeded(local+150) * .62;
+        var base = new THREE.Vector3(
+          cluster.center.x + Math.cos(a2) * spread,
+          cluster.center.y + (seeded(local+160)-.5) * .82,
+          cluster.center.z + Math.sin(a2) * spread * .55
+        );
+        var node = new THREE.Mesh(
+          graphNodeGeo,
+          new THREE.MeshBasicMaterial({color:cluster.color, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false})
+        );
+        node.position.copy(base);
+        node.userData = {
+          base: base,
+          sink: new THREE.Vector3(cluster.center.x*.08, cluster.center.y*.08, cluster.center.z*.08),
+          cluster: ci,
+          seed: seeded(local+170),
+          color: cluster.color
+        };
+        graph.add(node);
+        graphNodes.push(node);
+      }
+      for(var e=0; e<cluster.count; e++){
+        var from = startIndex + e;
+        graphEdges.push([from, startIndex + ((e + 1) % cluster.count)]);
+        if(e % 2 === 0) graphEdges.push([from, startIndex + ((e + 3) % cluster.count)]);
+      }
+    });
+    for(var ce=0; ce<graphClusters.length; ce++){
+      var aStart = graphClusters.slice(0, ce).reduce(function(sum,c){ return sum + c.count; }, 0);
+      var bStart = graphClusters.slice(0, (ce+1)%graphClusters.length).reduce(function(sum,c){ return sum + c.count; }, 0);
+      graphEdges.push([aStart, bStart]);
+      graphEdges.push([aStart + 4, (bStart + 7) % graphNodes.length]);
+      graphEdges.push([aStart + 8, (bStart + 2) % graphNodes.length]);
+    }
+    var graphLinkPositions = new Float32Array(graphEdges.length * 2 * 3);
+    var graphLinkGeometry = new THREE.BufferGeometry();
+    graphLinkGeometry.setAttribute('position', new THREE.BufferAttribute(graphLinkPositions, 3));
+    var graphLinks = new THREE.LineSegments(
+      graphLinkGeometry,
+      new THREE.LineBasicMaterial({color:0xf6efe7, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false})
+    );
+    graph.add(graphLinks);
+    graph.position.set(0,.04,-.16);
+    graph.scale.setScalar(.72);
+    world.add(graph);
+
     var core = new THREE.Group();
     var coreOuter = new THREE.Mesh(
       new THREE.IcosahedronGeometry(1.18, 5),
@@ -999,7 +1073,8 @@ function initS0Three(){
     world.add(particles);
 
     s0ThreeState = {renderer:renderer, scene:scene, camera:camera, mount:mount, world:world, cards:cards, core:core,
-      coreOuter:coreOuter, coreInner:coreInner, rings:rings, particles:particles, key:key, progress:0, time:0};
+      coreOuter:coreOuter, coreInner:coreInner, rings:rings, particles:particles, graph:graph, graphNodes:graphNodes,
+      graphLinks:graphLinks, graphEdges:graphEdges, key:key, progress:0, time:0};
     resizeS0Three();
     updateS0Three(0);
     renderS0Three();
@@ -1013,9 +1088,12 @@ function updateS0Three(p){
   if(!s) return;
   s.progress = p;
   var gather = easeOutCubic(segment(p,.08,.48));
-  var absorb = easeInOut(segment(p,.46,.82));
-  var zoom = easeInOut(segment(p,.76,.955));
-  var appear = 1 - segment(p,.86,.95);
+  var network = easeInOut(segment(p,.30,.58));
+  var organic = easeInOut(segment(p,.58,.92));
+  var cardFade = easeInOut(segment(p,.50,.74));
+  var networkOut = 1 - segment(p,.92,.97);
+  var heroFade = segment(p,.91,.97);
+  var appear = 1 - segment(p,.94,.985);
   var t = s.time;
 
   s.cards.forEach(function(card, i){
@@ -1027,37 +1105,73 @@ function updateS0Three(p){
     var x = mix(d.start.x, orbit.x, gather);
     var y = mix(d.start.y, orbit.y, gather);
     var z = mix(d.start.z, orbit.z, gather);
-    x = mix(x, d.sink.x, absorb);
-    y = mix(y, d.sink.y, absorb);
-    z = mix(z, d.sink.z, absorb);
     card.position.set(x,y,z);
-    var sc = mix(1, .16, absorb) * mix(.82, 1, gather);
+    var sc = mix(1, .72, cardFade) * mix(.82, 1, gather);
     card.scale.setScalar(sc);
-    card.material.opacity = .92 * (1 - absorb*.92) * appear;
+    card.material.opacity = .92 * (1 - cardFade) * appear * (1 - network*.52);
     card.rotation.z = d.tilt + Math.sin(t*.6+i)*.06;
     card.lookAt(s.camera.position);
   });
 
-  var coreScale = mix(.62, 1.12, gather);
-  coreScale = mix(coreScale, 2.8, zoom);
+  var graphOpacity = network * networkOut * appear;
+  s.graph.visible = graphOpacity > .01;
+  var viewportFit = s.mount.clientWidth < 600 ? .58 : 1;
+  var graphBreath = 1 + organic * Math.sin(t*.9) * .035;
+  s.graph.scale.setScalar(mix(.72, 1.22, network) * graphBreath * mix(1, .92, heroFade) * viewportFit);
+  s.graph.position.set(Math.sin(t*.36) * .05 * organic, mix(.04, .14, network) + Math.cos(t*.42) * .04 * organic + (viewportFit < 1 ? .36 : 0), .12 + Math.sin(t*.28) * .08 * organic);
+  s.graph.rotation.y = -.22 + Math.sin(t*.22) * .08 + network * .18 + organic * Math.sin(t*.32) * .16;
+  s.graph.rotation.x = .1 + organic * Math.cos(t*.24) * .08;
+  s.graphNodes.forEach(function(node, ni){
+    var d = node.userData;
+    var pulse = 1 + Math.sin(t*2.2 + ni*.47) * mix(.12, .18, organic);
+    var spread = mix(1.34, 1, network) * (1 + organic * Math.sin(t*.75 + d.seed*8) * .04);
+    var clusterAngle = t * (.18 + d.cluster*.035) + d.cluster * 1.7;
+    var clusterDriftX = Math.cos(clusterAngle) * .08 * organic;
+    var clusterDriftY = Math.sin(clusterAngle*.82) * .06 * organic;
+    var clusterDriftZ = Math.sin(clusterAngle) * .06 * organic;
+    node.position.set(
+      d.base.x * spread + clusterDriftX + Math.sin(t*.9 + ni*.73) * .045 * organic,
+      d.base.y * spread + clusterDriftY + Math.cos(t*.7 + ni*.41) * .04 * organic,
+      d.base.z * spread + clusterDriftZ + Math.sin(t*.64 + ni*.33) * .05 * organic
+    );
+    node.scale.setScalar(mix(.28, 1, network) * mix(1, 1.08, organic) * pulse);
+    node.material.opacity = Math.min(.98, graphOpacity * mix(.68, 1.08, network));
+  });
+  var linkArray = s.graphLinks.geometry.attributes.position.array;
+  s.graphEdges.forEach(function(edge, ei){
+    var aNode = s.graphNodes[edge[0]].position;
+    var bNode = s.graphNodes[edge[1]].position;
+    var idx = ei * 6;
+    linkArray[idx] = aNode.x; linkArray[idx+1] = aNode.y; linkArray[idx+2] = aNode.z;
+    linkArray[idx+3] = bNode.x; linkArray[idx+4] = bNode.y; linkArray[idx+5] = bNode.z;
+  });
+  s.graphLinks.geometry.attributes.position.needsUpdate = true;
+  s.graphLinks.material.opacity = graphOpacity * mix(.22, .78, network) * mix(1, 1.14, organic);
+
+  var coreSignal = gather * (1 - network*.72);
+  var coreScale = mix(.42, .78, coreSignal);
   s.core.scale.setScalar(coreScale);
-  s.coreOuter.material.opacity = mix(.16, .42, gather) * mix(1, 1.75, zoom);
-  s.coreInner.material.opacity = mix(.34, .72, gather) * mix(1, 1.45, zoom);
-  s.particles.material.opacity = mix(.28, .58, gather) * mix(1, .22, zoom);
-  s.key.intensity = mix(1.8, 5.8, Math.max(gather, zoom));
-  s.camera.position.set(mix(0, .12, gather), mix(1.2, .08, zoom), mix(9.5, 2.15, zoom));
+  s.coreOuter.material.opacity = mix(.10, .22, coreSignal) * (1 - network*.6) * appear;
+  s.coreInner.material.opacity = mix(.14, .28, coreSignal) * (1 - network*.52) * appear;
+  s.rings.forEach(function(ring, ri){
+    ring.material.opacity = mix(.08, .18 + ri*.03, coreSignal) * (1 - network*.68) * appear;
+  });
+  s.particles.material.opacity = mix(.28, .48, gather) * mix(1, .72, organic) * appear;
+  s.key.intensity = mix(1.8, 3.6, Math.max(gather, network)) * mix(1, .65, heroFade);
+  s.camera.position.set(mix(0, .12, gather) + Math.sin(t*.2) * .04 * organic, mix(1.2, .72, heroFade), mix(9.5, 5.6, heroFade));
   s.camera.lookAt(0, 0, 0);
   s.world.rotation.y = mix(-.12, .24, gather) + Math.sin(t*.18)*.03;
-  s.world.rotation.x = mix(.06, -.04, zoom);
+  s.world.rotation.x = mix(.06, .02, heroFade) + Math.sin(t*.16) * .025 * organic;
 
   var phase = document.getElementById('s0phase');
   if(phase){
-    if(p < .34) phase.innerHTML = 'Inherited files <small>흩어진 업무 기억</small>';
-    else if(p < .68) phase.innerHTML = 'Classifying work <small>업무 단위로 재배열</small>';
-    else if(p < .91) phase.innerHTML = 'Building memory <small>자리의 기억으로 축적</small>';
+    if(p < .30) phase.innerHTML = 'Inherited files <small>흩어진 업무 기억</small>';
+    else if(p < .58) phase.innerHTML = 'Linking context <small>문서 사이의 연결 생성</small>';
+    else if(p < .76) phase.innerHTML = 'Classifying work <small>업무 단위로 재배열</small>';
+    else if(p < .91) phase.innerHTML = 'Living work graph <small>연결된 업무 맥락의 흐름</small>';
     else phase.innerHTML = 'Job Memory ready <small>다음 담당자의 첫 화면</small>';
   }
-  var step = p < .34 ? 0 : (p < .70 ? 1 : 2);
+  var step = p < .30 ? 0 : (p < .58 ? 1 : (p < .76 ? 2 : 3));
   document.querySelectorAll('#s0caption .cap-step').forEach(function(el){
     el.classList.toggle('show', Number(el.getAttribute('data-step')) === step && p < .93);
   });
