@@ -56,8 +56,22 @@
   #s0{scrollbar-width:none}
   #s0::-webkit-scrollbar{display:none}
   #s0{background:#0b0d10}
-  #s0 .s0-track{height:520vh;position:relative}
+  #s0 .s0-track{height:100vh;position:relative}
   #s0 .s0-stage{position:sticky;top:0;height:100vh;overflow:hidden;background:#0b0d10}
+  #s0 .s0-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#090b0e;display:block}
+  /* 영상 컨트롤: 소리 켜기 / 건너뛰기 */
+  #s0 .s0-sound{position:absolute;top:30px;right:26px;z-index:16;display:inline-flex;align-items:center;gap:9px;
+    background:rgba(15,18,23,.62);border:1px solid rgba(255,255,255,.2);color:#f4f5f6;font-weight:700;font-size:14px;
+    padding:10px 16px;border-radius:999px;backdrop-filter:blur(8px);transition:background .2s, border-color .2s, opacity .5s, transform .15s}
+  #s0 .s0-sound:hover{background:rgba(232,89,12,.9);border-color:transparent}
+  #s0 .s0-sound .ic{font-size:15px;line-height:1}
+  #s0 .s0-skip{position:absolute;bottom:34px;right:26px;z-index:16;display:inline-flex;align-items:center;gap:7px;
+    background:rgba(15,18,23,.5);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.82);font-weight:700;
+    font-size:13.5px;padding:9px 16px;border-radius:999px;backdrop-filter:blur(8px);transition:background .2s, color .2s, opacity .5s}
+  #s0 .s0-skip:hover{background:rgba(255,255,255,.14);color:#fff}
+  #s0 .s0-skip .arr{transition:transform .2s}
+  #s0 .s0-skip:hover .arr{transform:translateX(3px)}
+  #s0 .s0-stage.done .s0-sound,#s0 .s0-stage.done .s0-skip{opacity:0;pointer-events:none}
   #s0 .s0-eyebrow{position:absolute;top:34px;left:48px;font-size:15px;color:var(--dark-muted);letter-spacing:.01em;z-index:12}
   #s0 .s0-cutscene{position:absolute;inset:0;z-index:1;overflow:hidden;background:#090b0e;opacity:1;
     transition:opacity .65s, filter .65s, transform .65s}
@@ -111,16 +125,12 @@
   #s0 .sub{margin-top:22px;font-size:19px;color:var(--dark-muted);opacity:0}
   #s0 .s0-stage.done .sub{animation:rise .7s .45s forwards cubic-bezier(.16,1,.3,1)}
   @media (max-width:600px){
-    #s0 .s0-eyebrow{top:28px;left:20px;right:20px;font-size:13px}
-    #s0 .s0-phase{top:72px;left:20px;right:18px;gap:8px;font-size:12px;line-height:1.35}
-    #s0 .s0-phase small{font-size:12px}
-    #s0 .s0-caption{bottom:14vh}
-    #s0 .s0-caption .cap-step{width:min(340px,84vw)}
-    #s0 .s0-caption b{font-size:30px;line-height:1.16}
-    #s0 .s0-caption span{margin:10px auto 0;max-width:310px;font-size:14px;line-height:1.45}
-    #s0 .s0-cut-meta{left:20px;right:20px;bottom:34px}
+    #s0 .s0-eyebrow{top:22px;left:16px;right:118px;font-size:12px;line-height:1.35}
+    #s0 .s0-sound{top:16px;right:14px;padding:7px 12px;font-size:12px}
+    #s0 .s0-sound .ic{font-size:13px}
+    #s0 .s0-skip{top:60px;right:14px;bottom:auto;left:auto;padding:7px 12px;font-size:11.5px}
+    #s0 .s0-cut-meta{left:16px;right:16px;bottom:78px;top:auto}
     #s0 .s0-progress{flex:1}
-    #s0 .s0-hint{display:none}
   }
   @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
   #s0 .persona{margin-top:44px;display:flex;align-items:center;gap:18px;background:#1d2127;border:1px solid #2a2f37;
@@ -414,47 +424,19 @@
     <div class="s0-stage" id="s0stage">
       <div class="s0-eyebrow">사내 AI 경진대회 제안 · 직무 메모리</div>
       <div class="s0-cutscene" id="s0cutscene" aria-hidden="true">
-        <div class="s0-slide active" data-cut="0"><img src="assets/storyboard/s0-cut-01.jpg" alt=""></div>
-        <div class="s0-slide" data-cut="1"><img src="assets/storyboard/s0-cut-02.jpg" alt=""></div>
-        <div class="s0-slide" data-cut="2"><img src="assets/storyboard/s0-cut-03.jpg" alt=""></div>
-        <div class="s0-slide" data-cut="3"><img src="assets/storyboard/s0-cut-04.jpg" alt=""></div>
-        <div class="s0-slide" data-cut="4"><img src="assets/storyboard/s0-cut-05.jpg" alt=""></div>
-        <div class="s0-slide" data-cut="5"><img src="assets/storyboard/s0-cut-06.jpg" alt=""></div>
-        <div class="s0-film-grain"></div>
+        <video id="s0video" class="s0-video" playsinline muted preload="auto" poster="assets/opening-poster.jpg">
+          <source src="assets/opening.mp4" type="video/mp4">
+        </video>
       </div>
       <div class="s0-vignette" aria-hidden="true"></div>
-      <div class="s0-phase" id="s0phase">CUT 01 <small>문서 산더미</small></div>
-      <div class="s0-caption" id="s0caption">
-        <div class="cap-step show" data-step="0">
-          <b>서류 더미 속에 묻힌 문서요정</b>
-          <span>산더미처럼 쌓인 책상 위, 무엇부터 정리해야 할지 막막합니다</span>
-        </div>
-        <div class="cap-step" data-step="1">
-          <b>문서요정이 벌떡 일어납니다</b>
-          <span>흩어진 서류가 사방으로 날리고 정리 자동화가 시작됩니다</span>
-        </div>
-        <div class="cap-step" data-step="2">
-          <b>필요한 서류를 빠르게 모읍니다</b>
-          <span>흩어진 문서가 한 묶음으로 모이며 업무 흐름이 생깁니다</span>
-        </div>
-        <div class="cap-step" data-step="3">
-          <b>모니터가 문서를 읽기 시작합니다</b>
-          <span>스캔과 OCR로 종이 문서가 데이터로 바뀝니다</span>
-        </div>
-        <div class="cap-step" data-step="4">
-          <b>문서가 자동으로 분류됩니다</b>
-          <span>계약서 · 보고서 · 영수증 · 신청서가 카테고리별로 정리됩니다</span>
-        </div>
-        <div class="cap-step" data-step="5">
-          <b>문서요정이 깔끔한 결과를 보여줍니다</b>
-          <span>분류된 문서와 대시보드가 다음 담당자의 첫 화면이 됩니다</span>
-        </div>
-      </div>
+      <button class="s0-sound" id="s0sound" type="button" onclick="toggleS0Sound()" aria-label="소리 켜기">
+        <span class="ic" id="s0soundic">🔊</span><span class="lbl" id="s0soundlbl">소리 켜기</span>
+      </button>
+      <button class="s0-skip" id="s0skip" type="button" onclick="skipS0()">건너뛰기 <span class="arr">→</span></button>
       <div class="s0-cut-meta" id="s0cutmeta">
-        <span id="s0cutcount">CUT 01 / 06</span>
+        <span id="s0playhint">인트로 재생 중</span>
         <div class="s0-progress" aria-hidden="true"><span id="s0cutprogress"></span></div>
       </div>
-      <div class="s0-hint" id="s0hint"><span>스크롤을 내려 업무를 넘겨주세요</span><span class="chev">▼</span></div>
       <div class="s0-hero">
         <div class="inner">
           <div class="eyebrow0">사내 AI 경진대회 제안 · 직무 메모리</div>
@@ -871,7 +853,7 @@ function go(n){
   document.querySelectorAll('.screen')[cur].classList.add('active');
   document.querySelectorAll('#presenter .dot').forEach(function(d,i){d.classList.toggle('on',i===cur);});
   hideAlert();
-  if(n===0){ document.getElementById('s0').scrollTop = 0; s0Update(); }
+  if(n===0){ playS0(); }
   if(n===2){ scheduleAlert(); }
   if(n===3){ runGen(); }
   if(n===4){ resetScan(); }
@@ -901,89 +883,50 @@ function chime(){
   }catch(e){}
 }
 
-/* ---------- S0: storyboard cutscene opener ---------- */
-function clamp01(v){ return Math.max(0, Math.min(1, v)); }
-function easeInOut(t){ t = clamp01(t); return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2; }
-const S0_CUTS = [
-  {phase:'CUT 01', sub:'문서 산더미', title: '서류 더미 속에 묻힌 문서요정', x:-1.4, y:.2, z0:1.04, z1:1.13},
-  {phase:'CUT 02', sub:'정리 시작', title: '문서요정이 벌떡 일어납니다', x:1.1, y:-.3, z0:1.03, z1:1.11},
-  {phase:'CUT 03', sub:'서류 수집', title: '필요한 서류를 빠르게 모읍니다', x:-1.8, y:.1, z0:1.05, z1:1.16},
-  {phase:'CUT 04', sub:'스캔과 OCR', title: '모니터가 문서를 읽기 시작합니다', x:1.4, y:-.2, z0:1.05, z1:1.14},
-  {phase:'CUT 05', sub:'자동 분류', title: '문서가 자동으로 분류됩니다', x:-1.1, y:.15, z0:1.04, z1:1.12},
-  {phase:'CUT 06', sub:'대시보드 완성', title: '문서요정이 깔끔한 결과를 보여줍니다', x:.9, y:-.1, z0:1.03, z1:1.1}
-];
-function initS0Cutscene(){
-  var slides = document.querySelectorAll('#s0cutscene .s0-slide');
-  slides.forEach(function(slide, i){
-    slide.classList.toggle('active', i === 0);
-    slide.classList.remove('prev');
-    slide.style.setProperty('--zoom', S0_CUTS[i] ? S0_CUTS[i].z0 : 1.04);
-    slide.style.setProperty('--pan-x', '0%');
-    slide.style.setProperty('--pan-y', '0%');
-  });
-  updateS0Cutscene(0);
+/* ---------- S0: video opener ---------- */
+var s0DonePlayed = false;
+function s0RevealHero(){
+  var s0stage = document.getElementById('s0stage');
+  if(!s0stage) return;
+  s0stage.classList.add('done');
+  if(!s0DonePlayed){ s0DonePlayed = true; try{ chime(); }catch(e){} }
 }
-function updateS0Cutscene(p){
-  p = clamp01(p);
-  var visibleProgress = clamp01(p / .93);
-  var cuts = S0_CUTS.length;
-  var cutFloat = Math.min(cuts - .0001, visibleProgress * cuts);
-  var index = Math.floor(cutFloat);
-  var local = cutFloat - index;
-  var cut = S0_CUTS[index] || S0_CUTS[0];
-  var eased = easeInOut(local);
-  var slides = document.querySelectorAll('#s0cutscene .s0-slide');
-  slides.forEach(function(slide, i){
-    slide.classList.toggle('active', i === index && p < .955);
-    slide.classList.toggle('prev', i === index - 1 && local < .24 && p < .955);
-  });
-  var active = slides[index];
-  if(active){
-    active.style.setProperty('--zoom', (cut.z0 + (cut.z1 - cut.z0) * eased).toFixed(3));
-    active.style.setProperty('--pan-x', (cut.x * eased).toFixed(2) + '%');
-    active.style.setProperty('--pan-y', (cut.y * eased).toFixed(2) + '%');
-  }
-  var phase = document.getElementById('s0phase');
-  if(phase) phase.innerHTML = cut.phase + ' <small>' + cut.sub + '</small>';
-  document.querySelectorAll('#s0caption .cap-step').forEach(function(el){
-    el.classList.toggle('show', Number(el.getAttribute('data-step')) === index && p < .93);
-  });
-  var count = document.getElementById('s0cutcount');
-  if(count) count.textContent = 'CUT ' + String(index + 1).padStart(2, '0') + ' / 06';
-  var bar = document.getElementById('s0cutprogress');
-  if(bar) bar.style.width = Math.round(visibleProgress * 100) + '%';
+function toggleS0Sound(){
+  var v = document.getElementById('s0video');
+  var ic = document.getElementById('s0soundic');
+  var lbl = document.getElementById('s0soundlbl');
+  if(!v) return;
+  v.muted = !v.muted;
+  if(!v.muted){ try{ v.play(); }catch(e){} }
+  if(ic) ic.textContent = v.muted ? '🔊' : '🔇';
+  if(lbl) lbl.textContent = v.muted ? '소리 켜기' : '음소거';
 }
 function skipS0(){
-  var s0 = document.getElementById('s0');
-  if(!s0) return;
-  s0.scrollTop = s0.scrollHeight;
-  s0Update();
+  var v = document.getElementById('s0video');
+  if(v){ try{ v.pause(); }catch(e){} }
+  s0RevealHero();
 }
-
-function s0Update(){
-  var s0 = document.getElementById('s0');
+function playS0(){
+  var v = document.getElementById('s0video');
   var s0stage = document.getElementById('s0stage');
-  if(!s0 || !s0stage) return;
-  var max = s0.scrollHeight - s0.clientHeight;
-  var p = max > 0 ? s0.scrollTop / max : 0;
-  var done = p >= 0.955;
-  var hint = document.getElementById('s0hint');
-  if(hint) hint.style.opacity = p < 0.04 ? 1 : 0;
-  updateS0Cutscene(p);
-  var lit = p >= 0.84;
-  if(lit && !s0LitPlayed){ s0LitPlayed = true; try{ chime(); }catch(e){} }
-  if(!lit) s0LitPlayed = false;
-  s0stage.classList.toggle('done', done);
+  if(!v) return;
+  s0DonePlayed = false;
+  if(s0stage) s0stage.classList.remove('done');
+  var bar = document.getElementById('s0cutprogress');
+  if(bar) bar.style.width = '0%';
+  try{ v.currentTime = 0; }catch(e){}
+  var p = v.play();
+  if(p && p.catch){ p.catch(function(){ /* autoplay 차단 시 포스터 유지, 소리 켜기/건너뛰기로 진행 */ }); }
 }
 (function initS0(){
-  var s0 = document.getElementById('s0');
-  if(!s0) return;
-  initS0Cutscene();
-  s0.addEventListener('scroll', s0Update);
-  window.addEventListener('resize', s0Update);
-  s0.scrollTop = 0;
-  requestAnimationFrame(function(){ s0.scrollTop = 0; s0Update(); });
-  s0Update();
+  var v = document.getElementById('s0video');
+  if(!v) return;
+  v.addEventListener('timeupdate', function(){
+    var bar = document.getElementById('s0cutprogress');
+    if(bar && v.duration){ bar.style.width = Math.round((v.currentTime / v.duration) * 100) + '%'; }
+  });
+  v.addEventListener('ended', s0RevealHero);
+  playS0();
 })();
 
 /* ---------- S2: alert + calendar + view toggle ---------- */
