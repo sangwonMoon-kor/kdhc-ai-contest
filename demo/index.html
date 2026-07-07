@@ -51,58 +51,45 @@
   .screen.curtain.active{display:flex;align-items:center;justify-content:center}
   .curtain .inner{max-width:1020px;padding:0 48px;width:100%}
 
-  /* S0 — 스크롤 연동 인수인계 오프닝 */
+  /* S0 — Three.js 업무 기억 코어 오프닝 */
   #s0.active{display:block}
   #s0{scrollbar-width:none}
   #s0::-webkit-scrollbar{display:none}
-  #s0{background:linear-gradient(180deg, rgba(9,11,14,.42) 0%, rgba(9,11,14,.62) 55%, rgba(9,11,14,.88) 100%), url('assets/office-bg.jpg') center 68%/cover no-repeat}
-  #s0 .s0-track{height:420vh;position:relative}
+  #s0{background:#0b0d10}
+  #s0 .s0-track{height:460vh;position:relative}
   #s0 .s0-stage{position:sticky;top:0;height:100vh;overflow:hidden}
-  #s0 .s0-scene{position:absolute;inset:0;transition:opacity .6s, filter .6s}
-  #s0 .s0-stage.done .s0-scene{opacity:.12;filter:blur(3px)}
-  #s0 .s0-eyebrow{position:absolute;top:34px;left:48px;font-size:15px;color:var(--dark-muted);letter-spacing:.01em}
-  /* 파일 더미 (상단, 실사 사진 — 스크롤에 맞춰 scale-down) */
-  #s0 .s0-pile{position:absolute;top:6vh;left:63%;transform:translateX(-50%);width:200px;text-align:center}
-  #s0 .s0-pile-label{font-size:13.5px;color:var(--dark-muted);margin-bottom:12px;transition:opacity .5s}
-  .s0-pile-img{width:100%;display:block;margin:0 auto;transform-origin:50% 0%;will-change:transform,opacity;
-    filter:drop-shadow(0 12px 20px rgba(0,0,0,.45))}
-  /* 캐릭터 */
-  #s0 .s0-char{position:absolute;height:32vh;width:32vh;transform:translateX(-50%);will-change:top,left;
-    filter:drop-shadow(0 14px 22px rgba(0,0,0,.45));transition:opacity .4s}
-  #s0 .s0-char img{position:absolute;bottom:0;left:50%;transform:translateX(-50%);height:100%;width:auto;opacity:0;transition:opacity .25s}
-  #s0 .s0-char img.show{opacity:1}
-  /* 컴퓨터 (하단, 실사 모니터 합성) */
-  #s0 .s0-pc{position:absolute;bottom:3vh;left:37%;transform:translateX(-50%);text-align:center}
-  .s0-mon-wrap{position:relative;width:360px;margin:0 auto;filter:drop-shadow(0 18px 26px rgba(0,0,0,.5));transition:filter .6s;
-    transform-origin:49.9% 38.74%;will-change:transform} /* origin = .scr 중심 — 확대 시 화면이 제자리에서 커짐 */
-  .s0-mon-wrap > img{width:100%;display:block;transition:opacity .45s}
-  .s0-mon-wrap .scr{position:absolute;left:12.01%;top:2.7%;width:75.78%;height:72.07%;border-radius:2px;overflow:hidden;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-    background:radial-gradient(ellipse at 50% 60%, #2a1f14 0%, #0c0d11 70%);opacity:0;transition:opacity .7s}
-  .s0-mon-wrap .scr .glow{position:absolute;inset:0;background:url('assets/ai-glow.jpg') center/cover no-repeat;opacity:.45;transition:opacity .5s}
-  .s0-stage.zooming .s0-mon-wrap .scr .glow{opacity:1}
-  .s0-mon-wrap .scr .logo{position:relative;color:var(--accent);font-weight:800;font-size:19px;letter-spacing:-.01em;transition:opacity .3s;
-    text-shadow:0 1px 8px rgba(0,0,0,.85)}
-  .s0-mon-wrap .scr .okmsg{position:relative;color:#7ed67e;font-size:11px;transition:opacity .3s;text-shadow:0 1px 6px rgba(0,0,0,.85)}
-  .s0-stage.lit .s0-mon-wrap{filter:drop-shadow(0 18px 26px rgba(0,0,0,.5)) drop-shadow(0 0 55px rgba(232,89,12,.45))}
-  .s0-stage.lit .s0-mon-wrap .scr{opacity:1}
-  #s0 .s0-pc-label{font-size:13.5px;color:var(--dark-muted);margin-top:10px;transition:opacity .3s}
-  /* 화면 확대(zoom-in) 전환: 모니터 프레임은 사라지고 화면 레이어만 뷰포트를 채움 */
-  .s0-stage.zooming .s0-pc{z-index:6}
-  .s0-stage.zooming .s0-mon-wrap{filter:none}
-  .s0-stage.zooming .s0-mon-wrap > img{opacity:0}
-  .s0-stage.zooming .scr .logo,.s0-stage.zooming .scr .okmsg{opacity:0}
-  .s0-stage.zooming .s0-char,.s0-stage.zooming .s0-pc-label{opacity:0}
-  /* 날아가는 파일 */
-  .s0-fly{position:absolute;width:56px;height:38px;border-radius:5px;background:linear-gradient(#eccd77,#d9b455);border:1px solid #bd9a45;
-    box-shadow:0 4px 10px rgba(0,0,0,.4);opacity:0;pointer-events:none;z-index:5}
+  #s0 .s0-eyebrow{position:absolute;top:34px;left:48px;font-size:15px;color:var(--dark-muted);letter-spacing:.01em;z-index:12}
+  #s0 .s0-three{position:absolute;inset:0;z-index:1;opacity:1;transition:opacity .65s, filter .65s, transform .65s;background:
+    radial-gradient(circle at 50% 50%,rgba(232,89,12,.12),transparent 28%),
+    radial-gradient(circle at 50% 105%,rgba(232,89,12,.16),transparent 34%),
+    #0b0d10}
+  #s0 .s0-three canvas{display:block;width:100%;height:100%;outline:0}
+  #s0 .s0-stage.done .s0-three{opacity:.2;filter:blur(8px) saturate(1.2);transform:scale(1.04)}
+  #s0 .s0-vignette{position:absolute;inset:0;z-index:2;pointer-events:none;background:
+    radial-gradient(circle at 50% 44%,transparent 0,transparent 33%,rgba(8,10,13,.3) 58%,rgba(8,10,13,.86) 100%),
+    linear-gradient(180deg,rgba(9,11,14,.78),rgba(9,11,14,0) 25%,rgba(9,11,14,.86) 100%)}
+  #s0 .s0-phase{position:absolute;top:84px;left:48px;z-index:12;display:flex;align-items:center;gap:12px;color:#f3e6d8;
+    font-size:14px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+  #s0 .s0-phase::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 28px rgba(232,89,12,.9)}
+  #s0 .s0-phase small{font-weight:700;color:rgba(255,255,255,.45);letter-spacing:0;text-transform:none}
+  #s0 .s0-caption{position:absolute;left:0;right:0;bottom:8vh;z-index:12;text-align:center;color:var(--dark-ink);pointer-events:none}
+  #s0 .s0-caption .cap-step{position:absolute;left:50%;bottom:0;width:min(900px,86vw);transform:translate(-50%,18px);
+    opacity:0;transition:opacity .35s, transform .35s;text-shadow:0 4px 28px rgba(0,0,0,.8)}
+  #s0 .s0-caption .cap-step.show{opacity:1;transform:translate(-50%,0)}
+  #s0 .s0-caption b{display:block;font-size:clamp(28px,3.4vw,48px);line-height:1.18;font-weight:800;letter-spacing:0}
+  #s0 .s0-caption span{display:block;margin-top:13px;font-size:clamp(15px,1.2vw,19px);color:var(--dark-muted)}
+  #s0 .s0-three-fallback{display:none;position:absolute;inset:0;z-index:3;align-items:center;justify-content:center;text-align:center;
+    padding:0 36px;color:var(--dark-muted);background:radial-gradient(circle at 50% 50%,rgba(232,89,12,.12),transparent 32%),#0b0d10}
+  #s0 .s0-three-fallback b{display:block;color:var(--dark-ink);font-size:clamp(30px,4vw,58px);line-height:1.15;margin-bottom:16px}
+  #s0.three-failed .s0-three-fallback{display:flex}
+  #s0.three-failed .s0-three{display:none}
   /* 스크롤 힌트 */
-  .s0-hint{position:absolute;bottom:24px;left:63%;transform:translateX(-50%);color:var(--dark-muted);font-size:14.5px;
+  .s0-hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:var(--dark-muted);font-size:14.5px;z-index:14;
     display:flex;flex-direction:column;align-items:center;gap:3px;transition:opacity .4s;pointer-events:none}
   .s0-hint .chev{animation:bob 1.4s infinite}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
   /* 히어로 (연출 종료 후 등장) */
-  #s0 .s0-hero{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s}
+  #s0 .s0-hero{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s;z-index:15}
   #s0 .s0-stage.done .s0-hero{opacity:1;pointer-events:auto}
   #s0 .eyebrow0{font-size:15px;color:var(--dark-muted);letter-spacing:.01em;margin-bottom:26px;opacity:0}
   #s0 .s0-stage.done .eyebrow0{animation:rise .7s .1s forwards cubic-bezier(.16,1,.3,1)}
@@ -401,28 +388,31 @@
 <section class="screen curtain active" id="s0">
   <div class="s0-track">
     <div class="s0-stage" id="s0stage">
-      <div class="s0-scene">
-        <div class="s0-eyebrow">사내 AI 경진대회 제안 · 직무 메모리</div>
-        <div class="s0-pile" id="s0pile">
-          <div class="s0-pile-label">전임자가 남긴 업무 파일</div>
-          <img class="s0-pile-img" id="s0pileimg" src="assets/pile.png" alt="전임자가 남긴 업무 파일 더미">
+      <div class="s0-eyebrow">사내 AI 경진대회 제안 · 직무 메모리</div>
+      <div class="s0-three" id="s0three" aria-hidden="true"></div>
+      <div class="s0-vignette" aria-hidden="true"></div>
+      <div class="s0-phase" id="s0phase">Inherited files <small>흩어진 업무 기억</small></div>
+      <div class="s0-caption" id="s0caption">
+        <div class="cap-step show" data-step="0">
+          <b>발령 첫날, 김 과장 앞에 놓인 것</b>
+          <span>전임자가 남긴 기안문 · 회의록 · 메일 · 파일 더미</span>
         </div>
-        <div class="s0-char" id="s0char">
-          <img src="assets/pose0.png" alt="서류 더미에 파묻힌 캐릭터">
-          <img src="assets/pose1.png" alt="파일을 들어올리는 캐릭터">
-          <img src="assets/pose2.png" alt="파일을 안고 이동하는 캐릭터">
-          <img src="assets/pose3.png" alt="파일을 건네는 캐릭터">
+        <div class="cap-step" data-step="1">
+          <b>흩어진 기록이 업무 단위로 모입니다</b>
+          <span>요금 정산 · 민원 대응 · 시스템 전환 · 계획 보고가 하나의 구조를 갖습니다</span>
         </div>
-        <div class="s0-fly" id="s0fly"></div>
-        <div class="s0-pc">
-          <div class="s0-mon-wrap">
-            <img src="assets/monitor.png" alt="모니터">
-            <div class="scr"><div class="glow"></div><div class="logo">직무 메모리</div><div class="okmsg">업무 기억 저장 완료 ✓</div></div>
-          </div>
-          <div class="s0-pc-label">다음 담당자의 자리</div>
+        <div class="cap-step" data-step="2">
+          <b>문서는 사라지지 않고, 자리의 기억이 됩니다</b>
+          <span>평소의 업무 기록이 다음 담당자를 위한 직무 메모리로 축적됩니다</span>
         </div>
-        <div class="s0-hint" id="s0hint"><span>스크롤을 내려 업무를 넘겨주세요</span><span class="chev">▼</span></div>
       </div>
+      <div class="s0-three-fallback">
+        <div>
+          <b>사람은 떠나도,<br>업무는 남게.</b>
+          <span>WebGL을 사용할 수 없어 3D 오프닝을 건너뜁니다.</span>
+        </div>
+      </div>
+      <div class="s0-hint" id="s0hint"><span>스크롤을 내려 업무를 넘겨주세요</span><span class="chev">▼</span></div>
       <div class="s0-hero">
         <div class="inner">
           <div class="eyebrow0">사내 AI 경진대회 제안 · 직무 메모리</div>
@@ -827,6 +817,7 @@
   <span class="hint">← → 이동 · A 알림</span>
 </div>
 
+<script src="vendor/three.min.js"></script>
 <script>
 /* ---------- router ---------- */
 var cur = 0, N = 7;
@@ -869,71 +860,253 @@ function chime(){
   }catch(e){}
 }
 
-/* ---------- S0: 스크롤 연동 인수인계 오프닝 ---------- */
+/* ---------- S0: Three.js 업무 기억 코어 오프닝 ---------- */
+var s0ThreeState = null;
 var s0LitPlayed = false;
+function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+function easeOutCubic(t){ t = clamp01(t); return 1 - Math.pow(1 - t, 3); }
+function easeInOut(t){ t = clamp01(t); return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2; }
+function mix(a,b,t){ return a + (b-a)*t; }
+function segment(p,a,b){ return clamp01((p-a)/(b-a)); }
+function seeded(n){ var x = Math.sin(n * 147.31) * 10000; return x - Math.floor(x); }
+function drawRoundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+function makeDocTexture(label,title,accent){
+  var c = document.createElement('canvas');
+  c.width = 640; c.height = 400;
+  var ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 28; ctx.shadowOffsetY = 14;
+  ctx.fillStyle = 'rgba(246,240,232,.94)';
+  drawRoundRect(ctx,34,34,572,332,28); ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = accent; drawRoundRect(ctx,64,70,128,38,19); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '700 22px sans-serif'; ctx.fillText(label,84,97);
+  ctx.fillStyle = '#242a33'; ctx.font = '800 34px sans-serif';
+  var parts = title.split(' ');
+  ctx.fillText(parts.slice(0,3).join(' '),64,170);
+  ctx.fillText(parts.slice(3).join(' '),64,214);
+  ctx.strokeStyle = 'rgba(42,47,55,.18)'; ctx.lineWidth = 10;
+  ctx.beginPath(); ctx.moveTo(68,266); ctx.lineTo(548,266); ctx.stroke();
+  ctx.strokeStyle = 'rgba(232,89,12,.42)';
+  ctx.beginPath(); ctx.moveTo(68,304); ctx.lineTo(410,304); ctx.stroke();
+  var tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  return tex;
+}
+function initS0Three(){
+  var s0 = document.getElementById('s0');
+  var mount = document.getElementById('s0three');
+  if(!s0 || !mount || !window.THREE){
+    if(s0) s0.classList.add('three-failed');
+    return;
+  }
+  try{
+    var renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:'high-performance'});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    mount.appendChild(renderer.domElement);
+
+    var scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0b0d10, .045);
+    var camera = new THREE.PerspectiveCamera(42, 1, .1, 80);
+    camera.position.set(0, 1.2, 9.5);
+
+    var ambient = new THREE.AmbientLight(0xffffff, .42);
+    var key = new THREE.PointLight(0xff8a2a, 3.2, 22);
+    key.position.set(0, 1.1, 2.8);
+    var rim = new THREE.PointLight(0x82a7ff, 1.1, 18);
+    rim.position.set(-5, 3, -4);
+    scene.add(ambient, key, rim);
+
+    var world = new THREE.Group();
+    scene.add(world);
+
+    var cardGeo = new THREE.PlaneGeometry(1.72, 1.08);
+    var docData = [
+      ['기안문','7월 열요금 정산 결과','#e8590c'], ['메일','민원 회신 표준 문안','#2b7fff'],
+      ['회의록','시스템 전환 협의','#9b5de5'], ['보고','이사회 안건 메모','#00a88f'],
+      ['정산','오차 검증 결과','#e8590c'], ['계획','연간 정산 일정','#00a88f'],
+      ['감사','소명자료 근거','#9b5de5'], ['협조','정보화부서 요청','#2b7fff']
+    ];
+    var cards = [];
+    for(var i=0;i<34;i++){
+      var item = docData[i % docData.length];
+      var mat = new THREE.MeshBasicMaterial({
+        map: makeDocTexture(item[0], item[1], item[2]),
+        transparent: true,
+        opacity: .92,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      var mesh = new THREE.Mesh(cardGeo, mat);
+      var angle = (i / 34) * Math.PI * 2;
+      var orbitRadius = 3.1 + (i % 4) * .38 + seeded(i) * .5;
+      mesh.userData = {
+        start: new THREE.Vector3((seeded(i+4)-.5)*11, (seeded(i+8)-.5)*6.4, -6.2 + seeded(i+12)*4.2),
+        orbit: new THREE.Vector3(Math.cos(angle)*orbitRadius, ((i%9)-4)*.42, Math.sin(angle)*(1.5 + (i%5)*.2)),
+        sink: new THREE.Vector3(Math.cos(angle)*.24, ((i%7)-3)*.06, Math.sin(angle)*.18),
+        angle: angle,
+        speed: .22 + seeded(i+20) * .28,
+        tilt: (seeded(i+30)-.5) * .75
+      };
+      mesh.position.copy(mesh.userData.start);
+      mesh.rotation.set((seeded(i+2)-.5)*.9, (seeded(i+6)-.5)*.9, mesh.userData.tilt);
+      world.add(mesh); cards.push(mesh);
+    }
+
+    var core = new THREE.Group();
+    var coreOuter = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(1.18, 5),
+      new THREE.MeshBasicMaterial({color:0xe8590c, transparent:true, opacity:.28, blending:THREE.AdditiveBlending, depthWrite:false})
+    );
+    var coreInner = new THREE.Mesh(
+      new THREE.SphereGeometry(.58, 48, 32),
+      new THREE.MeshBasicMaterial({color:0xffc078, transparent:true, opacity:.62, blending:THREE.AdditiveBlending, depthWrite:false})
+    );
+    core.add(coreOuter, coreInner);
+    var rings = [];
+    for(var r=0;r<3;r++){
+      var ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1.45 + r*.34, .01, 8, 96),
+        new THREE.MeshBasicMaterial({color:r===1?0xfff1df:0xe8590c, transparent:true, opacity:.28, blending:THREE.AdditiveBlending, depthWrite:false})
+      );
+      ring.rotation.set(Math.PI/2 + r*.38, r*.55, r*.2);
+      core.add(ring); rings.push(ring);
+    }
+    core.scale.setScalar(.58);
+    world.add(core);
+
+    var particleCount = 900;
+    var pos = new Float32Array(particleCount * 3);
+    for(var j=0;j<particleCount;j++){
+      var a = seeded(j+77) * Math.PI * 2;
+      var rr = 2.8 + seeded(j+91) * 8.6;
+      pos[j*3] = Math.cos(a) * rr;
+      pos[j*3+1] = (seeded(j+103)-.5) * 7.2;
+      pos[j*3+2] = Math.sin(a) * rr - 1.5;
+    }
+    var particles = new THREE.Points(
+      new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pos, 3)),
+      new THREE.PointsMaterial({color:0xffa24b, size:.028, transparent:true, opacity:.42, blending:THREE.AdditiveBlending, depthWrite:false})
+    );
+    world.add(particles);
+
+    s0ThreeState = {renderer:renderer, scene:scene, camera:camera, mount:mount, world:world, cards:cards, core:core,
+      coreOuter:coreOuter, coreInner:coreInner, rings:rings, particles:particles, key:key, progress:0, time:0};
+    resizeS0Three();
+    updateS0Three(0);
+    renderS0Three();
+  }catch(e){
+    s0.classList.add('three-failed');
+    console.error(e);
+  }
+}
+function updateS0Three(p){
+  var s = s0ThreeState;
+  if(!s) return;
+  s.progress = p;
+  var gather = easeOutCubic(segment(p,.08,.48));
+  var absorb = easeInOut(segment(p,.46,.82));
+  var zoom = easeInOut(segment(p,.76,.955));
+  var appear = 1 - segment(p,.86,.95);
+  var t = s.time;
+
+  s.cards.forEach(function(card, i){
+    var d = card.userData;
+    var orbitAngle = d.angle + t * d.speed;
+    var ox = Math.cos(orbitAngle) * (Math.abs(d.orbit.x) + .18 * Math.sin(t+i));
+    var oz = Math.sin(orbitAngle) * (Math.abs(d.orbit.z) + .16 * Math.cos(t*.7+i));
+    var orbit = new THREE.Vector3(ox, d.orbit.y + Math.sin(t*.8+i)*.08, oz);
+    var x = mix(d.start.x, orbit.x, gather);
+    var y = mix(d.start.y, orbit.y, gather);
+    var z = mix(d.start.z, orbit.z, gather);
+    x = mix(x, d.sink.x, absorb);
+    y = mix(y, d.sink.y, absorb);
+    z = mix(z, d.sink.z, absorb);
+    card.position.set(x,y,z);
+    var sc = mix(1, .16, absorb) * mix(.82, 1, gather);
+    card.scale.setScalar(sc);
+    card.material.opacity = .92 * (1 - absorb*.92) * appear;
+    card.rotation.z = d.tilt + Math.sin(t*.6+i)*.06;
+    card.lookAt(s.camera.position);
+  });
+
+  var coreScale = mix(.62, 1.12, gather);
+  coreScale = mix(coreScale, 2.8, zoom);
+  s.core.scale.setScalar(coreScale);
+  s.coreOuter.material.opacity = mix(.16, .42, gather) * mix(1, 1.75, zoom);
+  s.coreInner.material.opacity = mix(.34, .72, gather) * mix(1, 1.45, zoom);
+  s.particles.material.opacity = mix(.28, .58, gather) * mix(1, .22, zoom);
+  s.key.intensity = mix(1.8, 5.8, Math.max(gather, zoom));
+  s.camera.position.set(mix(0, .12, gather), mix(1.2, .08, zoom), mix(9.5, 2.15, zoom));
+  s.camera.lookAt(0, 0, 0);
+  s.world.rotation.y = mix(-.12, .24, gather) + Math.sin(t*.18)*.03;
+  s.world.rotation.x = mix(.06, -.04, zoom);
+
+  var phase = document.getElementById('s0phase');
+  if(phase){
+    if(p < .34) phase.innerHTML = 'Inherited files <small>흩어진 업무 기억</small>';
+    else if(p < .68) phase.innerHTML = 'Classifying work <small>업무 단위로 재배열</small>';
+    else if(p < .91) phase.innerHTML = 'Building memory <small>자리의 기억으로 축적</small>';
+    else phase.innerHTML = 'Job Memory ready <small>다음 담당자의 첫 화면</small>';
+  }
+  var step = p < .34 ? 0 : (p < .70 ? 1 : 2);
+  document.querySelectorAll('#s0caption .cap-step').forEach(function(el){
+    el.classList.toggle('show', Number(el.getAttribute('data-step')) === step && p < .93);
+  });
+}
+function renderS0Three(){
+  var s = s0ThreeState;
+  if(!s) return;
+  s.time += .016;
+  s.core.rotation.y += .008;
+  s.core.rotation.x += .003;
+  s.rings.forEach(function(ring,i){
+    ring.rotation.z += .006 + i*.002;
+    ring.rotation.x += .0015;
+  });
+  s.particles.rotation.y -= .0015;
+  updateS0Three(s.progress);
+  s.renderer.render(s.scene, s.camera);
+  requestAnimationFrame(renderS0Three);
+}
+function resizeS0Three(){
+  var s = s0ThreeState;
+  if(!s) return;
+  var w = s.mount.clientWidth || window.innerWidth || 1280;
+  var h = s.mount.clientHeight || window.innerHeight || 720;
+  s.renderer.setSize(w, h, false);
+  s.camera.aspect = w / h;
+  s.camera.updateProjectionMatrix();
+}
 function s0Update(){
   var s0 = document.getElementById('s0');
   var stage = document.getElementById('s0stage');
   if(!s0 || !stage) return;
   var max = s0.scrollHeight - s0.clientHeight;
   var p = max > 0 ? s0.scrollTop / max : 0;
-  function lerp(a,b,t){ return a + (b-a)*t; }
-  function seg(a,b){ return Math.max(0, Math.min(1, (p - a) / (b - a))); }
-
-  /* 캐릭터 이동: 인트로(파묻힘) 뒤 상단 파일 더미(우) → 하단 컴퓨터(좌), 0.72에 도착 */
-  var mp = seg(0.10, 0.72);
-  var ch = document.getElementById('s0char');
-  ch.style.top  = lerp(20, 46, mp) + 'vh';
-  ch.style.left = lerp(63, 50, mp) + '%';
-
-  /* 포즈 전환: 파묻힘 → 들어올리기 → 이동 → 건네기 */
-  var pose = p < 0.10 ? 0 : (p < 0.34 ? 1 : (p < 0.64 ? 2 : 3));
-  stage.querySelectorAll('.s0-char img').forEach(function(im,i){
-    im.classList.toggle('show', i === pose);
-  });
-
-  /* 파일 더미: 인트로 컷이 끝나면 등장, 스크롤에 맞춰 점점 작아지다 소멸 */
-  var pile = document.getElementById('s0pileimg');
-  pile.style.transform = 'scale(' + lerp(1, 0.1, seg(0.12, 0.62)) + ')';
-  pile.style.opacity = Math.min(seg(0.07, 0.12), 1 - seg(0.54, 0.62));
-  stage.querySelector('.s0-pile-label').style.opacity = p > 0.6 ? 0 : 1;
-
-  /* 스크롤 힌트 */
+  var done = p >= 0.955;
   document.getElementById('s0hint').style.opacity = p < 0.04 ? 1 : 0;
-
-  /* 파일이 컴퓨터로 날아 들어감 (p 0.72~0.80) */
-  var fly = document.getElementById('s0fly');
-  var fp = seg(0.72, 0.80);
-  if(fp > 0 && fp < 1){
-    fly.style.opacity = 1;
-    fly.style.left = lerp(48, 37, fp) + '%';
-    fly.style.top  = lerp(60, 80, fp) + 'vh';
-    fly.style.transform = 'translate(-50%,-50%) scale(' + lerp(1, 0.3, fp) + ') rotate(' + lerp(0, -24, fp) + 'deg)';
-  } else {
-    fly.style.opacity = 0;
-  }
-
-  /* 모니터 점등 + 차임 */
-  var lit = p >= 0.79;
-  stage.classList.toggle('lit', lit);
+  updateS0Three(p);
+  var lit = p >= 0.72;
   if(lit && !s0LitPlayed){ s0LitPlayed = true; try{ chime(); }catch(e){} }
   if(!lit) s0LitPlayed = false;
-
-  /* 화면 확대(zoom-in): 모니터 화면이 커지며 뷰포트를 뚫고 들어감 (p 0.87~0.98) */
-  var zp = seg(0.87, 0.98);
-  stage.classList.toggle('zooming', zp > 0);
-  var wrap = stage.querySelector('.s0-mon-wrap');
-  wrap.style.transform = zp > 0 ? 'scale(' + (1 + Math.pow(zp, 2.2) * 15) + ')' : '';
-
-  /* 연출 종료 → 타이틀 등장 */
-  stage.classList.toggle('done', p >= 0.96);
+  stage.classList.toggle('done', done);
 }
 (function initS0(){
   var s0 = document.getElementById('s0');
   if(!s0) return;
+  initS0Three();
   s0.addEventListener('scroll', s0Update);
-  window.addEventListener('resize', s0Update);
-  s0.scrollTop = 0;               /* 새로고침 시 브라우저 스크롤 복원 무시, 항상 처음부터 */
+  window.addEventListener('resize', function(){ resizeS0Three(); s0Update(); });
+  s0.scrollTop = 0;
   requestAnimationFrame(function(){ s0.scrollTop = 0; s0Update(); });
   s0Update();
 })();
