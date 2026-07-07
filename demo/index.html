@@ -326,8 +326,53 @@
     font-size:13px;font-weight:600;padding:11px}
   .human-note b{color:#fff}
 
-  /* ============ S5 vision ============ */
-  #s5 .inner{max-width:1100px;text-align:center}
+  /* ============ S5 내 업무 매뉴얼 (6개월 뒤, 밀착형 업무 매뉴얼) ============ */
+  .time-chip{font-size:12.5px;color:var(--accent-deep);background:var(--accent-soft);border:1px solid var(--accent-line);
+    border-radius:999px;padding:4px 12px;font-weight:800;margin-left:26px}
+  .grid-manual{display:grid;grid-template-columns:.9fr 1.1fr;gap:18px;align-items:start}
+  .fd-list{display:grid;gap:10px;align-content:start;min-height:300px}
+  .fd-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line-soft);
+    border-radius:10px;background:#fafbfc;opacity:0;transform:translateY(12px);transition:opacity .45s, transform .45s}
+  .fd-item.in{opacity:1;transform:none}
+  .fd-item .fd-type{font-size:11px;font-weight:800;border-radius:5px;padding:2px 8px;white-space:nowrap;flex-shrink:0;margin-top:2px}
+  .fd-item .fd-type.doc{background:var(--info-soft);color:var(--info)}
+  .fd-item .fd-type.mail{background:var(--warn-soft);color:var(--warn)}
+  .fd-item .fd-type.meet{background:var(--line-soft);color:var(--muted)}
+  .fd-item b{font-size:13.5px}
+  .fd-item p{font-size:12px;color:var(--muted);margin-top:1px}
+  .fd-wait{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px;padding:4px 2px}
+  .fd-wait .spin{width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--faint);border-radius:50%;animation:rot .9s linear infinite}
+  .mn-list{display:grid;gap:10px}
+  .mn-cat{display:flex;gap:12px;align-items:center;padding:13px 14px;border:1px solid var(--line-soft);border-radius:10px;
+    background:#fafbfc;transition:border-color .35s, background .35s, box-shadow .35s}
+  .mn-cat .ico{width:36px;height:36px;border-radius:9px;background:var(--accent-soft);display:flex;align-items:center;
+    justify-content:center;font-size:17px;flex-shrink:0}
+  .mn-cat b{font-size:14px}
+  .mn-cat p{font-size:12px;color:var(--muted);margin-top:2px}
+  .mn-ver{font-size:11px;font-weight:800;color:var(--accent-deep);background:var(--accent-soft);border-radius:5px;padding:1px 7px;margin-left:7px;vertical-align:1px}
+  .mn-upd{font-size:10.5px;font-weight:800;color:#fff;background:var(--accent);border-radius:5px;padding:1px 7px;margin-left:6px;
+    opacity:0;transition:opacity .3s;vertical-align:1px}
+  .mn-cnt{margin-left:auto;font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;text-align:right}
+  .mn-cnt b{font-size:16.5px;color:var(--ink)}
+  .mn-cat.bump{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 3px rgba(232,89,12,.13)}
+  .mn-cat.bump .mn-upd{opacity:1}
+  #s5fly{position:fixed;z-index:70;width:40px;height:27px;border-radius:5px;background:#fff;border:1.5px solid var(--accent);
+    box-shadow:0 6px 16px rgba(232,89,12,.3);opacity:0;pointer-events:none}
+  /* 시점 전환 자막 + 클로징 오버레이 */
+  .s5-veil{position:absolute;inset:0;z-index:45;background:var(--dark-bg);color:var(--dark-ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;
+    opacity:0;pointer-events:none;transition:opacity .7s}
+  .s5-veil.show{opacity:1;pointer-events:auto}
+  .s5-veil .v-eyebrow{font-size:15px;color:var(--dark-muted)}
+  .s5-veil .v-line{font-size:clamp(26px,2.8vw,40px);font-weight:800;letter-spacing:-.02em;line-height:1.4}
+  .s5-veil .v-line .accent{color:var(--accent)}
+  .s5-veil .v-sub{font-size:17px;color:var(--dark-muted);opacity:0;transition:opacity .8s}
+  .s5-veil .v-sub.show{opacity:1}
+  .s5-veil .v-cta{margin-top:22px;opacity:0;transition:opacity .6s}
+  .s5-veil .v-cta.show{opacity:1}
+
+  /* ============ S6 vision ============ */
+  #s6 .inner{max-width:1100px;text-align:center}
   #orgmap{display:grid;grid-template-columns:repeat(12,52px);gap:14px;justify-content:center;margin:0 auto 40px}
   .seat{width:52px;height:52px;border-radius:12px;background:#20242b;border:1px solid #2c313a;position:relative;transition:all .45s}
   .seat::after{content:"";position:absolute;inset:0;margin:auto;width:14px;height:14px;border-radius:50%;background:#343b46;transition:all .45s}
@@ -337,15 +382,15 @@
   .seat.equip::after{width:18px;height:18px;border-radius:4px;transform:rotate(45deg)}
   .seat.equip.lit{background:#132015;border-color:#2f7d43;box-shadow:0 0 24px rgba(47,158,68,.4)}
   .seat.equip.lit::after{background:#40c057;box-shadow:0 0 13px rgba(64,192,87,.9)}
-  #s5 .cap{min-height:120px}
-  #s5 .cap .line1{font-size:clamp(30px,3.4vw,46px);font-weight:800;letter-spacing:-.02em;opacity:0;transition:opacity .8s, transform .8s;transform:translateY(14px)}
-  #s5 .cap .line2{font-size:19px;color:var(--dark-muted);margin-top:14px;opacity:0;transition:opacity .8s .15s, transform .8s .15s;transform:translateY(14px)}
-  #s5 .cap.show .line1,#s5 .cap.show .line2{opacity:1;transform:none}
-  #s5 .cap .accent{color:var(--accent)}
-  #s5 .equip-note{font-size:14.5px;color:#7fca8e;font-weight:700;margin:0 0 26px;opacity:0;transition:opacity .6s}
-  #s5 .equip-note.show{opacity:1}
-  #s5 .restart{margin-top:38px;opacity:0;transition:opacity .6s .4s}
-  #s5 .restart.show{opacity:1}
+  #s6 .cap{min-height:120px}
+  #s6 .cap .line1{font-size:clamp(30px,3.4vw,46px);font-weight:800;letter-spacing:-.02em;opacity:0;transition:opacity .8s, transform .8s;transform:translateY(14px)}
+  #s6 .cap .line2{font-size:19px;color:var(--dark-muted);margin-top:14px;opacity:0;transition:opacity .8s .15s, transform .8s .15s;transform:translateY(14px)}
+  #s6 .cap.show .line1,#s6 .cap.show .line2{opacity:1;transform:none}
+  #s6 .cap .accent{color:var(--accent)}
+  #s6 .equip-note{font-size:14.5px;color:#7fca8e;font-weight:700;margin:0 0 26px;opacity:0;transition:opacity .6s}
+  #s6 .equip-note.show{opacity:1}
+  #s6 .restart{margin-top:38px;opacity:0;transition:opacity .6s .4s}
+  #s6 .restart.show{opacity:1}
   .btn-ghost-d{border:1.5px solid #3a414c;color:var(--dark-muted);border-radius:999px;padding:11px 24px;font-weight:700;font-size:14px}
   .btn-ghost-d:hover{border-color:var(--dark-muted);color:var(--dark-ink)}
 </style>
@@ -672,11 +717,84 @@
       </div>
     </div></main>
   </div>
-  <div class="human-note">본 결과는 참고 정보입니다. <b>"문제 없음" 판정은 제공하지 않으며, 최종 판단은 담당자에게 있습니다.</b> &nbsp;&nbsp;<button style="text-decoration:underline;color:#fff;font-weight:700" onclick="go(5)">비전 보기 →</button></div>
+  <div class="human-note">본 결과는 참고 정보입니다. <b>"문제 없음" 판정은 제공하지 않으며, 최종 판단은 담당자에게 있습니다.</b> &nbsp;&nbsp;<button style="text-decoration:underline;color:#fff;font-weight:700" onclick="go(5)">6개월 뒤 →</button></div>
 </section>
 
-<!-- ================= S5 비전 ================= -->
-<section class="screen curtain" id="s5">
+<!-- ================= S5 내 업무 매뉴얼 (밀착형 업무 매뉴얼 · 6개월 뒤) ================= -->
+<section class="screen" id="s5">
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark"><span></span></span>직무 메모리 <small>업무 승계 비서</small></div>
+      <span class="time-chip">발령 6개월 뒤 · 2026년 7월</span>
+      <div class="right">
+        <span class="proto-chip">시연용 프로토타입 · 샘플 데이터</span>
+        <div class="userchip"><span class="avatar">김</span>김민준 과장 <span class="team">· 요금정산팀</span></div>
+      </div>
+    </header>
+    <main class="content"><div class="content-inner">
+      <div class="pagehead">
+        <h2>내 업무 매뉴얼</h2>
+        <span class="ai-badge">개인별 업무 자동 분류</span>
+        <span class="meta">결재 · 메일 · 회의록이 업무 단위로 자동 정리됩니다</span>
+      </div>
+      <p class="pagesub">김 과장은 평소처럼 일할 뿐입니다. 처리한 문서가 그대로 이 자리의 매뉴얼이 됩니다.</p>
+      <div class="grid-manual">
+        <div class="card">
+          <div class="card-h">오늘 처리한 업무 <span class="cnt">2026-07-06 (월)</span></div>
+          <div class="card-b fd-list" id="fdList">
+            <div class="fd-wait" id="fdWait"><span class="spin"></span>새 문서를 기다리는 중…</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h">김민준 과장의 업무 매뉴얼 <span class="cnt">자동 갱신 · 근거 문서 연결</span></div>
+          <div class="card-b mn-list">
+            <div class="mn-cat" id="mncat1">
+              <div class="ico">🧾</div>
+              <div><b>요금 정산</b><span class="mn-ver" id="mnv1">v2.3</span><span class="mn-upd">매뉴얼 갱신</span>
+                <p>월별 정산 처리 절차 · 마감 체크리스트 · 오차 검증 요령</p></div>
+              <div class="mn-cnt"><b id="mnc1">30</b> 문서</div>
+            </div>
+            <div class="mn-cat" id="mncat2">
+              <div class="ico">💬</div>
+              <div><b>정산 민원 대응</b><span class="mn-ver" id="mnv2">v1.7</span><span class="mn-upd">매뉴얼 갱신</span>
+                <p>이의신청 처리 기준 · 회신 표준 문안 · 에스컬레이션 판단</p></div>
+              <div class="mn-cnt"><b id="mnc2">11</b> 문서</div>
+            </div>
+            <div class="mn-cat" id="mncat3">
+              <div class="ico">🖥️</div>
+              <div><b>정산시스템 전환</b><span class="mn-ver" id="mnv3">v1.1</span><span class="mn-upd">매뉴얼 갱신</span>
+                <p>병행 운영 절차 · 오차 검증 회의 이력 · 정보화부서 협조 창구</p></div>
+              <div class="mn-cnt"><b id="mnc3">8</b> 문서</div>
+            </div>
+            <div class="mn-cat" id="mncat4">
+              <div class="ico">📊</div>
+              <div><b>계획 · 보고</b><span class="mn-ver" id="mnv4">v1.4</span><span class="mn-upd">매뉴얼 갱신</span>
+                <p>연간 계획 수립 · 중간보고 구성 · 이사회 안건 흐름</p></div>
+              <div class="mn-cnt"><b id="mnc4">6</b> 문서</div>
+            </div>
+            <div class="foot-note">인수인계 시점이 되면, 이 매뉴얼이 그대로 후임자의 브리핑북이 됩니다.</div>
+          </div>
+        </div>
+      </div>
+    </div></main>
+  </div>
+  <div class="s5-veil" id="s5intro">
+    <div class="v-eyebrow">발령 6개월 뒤 · 2026년 7월</div>
+    <div class="v-line">요금정산팀 김민준 과장의<br><span class="accent">평범한 하루</span></div>
+  </div>
+  <div class="s5-veil" id="s5close">
+    <div class="v-line">따로 정리한 적, 없습니다.<br>일했을 뿐인데 <span class="accent">매뉴얼이 쌓였습니다.</span></div>
+    <div class="v-sub" id="s5closeSub">김 과장이 떠나는 날 — 이 매뉴얼이 그대로 다음 사람의 브리핑북이 됩니다.</div>
+    <div class="v-cta" id="s5closeCta">
+      <button class="btn-primary" onclick="go(6)">비전 보기 <span class="arr">→</span></button>
+      &nbsp;<button class="btn-ghost-d" onclick="runManual()">다시 보기</button>
+    </div>
+  </div>
+  <div id="s5fly"></div>
+</section>
+
+<!-- ================= S6 비전 ================= -->
+<section class="screen curtain" id="s6">
   <div class="inner">
     <div id="orgmap"></div>
     <p class="equip-note" id="equipNote">설비에도 메모리를. 다음 단계, 설비 카르테.</p>
@@ -705,14 +823,14 @@
 
 <!-- ================= presenter ================= -->
 <div id="presenter">
-  <span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  <span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
   <span class="hint">← → 이동 · A 알림</span>
 </div>
 
 <script>
 /* ---------- router ---------- */
-var cur = 0, N = 6;
-var alertTimer = null, s5Timers = [];
+var cur = 0, N = 7;
+var alertTimer = null, s5Timers = [], s5mTimers = [];
 function go(n){
   if(n<0||n>=N) return;
   document.querySelectorAll('.screen')[cur].classList.remove('active');
@@ -725,12 +843,13 @@ function go(n){
   if(n===2){ scheduleAlert(); }
   if(n===3){ runGen(); }
   if(n===4){ resetScan(); }
-  if(n===5){ runVision(); } else { stopVision(); }
+  if(n===5){ runManual(); } else { stopManual(); }
+  if(n===6){ runVision(); } else { stopVision(); }
 }
 document.addEventListener('keydown', function(e){
   if(e.key==='ArrowRight') go(cur+1);
   else if(e.key==='ArrowLeft') go(cur-1);
-  else if(e.key>='0'&&e.key<='5') go(parseInt(e.key,10));
+  else if(e.key>='0'&&e.key<='6') go(parseInt(e.key,10));
   else if(e.key==='a'||e.key==='A'){ if(cur===2) showAlert(); }
 });
 
@@ -930,16 +1049,96 @@ function showWhy(n){
   document.getElementById('why'+n).classList.add('show');
 }
 
-/* ---------- S5: vision ---------- */
+/* ---------- S5: 내 업무 매뉴얼 (개인별 업무 자동 분류) ---------- */
+var MFEED = [
+  {cls:'doc',  label:'전자결재', title:'7월 열요금 정산 결과 보고',           sub:'10:12 기안 · 결재 완료',        cat:1},
+  {cls:'mail', label:'회신 메일', title:'공동주택 이의신청 회신 (○○아파트)',   sub:'11:05 발송 · 표준 문안 사용',    cat:2},
+  {cls:'doc',  label:'전자결재', title:'차세대 정산시스템 오차 검증 결과',      sub:'14:30 기안 · 정보화부서 합동',   cat:3},
+  {cls:'meet', label:'회의록',   title:'이사회 안건 사전 협의 메모',           sub:'16:20 등록',                  cat:4}
+];
+var MBASE = [{v:2.3,c:30},{v:1.7,c:11},{v:1.1,c:8},{v:1.4,c:6}];
+function tick(){
+  try{
+    var ctx = new (window.AudioContext||window.webkitAudioContext)();
+    var o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.value=1320;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.25);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.3);
+  }catch(e){}
+}
+function s5flyTo(fromEl, toEl){
+  var f = document.getElementById('s5fly');
+  var a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+  f.style.transition='none';
+  f.style.left = (a.left + a.width*0.5 - 20)+'px';
+  f.style.top  = (a.top + a.height*0.5 - 13)+'px';
+  f.style.transform='scale(1) rotate(0deg)';
+  f.style.opacity='1';
+  void f.offsetWidth;
+  f.style.transition='left .75s cubic-bezier(.3,.7,.3,1), top .75s cubic-bezier(.3,.7,.3,1), transform .75s, opacity .25s .6s';
+  f.style.left = (b.left + b.width*0.5 - 20)+'px';
+  f.style.top  = (b.top + b.height*0.5 - 13)+'px';
+  f.style.transform='scale(.45) rotate(-14deg)';
+  f.style.opacity='0';
+}
+function resetManual(){
+  s5mTimers.forEach(clearTimeout); s5mTimers=[];
+  var list=document.getElementById('fdList');
+  list.querySelectorAll('.fd-item').forEach(function(x){x.remove();});
+  for(var i=1;i<=4;i++){
+    document.getElementById('mncat'+i).classList.remove('bump');
+    document.getElementById('mnv'+i).textContent='v'+MBASE[i-1].v.toFixed(1);
+    document.getElementById('mnc'+i).textContent=MBASE[i-1].c;
+  }
+  document.getElementById('s5intro').classList.remove('show');
+  document.getElementById('s5close').classList.remove('show');
+  document.getElementById('s5closeSub').classList.remove('show');
+  document.getElementById('s5closeCta').classList.remove('show');
+  var f=document.getElementById('s5fly'); f.style.transition='none'; f.style.opacity='0';
+}
+function runManual(){
+  resetManual();
+  var intro=document.getElementById('s5intro');
+  intro.classList.add('show');
+  s5mTimers.push(setTimeout(function(){ intro.classList.remove('show'); }, 2200));
+  var list=document.getElementById('fdList'), wait=document.getElementById('fdWait');
+  MFEED.forEach(function(it,i){
+    s5mTimers.push(setTimeout(function(){
+      var el=document.createElement('div'); el.className='fd-item';
+      el.innerHTML='<span class="fd-type '+it.cls+'">'+it.label+'</span><div><b>'+it.title+'</b><p>'+it.sub+'</p></div>';
+      list.insertBefore(el, wait);
+      void el.offsetWidth;
+      s5mTimers.push(setTimeout(function(){ el.classList.add('in'); }, 30));
+      s5mTimers.push(setTimeout(function(){ s5flyTo(el, document.getElementById('mncat'+it.cat)); }, 550));
+      s5mTimers.push(setTimeout(function(){
+        document.getElementById('mncat'+it.cat).classList.add('bump');
+        document.getElementById('mnv'+it.cat).textContent='v'+(MBASE[it.cat-1].v+0.1).toFixed(1);
+        document.getElementById('mnc'+it.cat).textContent=MBASE[it.cat-1].c+1;
+        tick();
+      }, 1300));
+      s5mTimers.push(setTimeout(function(){ document.getElementById('mncat'+it.cat).classList.remove('bump'); }, 2900));
+    }, 3000 + i*2300));
+  });
+  var tEnd = 3000 + MFEED.length*2300 + 900;
+  s5mTimers.push(setTimeout(function(){ document.getElementById('s5close').classList.add('show'); }, tEnd));
+  s5mTimers.push(setTimeout(function(){ document.getElementById('s5closeSub').classList.add('show'); }, tEnd+1500));
+  s5mTimers.push(setTimeout(function(){ document.getElementById('s5closeCta').classList.add('show'); }, tEnd+2600));
+}
+function stopManual(){ s5mTimers.forEach(clearTimeout); s5mTimers=[]; }
+
+/* ---------- S6: vision ---------- */
 (function buildOrg(){
   var map=document.getElementById('orgmap');
   for(var i=0;i<35;i++){ map.insertAdjacentHTML('beforeend','<div class="seat"></div>'); }
   map.insertAdjacentHTML('beforeend','<div class="seat equip" title="열수송 설비"></div>');
 })();
 function stopVision(){ s5Timers.forEach(clearTimeout); s5Timers=[]; }
-/* deep link: #s0 ~ #s5 (+ ?auto=1 : S4 점검 자동 실행) */
+/* deep link: #s0 ~ #s6 (+ ?auto=1 : S4 점검 자동 실행) */
 (function initHash(){
-  var m = (location.hash||'').match(/^#s([0-5])$/);
+  var m = (location.hash||'').match(/^#s([0-6])$/);
   if(m){ var n=parseInt(m[1],10); if(n!==0){ go(n); } }
   if(/[?&]auto=1/.test(location.search) && m && m[1]==='4'){
     setTimeout(runScan, 300);
