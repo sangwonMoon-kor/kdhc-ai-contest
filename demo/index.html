@@ -55,6 +55,7 @@
   #s0.active{display:block}
   #s0{scrollbar-width:none}
   #s0::-webkit-scrollbar{display:none}
+  #s0{background:linear-gradient(180deg, rgba(9,11,14,.42) 0%, rgba(9,11,14,.62) 55%, rgba(9,11,14,.88) 100%), url('assets/office-bg.jpg') center 68%/cover no-repeat}
   #s0 .s0-track{height:340vh;position:relative}
   #s0 .s0-stage{position:sticky;top:0;height:100vh;overflow:hidden}
   #s0 .s0-scene{position:absolute;inset:0;transition:opacity .6s, filter .6s}
@@ -73,18 +74,18 @@
   #s0 .s0-char{position:absolute;height:32vh;width:32vh;transform:translateX(-50%);will-change:top,left;filter:drop-shadow(0 14px 22px rgba(0,0,0,.45))}
   #s0 .s0-char img{position:absolute;bottom:0;left:50%;transform:translateX(-50%);height:100%;width:auto;opacity:0;transition:opacity .25s}
   #s0 .s0-char img.show{opacity:1}
-  /* 컴퓨터 (하단) */
-  #s0 .s0-pc{position:absolute;bottom:5vh;left:37%;transform:translateX(-50%);text-align:center}
-  .s0-mon{width:300px;height:186px;margin:0 auto;background:#08090c;border:6px solid #2b323b;border-radius:12px;position:relative;overflow:hidden;transition:box-shadow .6s}
-  .s0-mon .scr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-    background:radial-gradient(ellipse at 50% 60%, #241a12 0%, #0c0d11 70%);opacity:0;transition:opacity .7s}
-  .s0-mon .scr .logo{color:var(--accent);font-weight:800;font-size:26px;letter-spacing:-.01em}
-  .s0-mon .scr .okmsg{color:#7ed67e;font-size:13.5px}
-  .s0-stage.lit .s0-mon{box-shadow:0 0 70px rgba(232,89,12,.4)}
-  .s0-stage.lit .s0-mon .scr{opacity:1}
-  .s0-stand{width:66px;height:32px;margin:0 auto;background:#232932;clip-path:polygon(22% 0,78% 0,100% 100%,0 100%)}
-  .s0-base{width:150px;height:10px;margin:0 auto;border-radius:6px;background:#2b323b}
-  #s0 .s0-pc-label{font-size:13.5px;color:var(--dark-muted);margin-top:12px}
+  /* 컴퓨터 (하단, 실사 모니터 합성) */
+  #s0 .s0-pc{position:absolute;bottom:3vh;left:37%;transform:translateX(-50%);text-align:center}
+  .s0-mon-wrap{position:relative;width:360px;margin:0 auto;filter:drop-shadow(0 18px 26px rgba(0,0,0,.5));transition:filter .6s}
+  .s0-mon-wrap img{width:100%;display:block}
+  .s0-mon-wrap .scr{position:absolute;left:12.01%;top:2.7%;width:75.78%;height:72.07%;border-radius:2px;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    background:radial-gradient(ellipse at 50% 60%, #2a1f14 0%, #0c0d11 70%);opacity:0;transition:opacity .7s}
+  .s0-mon-wrap .scr .logo{color:var(--accent);font-weight:800;font-size:19px;letter-spacing:-.01em}
+  .s0-mon-wrap .scr .okmsg{color:#7ed67e;font-size:11px}
+  .s0-stage.lit .s0-mon-wrap{filter:drop-shadow(0 18px 26px rgba(0,0,0,.5)) drop-shadow(0 0 55px rgba(232,89,12,.45))}
+  .s0-stage.lit .s0-mon-wrap .scr{opacity:1}
+  #s0 .s0-pc-label{font-size:13.5px;color:var(--dark-muted);margin-top:10px}
   /* 날아가는 파일 */
   .s0-fly{position:absolute;width:56px;height:38px;border-radius:5px;background:linear-gradient(#eccd77,#d9b455);border:1px solid #bd9a45;
     box-shadow:0 4px 10px rgba(0,0,0,.4);opacity:0;pointer-events:none;z-index:5}
@@ -366,9 +367,10 @@
         </div>
         <div class="s0-fly" id="s0fly"></div>
         <div class="s0-pc">
-          <div class="s0-mon"><div class="scr"><div class="logo">직무 메모리</div><div class="okmsg">업무 기억 저장 완료 ✓</div></div></div>
-          <div class="s0-stand"></div>
-          <div class="s0-base"></div>
+          <div class="s0-mon-wrap">
+            <img src="assets/monitor.png" alt="모니터">
+            <div class="scr"><div class="logo">직무 메모리</div><div class="okmsg">업무 기억 저장 완료 ✓</div></div>
+          </div>
           <div class="s0-pc-label">다음 담당자의 자리</div>
         </div>
         <div class="s0-hint" id="s0hint"><span>스크롤을 내려 업무를 넘겨주세요</span><span class="chev">▼</span></div>
