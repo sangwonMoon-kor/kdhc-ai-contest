@@ -51,20 +51,32 @@
   .screen.curtain.active{display:flex;align-items:center;justify-content:center}
   .curtain .inner{max-width:1020px;padding:0 48px;width:100%}
 
-  /* S0 — Three.js 업무 연결 그래프 오프닝 */
+  /* S0 — storyboard cutscene opener */
   #s0.active{display:block}
   #s0{scrollbar-width:none}
   #s0::-webkit-scrollbar{display:none}
   #s0{background:#0b0d10}
-  #s0 .s0-track{height:460vh;position:relative}
-  #s0 .s0-stage{position:sticky;top:0;height:100vh;overflow:hidden}
+  #s0 .s0-track{height:520vh;position:relative}
+  #s0 .s0-stage{position:sticky;top:0;height:100vh;overflow:hidden;background:#0b0d10}
   #s0 .s0-eyebrow{position:absolute;top:34px;left:48px;font-size:15px;color:var(--dark-muted);letter-spacing:.01em;z-index:12}
-  #s0 .s0-three{position:absolute;inset:0;z-index:1;opacity:1;transition:opacity .65s, filter .65s, transform .65s;background:
-    radial-gradient(circle at 50% 50%,rgba(232,89,12,.12),transparent 28%),
-    radial-gradient(circle at 50% 105%,rgba(232,89,12,.16),transparent 34%),
-    #0b0d10}
-  #s0 .s0-three canvas{display:block;width:100%;height:100%;outline:0}
-  #s0 .s0-stage.done .s0-three{opacity:.2;filter:blur(8px) saturate(1.2);transform:scale(1.04)}
+  #s0 .s0-cutscene{position:absolute;inset:0;z-index:1;overflow:hidden;background:#090b0e;opacity:1;
+    transition:opacity .65s, filter .65s, transform .65s}
+  #s0 .s0-stage.done .s0-cutscene{opacity:.2;filter:blur(8px) saturate(1.2);transform:scale(1.04)}
+  #s0 .s0-slide{position:absolute;inset:0;opacity:0;transform:scale(1.02);transition:opacity .45s ease, transform .65s ease}
+  #s0 .s0-slide.active{opacity:1;transform:scale(1)}
+  #s0 .s0-slide.prev{opacity:.18}
+  #s0 .s0-slide img{display:block;width:100%;height:100%;object-fit:cover;transform:translate3d(var(--pan-x,0),var(--pan-y,0),0) scale(var(--zoom,1.04));
+    transition:transform .08s linear;filter:saturate(1.04) contrast(1.02)}
+  #s0 .s0-slide.prev img{filter:saturate(.9) contrast(.95) blur(2px)}
+  #s0 .s0-cutscene::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:
+    radial-gradient(circle at 50% 46%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 42%,rgba(0,0,0,.45) 100%),
+    linear-gradient(180deg,rgba(5,7,10,.45),rgba(5,7,10,0) 24%,rgba(5,7,10,.7) 100%)}
+  #s0 .s0-film-grain{position:absolute;inset:-20%;z-index:4;pointer-events:none;opacity:.12;mix-blend-mode:screen;
+    background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,.55) 0 1px,transparent 1.3px),
+      radial-gradient(circle at 80% 62%,rgba(255,255,255,.38) 0 1px,transparent 1.4px),
+      radial-gradient(circle at 48% 76%,rgba(232,89,12,.38) 0 1px,transparent 1.5px);
+    background-size:42px 42px,58px 58px,74px 74px;animation:s0FilmGrain 1.1s steps(2,end) infinite}
+  @keyframes s0FilmGrain{0%{transform:translate3d(0,0,0)}25%{transform:translate3d(-3%,2%,0)}50%{transform:translate3d(2%,-2%,0)}75%{transform:translate3d(3%,3%,0)}100%{transform:translate3d(0,0,0)}}
   #s0 .s0-vignette{position:absolute;inset:0;z-index:2;pointer-events:none;background:
     radial-gradient(circle at 50% 44%,transparent 0,transparent 33%,rgba(8,10,13,.3) 58%,rgba(8,10,13,.86) 100%),
     linear-gradient(180deg,rgba(9,11,14,.78),rgba(9,11,14,0) 25%,rgba(9,11,14,.86) 100%)}
@@ -78,11 +90,11 @@
   #s0 .s0-caption .cap-step.show{opacity:1;transform:translate(-50%,0)}
   #s0 .s0-caption b{display:block;font-size:clamp(28px,3.4vw,48px);line-height:1.18;font-weight:800;letter-spacing:0}
   #s0 .s0-caption span{display:block;margin-top:13px;font-size:clamp(15px,1.2vw,19px);color:var(--dark-muted)}
-  #s0 .s0-three-fallback{display:none;position:absolute;inset:0;z-index:3;align-items:center;justify-content:center;text-align:center;
-    padding:0 36px;color:var(--dark-muted);background:radial-gradient(circle at 50% 50%,rgba(232,89,12,.12),transparent 32%),#0b0d10}
-  #s0 .s0-three-fallback b{display:block;color:var(--dark-ink);font-size:clamp(30px,4vw,58px);line-height:1.15;margin-bottom:16px}
-  #s0.three-failed .s0-three-fallback{display:flex}
-  #s0.three-failed .s0-three{display:none}
+  #s0 .s0-cut-meta{position:absolute;left:48px;bottom:36px;z-index:13;display:flex;align-items:center;gap:12px;color:rgba(255,255,255,.72);
+    font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;transition:opacity .4s}
+  #s0 .s0-stage.done .s0-cut-meta{opacity:0}
+  #s0 .s0-progress{width:148px;height:3px;border-radius:999px;background:rgba(255,255,255,.18);overflow:hidden}
+  #s0 .s0-progress span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#f59f00,#e8590c,#f8f9fa)}
   /* 스크롤 힌트 */
   .s0-hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:var(--dark-muted);font-size:14.5px;z-index:14;
     display:flex;flex-direction:column;align-items:center;gap:3px;transition:opacity .4s;pointer-events:none}
@@ -99,12 +111,15 @@
   #s0 .sub{margin-top:22px;font-size:19px;color:var(--dark-muted);opacity:0}
   #s0 .s0-stage.done .sub{animation:rise .7s .45s forwards cubic-bezier(.16,1,.3,1)}
   @media (max-width:600px){
+    #s0 .s0-eyebrow{top:28px;left:20px;right:20px;font-size:13px}
     #s0 .s0-phase{top:72px;left:20px;right:18px;gap:8px;font-size:12px;line-height:1.35}
     #s0 .s0-phase small{font-size:12px}
-    #s0 .s0-caption{bottom:13vh}
+    #s0 .s0-caption{bottom:14vh}
     #s0 .s0-caption .cap-step{width:min(340px,84vw)}
     #s0 .s0-caption b{font-size:30px;line-height:1.16}
     #s0 .s0-caption span{margin:10px auto 0;max-width:310px;font-size:14px;line-height:1.45}
+    #s0 .s0-cut-meta{left:20px;right:20px;bottom:34px}
+    #s0 .s0-progress{flex:1}
     #s0 .s0-hint{display:none}
   }
   @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -398,32 +413,46 @@
   <div class="s0-track">
     <div class="s0-stage" id="s0stage">
       <div class="s0-eyebrow">사내 AI 경진대회 제안 · 직무 메모리</div>
-      <div class="s0-three" id="s0three" aria-hidden="true"></div>
+      <div class="s0-cutscene" id="s0cutscene" aria-hidden="true">
+        <div class="s0-slide active" data-cut="0"><img src="assets/storyboard/s0-cut-01.jpg" alt=""></div>
+        <div class="s0-slide" data-cut="1"><img src="assets/storyboard/s0-cut-02.jpg" alt=""></div>
+        <div class="s0-slide" data-cut="2"><img src="assets/storyboard/s0-cut-03.jpg" alt=""></div>
+        <div class="s0-slide" data-cut="3"><img src="assets/storyboard/s0-cut-04.jpg" alt=""></div>
+        <div class="s0-slide" data-cut="4"><img src="assets/storyboard/s0-cut-05.jpg" alt=""></div>
+        <div class="s0-slide" data-cut="5"><img src="assets/storyboard/s0-cut-06.jpg" alt=""></div>
+        <div class="s0-film-grain"></div>
+      </div>
       <div class="s0-vignette" aria-hidden="true"></div>
-      <div class="s0-phase" id="s0phase">Inherited files <small>흩어진 업무 기억</small></div>
+      <div class="s0-phase" id="s0phase">CUT 01 <small>문서 산더미</small></div>
       <div class="s0-caption" id="s0caption">
         <div class="cap-step show" data-step="0">
-          <b>발령 첫날, 김 과장 앞에 놓인 것</b>
-          <span>전임자가 남긴 기안문 · 회의록 · 메일 · 파일 더미</span>
+          <b>서류 더미 속에 묻힌 문서요정</b>
+          <span>산더미처럼 쌓인 책상 위, 무엇부터 정리해야 할지 막막합니다</span>
         </div>
         <div class="cap-step" data-step="1">
-          <b>흩어진 문서가 서로 연결됩니다</b>
-          <span>기안문 · 회의록 · 메일이 하나의 업무 맥락으로 이어집니다</span>
+          <b>문서요정이 벌떡 일어납니다</b>
+          <span>흩어진 서류가 사방으로 날리고 정리 자동화가 시작됩니다</span>
         </div>
         <div class="cap-step" data-step="2">
-          <b>흩어진 기록이 업무 단위로 모입니다</b>
-          <span>요금 정산 · 민원 대응 · 시스템 전환 · 계획 보고가 하나의 구조를 갖습니다</span>
+          <b>필요한 서류를 빠르게 모읍니다</b>
+          <span>흩어진 문서가 한 묶음으로 모이며 업무 흐름이 생깁니다</span>
         </div>
         <div class="cap-step" data-step="3">
-          <b>연결된 업무 맥락이 살아 움직입니다</b>
-          <span>요금 정산 · 민원 대응 · 시스템 전환 · 계획 보고가 서로 영향을 주고받습니다</span>
+          <b>모니터가 문서를 읽기 시작합니다</b>
+          <span>스캔과 OCR로 종이 문서가 데이터로 바뀝니다</span>
+        </div>
+        <div class="cap-step" data-step="4">
+          <b>문서가 자동으로 분류됩니다</b>
+          <span>계약서 · 보고서 · 영수증 · 신청서가 카테고리별로 정리됩니다</span>
+        </div>
+        <div class="cap-step" data-step="5">
+          <b>문서요정이 깔끔한 결과를 보여줍니다</b>
+          <span>분류된 문서와 대시보드가 다음 담당자의 첫 화면이 됩니다</span>
         </div>
       </div>
-      <div class="s0-three-fallback">
-        <div>
-          <b>사람은 떠나도,<br>업무는 남게.</b>
-          <span>WebGL을 사용할 수 없어 3D 오프닝을 건너뜁니다.</span>
-        </div>
+      <div class="s0-cut-meta" id="s0cutmeta">
+        <span id="s0cutcount">CUT 01 / 06</span>
+        <div class="s0-progress" aria-hidden="true"><span id="s0cutprogress"></span></div>
       </div>
       <div class="s0-hint" id="s0hint"><span>스크롤을 내려 업무를 넘겨주세요</span><span class="chev">▼</span></div>
       <div class="s0-hero">
@@ -830,7 +859,6 @@
   <span class="hint">← → 이동 · A 알림</span>
 </div>
 
-<script src="vendor/three.min.js"></script>
 <script>
 /* ---------- router ---------- */
 var cur = 0, N = 7;
@@ -873,353 +901,86 @@ function chime(){
   }catch(e){}
 }
 
-/* ---------- S0: Three.js 업무 연결 그래프 오프닝 ---------- */
-var s0ThreeState = null;
-var s0LitPlayed = false;
+/* ---------- S0: storyboard cutscene opener ---------- */
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
-function easeOutCubic(t){ t = clamp01(t); return 1 - Math.pow(1 - t, 3); }
 function easeInOut(t){ t = clamp01(t); return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2; }
-function mix(a,b,t){ return a + (b-a)*t; }
-function segment(p,a,b){ return clamp01((p-a)/(b-a)); }
-function seeded(n){ var x = Math.sin(n * 147.31) * 10000; return x - Math.floor(x); }
-function drawRoundRect(ctx,x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
-  ctx.closePath();
+const S0_CUTS = [
+  {phase:'CUT 01', sub:'문서 산더미', title: '서류 더미 속에 묻힌 문서요정', x:-1.4, y:.2, z0:1.04, z1:1.13},
+  {phase:'CUT 02', sub:'정리 시작', title: '문서요정이 벌떡 일어납니다', x:1.1, y:-.3, z0:1.03, z1:1.11},
+  {phase:'CUT 03', sub:'서류 수집', title: '필요한 서류를 빠르게 모읍니다', x:-1.8, y:.1, z0:1.05, z1:1.16},
+  {phase:'CUT 04', sub:'스캔과 OCR', title: '모니터가 문서를 읽기 시작합니다', x:1.4, y:-.2, z0:1.05, z1:1.14},
+  {phase:'CUT 05', sub:'자동 분류', title: '문서가 자동으로 분류됩니다', x:-1.1, y:.15, z0:1.04, z1:1.12},
+  {phase:'CUT 06', sub:'대시보드 완성', title: '문서요정이 깔끔한 결과를 보여줍니다', x:.9, y:-.1, z0:1.03, z1:1.1}
+];
+function initS0Cutscene(){
+  var slides = document.querySelectorAll('#s0cutscene .s0-slide');
+  slides.forEach(function(slide, i){
+    slide.classList.toggle('active', i === 0);
+    slide.classList.remove('prev');
+    slide.style.setProperty('--zoom', S0_CUTS[i] ? S0_CUTS[i].z0 : 1.04);
+    slide.style.setProperty('--pan-x', '0%');
+    slide.style.setProperty('--pan-y', '0%');
+  });
+  updateS0Cutscene(0);
 }
-function makeDocTexture(label,title,accent){
-  var c = document.createElement('canvas');
-  c.width = 640; c.height = 400;
-  var ctx = c.getContext('2d');
-  ctx.clearRect(0,0,c.width,c.height);
-  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 28; ctx.shadowOffsetY = 14;
-  ctx.fillStyle = 'rgba(246,240,232,.94)';
-  drawRoundRect(ctx,34,34,572,332,28); ctx.fill();
-  ctx.shadowColor = 'transparent';
-  ctx.fillStyle = accent; drawRoundRect(ctx,64,70,128,38,19); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.font = '700 22px sans-serif'; ctx.fillText(label,84,97);
-  ctx.fillStyle = '#242a33'; ctx.font = '800 34px sans-serif';
-  var parts = title.split(' ');
-  ctx.fillText(parts.slice(0,3).join(' '),64,170);
-  ctx.fillText(parts.slice(3).join(' '),64,214);
-  ctx.strokeStyle = 'rgba(42,47,55,.18)'; ctx.lineWidth = 10;
-  ctx.beginPath(); ctx.moveTo(68,266); ctx.lineTo(548,266); ctx.stroke();
-  ctx.strokeStyle = 'rgba(232,89,12,.42)';
-  ctx.beginPath(); ctx.moveTo(68,304); ctx.lineTo(410,304); ctx.stroke();
-  var tex = new THREE.CanvasTexture(c);
-  tex.anisotropy = 4;
-  return tex;
-}
-function initS0Three(){
-  var s0 = document.getElementById('s0');
-  var mount = document.getElementById('s0three');
-  if(!s0 || !mount || !window.THREE){
-    if(s0) s0.classList.add('three-failed');
-    return;
+function updateS0Cutscene(p){
+  p = clamp01(p);
+  var visibleProgress = clamp01(p / .93);
+  var cuts = S0_CUTS.length;
+  var cutFloat = Math.min(cuts - .0001, visibleProgress * cuts);
+  var index = Math.floor(cutFloat);
+  var local = cutFloat - index;
+  var cut = S0_CUTS[index] || S0_CUTS[0];
+  var eased = easeInOut(local);
+  var slides = document.querySelectorAll('#s0cutscene .s0-slide');
+  slides.forEach(function(slide, i){
+    slide.classList.toggle('active', i === index && p < .955);
+    slide.classList.toggle('prev', i === index - 1 && local < .24 && p < .955);
+  });
+  var active = slides[index];
+  if(active){
+    active.style.setProperty('--zoom', (cut.z0 + (cut.z1 - cut.z0) * eased).toFixed(3));
+    active.style.setProperty('--pan-x', (cut.x * eased).toFixed(2) + '%');
+    active.style.setProperty('--pan-y', (cut.y * eased).toFixed(2) + '%');
   }
-  try{
-    var renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:'high-performance'});
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    mount.appendChild(renderer.domElement);
-
-    var scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0b0d10, .045);
-    var camera = new THREE.PerspectiveCamera(42, 1, .1, 80);
-    camera.position.set(0, 1.2, 9.5);
-
-    var ambient = new THREE.AmbientLight(0xffffff, .42);
-    var key = new THREE.PointLight(0xff8a2a, 3.2, 22);
-    key.position.set(0, 1.1, 2.8);
-    var rim = new THREE.PointLight(0x82a7ff, 1.1, 18);
-    rim.position.set(-5, 3, -4);
-    scene.add(ambient, key, rim);
-
-    var world = new THREE.Group();
-    scene.add(world);
-
-    var cardGeo = new THREE.PlaneGeometry(1.72, 1.08);
-    var docData = [
-      ['기안문','7월 열요금 정산 결과','#e8590c'], ['메일','민원 회신 표준 문안','#2b7fff'],
-      ['회의록','시스템 전환 협의','#9b5de5'], ['보고','이사회 안건 메모','#00a88f'],
-      ['정산','오차 검증 결과','#e8590c'], ['계획','연간 정산 일정','#00a88f'],
-      ['감사','소명자료 근거','#9b5de5'], ['협조','정보화부서 요청','#2b7fff']
-    ];
-    var cards = [];
-    for(var i=0;i<34;i++){
-      var item = docData[i % docData.length];
-      var mat = new THREE.MeshBasicMaterial({
-        map: makeDocTexture(item[0], item[1], item[2]),
-        transparent: true,
-        opacity: .92,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      });
-      var mesh = new THREE.Mesh(cardGeo, mat);
-      var angle = (i / 34) * Math.PI * 2;
-      var orbitRadius = 3.1 + (i % 4) * .38 + seeded(i) * .5;
-      mesh.userData = {
-        start: new THREE.Vector3((seeded(i+4)-.5)*11, (seeded(i+8)-.5)*6.4, -6.2 + seeded(i+12)*4.2),
-        orbit: new THREE.Vector3(Math.cos(angle)*orbitRadius, ((i%9)-4)*.42, Math.sin(angle)*(1.5 + (i%5)*.2)),
-        sink: new THREE.Vector3(Math.cos(angle)*.24, ((i%7)-3)*.06, Math.sin(angle)*.18),
-        angle: angle,
-        speed: .22 + seeded(i+20) * .28,
-        tilt: (seeded(i+30)-.5) * .75
-      };
-      mesh.position.copy(mesh.userData.start);
-      mesh.rotation.set((seeded(i+2)-.5)*.9, (seeded(i+6)-.5)*.9, mesh.userData.tilt);
-      world.add(mesh); cards.push(mesh);
-    }
-
-    var graph = new THREE.Group();
-    var graphNodes = [];
-    var graphEdges = [];
-    var graphNodeGeo = new THREE.SphereGeometry(.09, 16, 10);
-    var graphClusters = [
-      {name:'요금 정산', color:0xe8590c, center:new THREE.Vector3(-1.35,.62,.18), count:13},
-      {name:'민원 메일', color:0x2b7fff, center:new THREE.Vector3(1.18,.46,.08), count:12},
-      {name:'감사 시스템', color:0x9b5de5, center:new THREE.Vector3(-.62,-.72,.28), count:11},
-      {name:'계획 보고', color:0x00a88f, center:new THREE.Vector3(.9,-.58,-.12), count:12}
-    ];
-    graphClusters.forEach(function(cluster, ci){
-      var startIndex = graphNodes.length;
-      for(var gi=0; gi<cluster.count; gi++){
-        var local = graphNodes.length;
-        var a2 = (gi / cluster.count) * Math.PI * 2 + seeded(local+140) * .7;
-        var spread = .42 + seeded(local+150) * .62;
-        var base = new THREE.Vector3(
-          cluster.center.x + Math.cos(a2) * spread,
-          cluster.center.y + (seeded(local+160)-.5) * .82,
-          cluster.center.z + Math.sin(a2) * spread * .55
-        );
-        var node = new THREE.Mesh(
-          graphNodeGeo,
-          new THREE.MeshBasicMaterial({color:cluster.color, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false})
-        );
-        node.position.copy(base);
-        node.userData = {
-          base: base,
-          sink: new THREE.Vector3(cluster.center.x*.08, cluster.center.y*.08, cluster.center.z*.08),
-          cluster: ci,
-          seed: seeded(local+170),
-          color: cluster.color
-        };
-        graph.add(node);
-        graphNodes.push(node);
-      }
-      for(var e=0; e<cluster.count; e++){
-        var from = startIndex + e;
-        graphEdges.push([from, startIndex + ((e + 1) % cluster.count)]);
-        if(e % 2 === 0) graphEdges.push([from, startIndex + ((e + 3) % cluster.count)]);
-      }
-    });
-    for(var ce=0; ce<graphClusters.length; ce++){
-      var aStart = graphClusters.slice(0, ce).reduce(function(sum,c){ return sum + c.count; }, 0);
-      var bStart = graphClusters.slice(0, (ce+1)%graphClusters.length).reduce(function(sum,c){ return sum + c.count; }, 0);
-      graphEdges.push([aStart, bStart]);
-      graphEdges.push([aStart + 4, (bStart + 7) % graphNodes.length]);
-      graphEdges.push([aStart + 8, (bStart + 2) % graphNodes.length]);
-    }
-    var graphLinkPositions = new Float32Array(graphEdges.length * 2 * 3);
-    var graphLinkGeometry = new THREE.BufferGeometry();
-    graphLinkGeometry.setAttribute('position', new THREE.BufferAttribute(graphLinkPositions, 3));
-    var graphLinks = new THREE.LineSegments(
-      graphLinkGeometry,
-      new THREE.LineBasicMaterial({color:0xf6efe7, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false})
-    );
-    graph.add(graphLinks);
-    graph.position.set(0,.04,-.16);
-    graph.scale.setScalar(.72);
-    world.add(graph);
-
-    var core = new THREE.Group();
-    var coreOuter = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(1.18, 5),
-      new THREE.MeshBasicMaterial({color:0xe8590c, transparent:true, opacity:.28, blending:THREE.AdditiveBlending, depthWrite:false})
-    );
-    var coreInner = new THREE.Mesh(
-      new THREE.SphereGeometry(.58, 48, 32),
-      new THREE.MeshBasicMaterial({color:0xffc078, transparent:true, opacity:.62, blending:THREE.AdditiveBlending, depthWrite:false})
-    );
-    core.add(coreOuter, coreInner);
-    var rings = [];
-    for(var r=0;r<3;r++){
-      var ring = new THREE.Mesh(
-        new THREE.TorusGeometry(1.45 + r*.34, .01, 8, 96),
-        new THREE.MeshBasicMaterial({color:r===1?0xfff1df:0xe8590c, transparent:true, opacity:.28, blending:THREE.AdditiveBlending, depthWrite:false})
-      );
-      ring.rotation.set(Math.PI/2 + r*.38, r*.55, r*.2);
-      core.add(ring); rings.push(ring);
-    }
-    core.scale.setScalar(.58);
-    world.add(core);
-
-    var particleCount = 900;
-    var pos = new Float32Array(particleCount * 3);
-    for(var j=0;j<particleCount;j++){
-      var a = seeded(j+77) * Math.PI * 2;
-      var rr = 2.8 + seeded(j+91) * 8.6;
-      pos[j*3] = Math.cos(a) * rr;
-      pos[j*3+1] = (seeded(j+103)-.5) * 7.2;
-      pos[j*3+2] = Math.sin(a) * rr - 1.5;
-    }
-    var particles = new THREE.Points(
-      new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pos, 3)),
-      new THREE.PointsMaterial({color:0xffa24b, size:.028, transparent:true, opacity:.42, blending:THREE.AdditiveBlending, depthWrite:false})
-    );
-    world.add(particles);
-
-    s0ThreeState = {renderer:renderer, scene:scene, camera:camera, mount:mount, world:world, cards:cards, core:core,
-      coreOuter:coreOuter, coreInner:coreInner, rings:rings, particles:particles, graph:graph, graphNodes:graphNodes,
-      graphLinks:graphLinks, graphEdges:graphEdges, key:key, progress:0, time:0};
-    resizeS0Three();
-    updateS0Three(0);
-    renderS0Three();
-  }catch(e){
-    s0.classList.add('three-failed');
-    console.error(e);
-  }
-}
-function updateS0Three(p){
-  var s = s0ThreeState;
-  if(!s) return;
-  s.progress = p;
-  var gather = easeOutCubic(segment(p,.08,.48));
-  var network = easeInOut(segment(p,.30,.58));
-  var organic = easeInOut(segment(p,.58,.92));
-  var cardFade = easeInOut(segment(p,.50,.74));
-  var networkOut = 1 - segment(p,.92,.97);
-  var heroFade = segment(p,.91,.97);
-  var appear = 1 - segment(p,.94,.985);
-  var t = s.time;
-
-  s.cards.forEach(function(card, i){
-    var d = card.userData;
-    var orbitAngle = d.angle + t * d.speed;
-    var ox = Math.cos(orbitAngle) * (Math.abs(d.orbit.x) + .18 * Math.sin(t+i));
-    var oz = Math.sin(orbitAngle) * (Math.abs(d.orbit.z) + .16 * Math.cos(t*.7+i));
-    var orbit = new THREE.Vector3(ox, d.orbit.y + Math.sin(t*.8+i)*.08, oz);
-    var x = mix(d.start.x, orbit.x, gather);
-    var y = mix(d.start.y, orbit.y, gather);
-    var z = mix(d.start.z, orbit.z, gather);
-    card.position.set(x,y,z);
-    var sc = mix(1, .72, cardFade) * mix(.82, 1, gather);
-    card.scale.setScalar(sc);
-    card.material.opacity = .92 * (1 - cardFade) * appear * (1 - network*.52);
-    card.rotation.z = d.tilt + Math.sin(t*.6+i)*.06;
-    card.lookAt(s.camera.position);
-  });
-
-  var graphOpacity = network * networkOut * appear;
-  s.graph.visible = graphOpacity > .01;
-  var viewportFit = s.mount.clientWidth < 600 ? .58 : 1;
-  var graphBreath = 1 + organic * Math.sin(t*.9) * .035;
-  s.graph.scale.setScalar(mix(.72, 1.22, network) * graphBreath * mix(1, .92, heroFade) * viewportFit);
-  s.graph.position.set(Math.sin(t*.36) * .05 * organic, mix(.04, .14, network) + Math.cos(t*.42) * .04 * organic + (viewportFit < 1 ? .36 : 0), .12 + Math.sin(t*.28) * .08 * organic);
-  s.graph.rotation.y = -.22 + Math.sin(t*.22) * .08 + network * .18 + organic * Math.sin(t*.32) * .16;
-  s.graph.rotation.x = .1 + organic * Math.cos(t*.24) * .08;
-  s.graphNodes.forEach(function(node, ni){
-    var d = node.userData;
-    var pulse = 1 + Math.sin(t*2.2 + ni*.47) * mix(.12, .18, organic);
-    var spread = mix(1.34, 1, network) * (1 + organic * Math.sin(t*.75 + d.seed*8) * .04);
-    var clusterAngle = t * (.18 + d.cluster*.035) + d.cluster * 1.7;
-    var clusterDriftX = Math.cos(clusterAngle) * .08 * organic;
-    var clusterDriftY = Math.sin(clusterAngle*.82) * .06 * organic;
-    var clusterDriftZ = Math.sin(clusterAngle) * .06 * organic;
-    node.position.set(
-      d.base.x * spread + clusterDriftX + Math.sin(t*.9 + ni*.73) * .045 * organic,
-      d.base.y * spread + clusterDriftY + Math.cos(t*.7 + ni*.41) * .04 * organic,
-      d.base.z * spread + clusterDriftZ + Math.sin(t*.64 + ni*.33) * .05 * organic
-    );
-    node.scale.setScalar(mix(.28, 1, network) * mix(1, 1.08, organic) * pulse);
-    node.material.opacity = Math.min(.98, graphOpacity * mix(.68, 1.08, network));
-  });
-  var linkArray = s.graphLinks.geometry.attributes.position.array;
-  s.graphEdges.forEach(function(edge, ei){
-    var aNode = s.graphNodes[edge[0]].position;
-    var bNode = s.graphNodes[edge[1]].position;
-    var idx = ei * 6;
-    linkArray[idx] = aNode.x; linkArray[idx+1] = aNode.y; linkArray[idx+2] = aNode.z;
-    linkArray[idx+3] = bNode.x; linkArray[idx+4] = bNode.y; linkArray[idx+5] = bNode.z;
-  });
-  s.graphLinks.geometry.attributes.position.needsUpdate = true;
-  s.graphLinks.material.opacity = graphOpacity * mix(.22, .78, network) * mix(1, 1.14, organic);
-
-  var coreSignal = gather * (1 - network*.72);
-  var coreScale = mix(.42, .78, coreSignal);
-  s.core.scale.setScalar(coreScale);
-  s.coreOuter.material.opacity = mix(.10, .22, coreSignal) * (1 - network*.6) * appear;
-  s.coreInner.material.opacity = mix(.14, .28, coreSignal) * (1 - network*.52) * appear;
-  s.rings.forEach(function(ring, ri){
-    ring.material.opacity = mix(.08, .18 + ri*.03, coreSignal) * (1 - network*.68) * appear;
-  });
-  s.particles.material.opacity = mix(.28, .48, gather) * mix(1, .72, organic) * appear;
-  s.key.intensity = mix(1.8, 3.6, Math.max(gather, network)) * mix(1, .65, heroFade);
-  s.camera.position.set(mix(0, .12, gather) + Math.sin(t*.2) * .04 * organic, mix(1.2, .72, heroFade), mix(9.5, 5.6, heroFade));
-  s.camera.lookAt(0, 0, 0);
-  s.world.rotation.y = mix(-.12, .24, gather) + Math.sin(t*.18)*.03;
-  s.world.rotation.x = mix(.06, .02, heroFade) + Math.sin(t*.16) * .025 * organic;
-
   var phase = document.getElementById('s0phase');
-  if(phase){
-    if(p < .30) phase.innerHTML = 'Inherited files <small>흩어진 업무 기억</small>';
-    else if(p < .58) phase.innerHTML = 'Linking context <small>문서 사이의 연결 생성</small>';
-    else if(p < .76) phase.innerHTML = 'Classifying work <small>업무 단위로 재배열</small>';
-    else if(p < .91) phase.innerHTML = 'Living work graph <small>연결된 업무 맥락의 흐름</small>';
-    else phase.innerHTML = 'Job Memory ready <small>다음 담당자의 첫 화면</small>';
-  }
-  var step = p < .30 ? 0 : (p < .58 ? 1 : (p < .76 ? 2 : 3));
+  if(phase) phase.innerHTML = cut.phase + ' <small>' + cut.sub + '</small>';
   document.querySelectorAll('#s0caption .cap-step').forEach(function(el){
-    el.classList.toggle('show', Number(el.getAttribute('data-step')) === step && p < .93);
+    el.classList.toggle('show', Number(el.getAttribute('data-step')) === index && p < .93);
   });
+  var count = document.getElementById('s0cutcount');
+  if(count) count.textContent = 'CUT ' + String(index + 1).padStart(2, '0') + ' / 06';
+  var bar = document.getElementById('s0cutprogress');
+  if(bar) bar.style.width = Math.round(visibleProgress * 100) + '%';
 }
-function renderS0Three(){
-  var s = s0ThreeState;
-  if(!s) return;
-  s.time += .016;
-  s.core.rotation.y += .008;
-  s.core.rotation.x += .003;
-  s.rings.forEach(function(ring,i){
-    ring.rotation.z += .006 + i*.002;
-    ring.rotation.x += .0015;
-  });
-  s.particles.rotation.y -= .0015;
-  updateS0Three(s.progress);
-  s.renderer.render(s.scene, s.camera);
-  requestAnimationFrame(renderS0Three);
+function skipS0(){
+  var s0 = document.getElementById('s0');
+  if(!s0) return;
+  s0.scrollTop = s0.scrollHeight;
+  s0Update();
 }
-function resizeS0Three(){
-  var s = s0ThreeState;
-  if(!s) return;
-  var w = s.mount.clientWidth || window.innerWidth || 1280;
-  var h = s.mount.clientHeight || window.innerHeight || 720;
-  s.renderer.setSize(w, h, false);
-  s.camera.aspect = w / h;
-  s.camera.updateProjectionMatrix();
-}
+
 function s0Update(){
   var s0 = document.getElementById('s0');
-  var stage = document.getElementById('s0stage');
-  if(!s0 || !stage) return;
+  var s0stage = document.getElementById('s0stage');
+  if(!s0 || !s0stage) return;
   var max = s0.scrollHeight - s0.clientHeight;
   var p = max > 0 ? s0.scrollTop / max : 0;
   var done = p >= 0.955;
-  document.getElementById('s0hint').style.opacity = p < 0.04 ? 1 : 0;
-  updateS0Three(p);
-  var lit = p >= 0.72;
+  var hint = document.getElementById('s0hint');
+  if(hint) hint.style.opacity = p < 0.04 ? 1 : 0;
+  updateS0Cutscene(p);
+  var lit = p >= 0.84;
   if(lit && !s0LitPlayed){ s0LitPlayed = true; try{ chime(); }catch(e){} }
   if(!lit) s0LitPlayed = false;
-  stage.classList.toggle('done', done);
+  s0stage.classList.toggle('done', done);
 }
 (function initS0(){
   var s0 = document.getElementById('s0');
   if(!s0) return;
-  initS0Three();
+  initS0Cutscene();
   s0.addEventListener('scroll', s0Update);
-  window.addEventListener('resize', function(){ resizeS0Three(); s0Update(); });
+  window.addEventListener('resize', s0Update);
   s0.scrollTop = 0;
   requestAnimationFrame(function(){ s0.scrollTop = 0; s0Update(); });
   s0Update();
