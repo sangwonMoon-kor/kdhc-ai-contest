@@ -12,12 +12,12 @@
 - ✅ S0 오프닝을 사용자 제작 영상으로 교체·배포 (`demo/assets/opening.mp4`, 23MB, GitHub Pages 라이브)
 - ✅ 컨셉 재정의 — 중심축 = **개인 비서 진입 → AX 반전**
 - ✅ 발표 서사 척추 (4막 8비트) 설계
-- ✅ 캐릭터(마스코트) 단독 스토리보드 v2 설계
+- ✅ **영상 스토리보드 확정** (영상 중심·자막 없음 · 매개체=PC 모니터/대시보드 · 캐릭터=사용자 첨부 레퍼런스 · Flow Omni 제작) — §4
 
 **대기 / 남은 일**
 - ⏳ **팀원**: 파싱·레이어 분리(= 숨은 엔진/온톨로지) 기능 개발 중 → 추후 합침. *지금 이쪽은 고민 대상 아님.*
 - ⏳ **최종 카피 확정**: 팀원 기능 확정 후 종합해서 결정. 자리 = 스토리보드 SHOT 7 / 데모 S0 히어로. (현재 임시: "사람은 떠나도, 업무는 남게" 그대로 둠)
-- ⏳ **스토리보드 → 실제 제작**: 각 샷 AI 클립 생성 → CapCut 편집. SHOT 1은 현 오프닝 영상 재활용 가능.
+- ⏳ **스토리보드 → 실제 제작**: 각 샷 **Flow Omni로 생성**(캐릭터 레퍼런스 첨부) → CapCut 편집. SHOT 1은 현 오프닝 영상 재활용 가능.
 - ⏳ (선택) 스토리보드를 팀 공유용 비주얼 보드(웹)로 렌더.
 - ⏳ (선택) 확정된 최종 카피를 데모 S0 히어로 문구에 반영.
 
@@ -61,6 +61,7 @@
 | 착지 문장 | **"개인에게 가장 도움 되는 일이, 회사에 가장 필요한 일과 같은 방향이었습니다."** |
 | 오프닝 영상 | 현 영상 유지 + **발표자 멘트로 의미 재정의**('서류 분류'가 아니라 '인수인계 막막함의 은유') |
 | 발표 형식 | **발표자가 직접 시연하며 설명** (이야기의 90%는 발표자 말이 나름, 데모는 시각 보조 + 반전) |
+| 컨셉 영상 | **자막 없이 영상으로 의미 전달**(show, don't tell) · 매개체=**PC 모니터/대시보드**(책 아님) · **일반 회사 배경**(특정 업무 X) · 캐릭터=사용자 제작 **레퍼런스 첨부**(일관성 신경 X) · 도구=**Flow Omni** — 상세 §4 |
 
 ### ⚠️ 워딩 금지 목록 (반전 멘트에서 절대 쓰지 말 것)
 직원의 노력을 깎거나 회사가 몰래 뽑아먹는 뉘앙스는 전부 금지:
@@ -98,34 +99,34 @@
 
 ---
 
-## 4. 캐릭터 단독 스토리보드 v2 — "자리에 남는 문서요정"
+## 4. 영상 스토리보드 (영상 중심 · 자막 없음)
 
-**원칙:** 화면엔 **마스코트(문서요정) 하나만**. 사람(김 과장)은 화면에서 빼고 **발표자 내레이션으로만** 존재. AI 생성 일관성·제작 편의를 위해.
+- **제작 도구:** Flow Omni 에이전트 (샷별 생성).
+- **캐릭터:** 사용자가 만든 캐릭터 **레퍼런스 이미지 첨부** → 프롬프트에 외형 묘사 불필요, 일관성은 레퍼런스가 담당. 프롬프트엔 `the character`로만.
+- **배경:** 특정 업무 상황 X → **일반 회사 사무실**.
+- **매개체(중요):** '빛나는 책' → **업무용 PC 모니터/대시보드**(자리에 남는 현실적 매개체). 흩어진 서류가 화면으로 정리돼 쌓이고, 사람이 떠나도 그 화면은 남음.
+- **표현 원칙:** **자막 없이 영상으로 의미 전달(show, don't tell).** 감정=표정·자세, 개념=카메라 무브·대비. 설명은 발표자가 라이브로(§3 4막 척추).
 
-**장치:** 문서요정 = "그 자리에 남는 기억"의 화신. 사람의 순환은 사람 없이 **책상 + '빛나는 기억의 책'**으로 표현 — 요정이 책을 *받고 → 키우고 → 남기고* 떠남.
+| # | 비트 | 길이 | 화면이 말하는 것 (자막 없이 시각으로) |
+|---|---|---|---|
+| 1 | 막막한 첫날 *(현 오프닝 재활용 가능)* | ~9s | 큰 사무실 구석 한 자리, 서류 산더미에 파묻혀 웅크린 캐릭터, 꺼진 어두운 모니터. 막막·고립 (표정+대비) |
+| 2 | 기억이 깨어난다 | ~8s | 키보드를 건드리면 모니터가 따뜻하게 켜지고 흩어진 서류가 화면으로 빨려들어가 깔끔한 대시보드로 정렬. 표정: 절망→경이→안도 |
+| 3 | 능숙해진다 (몽타주) | ~13s | 창밖 빛이 아침→저녁. 캐릭터가 자신감 있게 화면과 일함 — 달력 알림에 끄덕, 초안 자동 조립, 빨간 경고를 잡아냄. 편안·능숙 |
+| 4 ⭐ | 반전 — 나도 모르게 쌓인다 | ~11s | 고개 숙여 일하는 캐릭터, 끝낸 일마다 작은 빛 입자가 떠오름(본인은 모름). 카메라가 뒤로·위로 빠지면 그 입자들이 등 뒤로 거대한 빛의 지식망을 이룸. **작고 담담한 사람 ↔ 그가 모르게 지은 거대한 구조**의 대비 = "내 일 = 회사 자산" |
+| 5 | 남기고, 이어진다 | ~10s | 노을. 마지막으로 화면을 바라보고 개인 머그를 챙겨 떠남. 정돈된 책상 + 여전히 켜진 모니터 + 새 머그가 놓임(다음 사람 암시) |
+| 6 | 확장 | ~7s | 카메라가 사무실 전체→건물 위로. 자리마다 같은 빛의 모니터, 빛의 실선이 이어져 하나의 망 |
+| 7 | 타이틀 카드 | ~4s | 캐릭터 정면 미소 + 상단에 카피 얹을 여백. 착지: "개인에게 가장 도움 되는 일이, 회사에 가장 필요한 일과 같은 방향이었습니다." |
 
-**캐릭터 일관성 설명(프롬프트용):** 흰 둥근 몸 · 노란 헬멧 빨간 방울 안테나 · 이마 종(鐘) 문양 · 분홍 요정 날개 · 큰 눈. 모든 샷에 이 요정 한 마리만, 사람 없음.
+**총 ~60초 / 클립 6개 + 타이틀.** 핵심은 **SHOT 4** — 자막 없이 카메라 무브(뒤로·위로)와 대비만으로 반전.
 
-| # | 비트 | 길이 | 화면 | 자막 | 내레이션 |
-|---|---|---|---|---|---|
-| 1 | 막막한 첫날 *(현 오프닝 재활용 가능)* | ~9s | 서류 산더미에 파묻힌 요정, 막막 | "낯선 자리의 첫날." | "발령 첫날. 전임자는 떠났고, 아무도 설명해주지 않습니다." |
-| 2 | 기억이 깨어난다 | ~8s | 책상 위 빛나는 책이 열리고 서류가 정렬돼 빨려 들어감 | "그런데, 자리엔 기억이 남아 있었다." | "이 자리가 뭘 하는 자리인지, 과거의 기록이 먼저 말해줍니다." |
-| 3 | 능숙해진다 (몽타주) | ~13s | 요정이 책과 함께 달력 표시·초안·빨간 느낌표 점검 | "오늘도, 올해도 — 무엇을 해야 할지." | — |
-| 4 | 기억이 자란다 (반전) | ~11s | 카메라 후퇴, 빛나는 책이 두껍고 환하게 자람, 배경 지식 나무 | "요정이 일할수록, 기억은 더 밝아진다." | "그저 자기 일을 성실히 했을 뿐인데, 그 하루하루가 회사의 지식으로 쌓입니다." |
-| 5 | 남기고, 이어진다 | ~10s | 노을. 요정이 빛나는 책을 책상에 놓고 떠남. 빈 의자 + 맥동하는 책 | "사람은 순환해도, 기억은 남는다." | — |
-| 6 | 모든 자리 (확장) | ~7s | 사무실 전체, 자리마다 빛나는 책 + 연결된 빛 네트워크 | "회사의 기억이 됩니다." | — |
-| 7 | 타이틀 카드 | ~4s | 요정 정면 미소 + 카피 타이포 | [최종 카피 자리] / 임시 "사람은 순환해도, 기억은 이어지게." | 착지: "개인에게 가장 도움 되는 일이, 회사에 가장 필요한 일과 같은 방향이었습니다." |
-
-**총 ~60초 / 클립 6개 + 타이틀.** SHOT 1은 현 오프닝 재활용 → 실제 새로 뽑을 건 ~5개.
-
-### 샷별 AI 생성 프롬프트 (영문)
-- **S1** `Cinematic 3D animation, a cute document-fairy mascot (white round body, yellow helmet with red bulb antennae, bell emblem on forehead, pink translucent wings, big eyes) buried under a huge pile of office papers on an unfamiliar desk, overwhelmed worried expression, warm cinematic light — no humans`
-- **S2** `the document-fairy watching a glowing book open on the desk, scattered papers flying in and organizing into it, golden particles, the fairy's eyes lighting up with hope — fairy only, no humans`
-- **S3** `montage of the document-fairy working alongside the glowing book: marking upcoming dates on a floating calendar, sliding a draft document, flagging a risky line with a red exclamation, growing confident and relaxed, cozy office — fairy only`
-- **S4** `camera slowly pulls back, the glowing memory book growing thicker and brighter as the fairy tends it, a soft glowing knowledge-tree rising in the background, magical but subtle — fairy only, no humans`
-- **S5** `sunset tone, the document-fairy gently placing the glowing book on the desk and floating away, an empty chair, the book pulsing softly as if waiting for someone — fairy only, tender mood`
-- **S6** `wide shot of an entire office floor, every desk holding a glowing memory book, their lights connecting into a warm network across the room, inspiring cinematic — no humans`
-- **타이틀** `the document-fairy facing forward with a gentle smile, clean typographic title card, warm minimal background`
+### 샷별 영문 생성 프롬프트 (참고 · `the character`=첨부 레퍼런스, 자막 없음)
+- **S1** `A single desk in a large quiet corporate office at dawn. The character sits small and hunched, almost swallowed by towering chaotic stacks of paper documents, facing a cold dark monitor, looking lost and overwhelmed. Dim bluish light with one warm lamp, slow push-in. Cinematic, melancholic. No text.`
+- **S2** `The character touches the keyboard; the dark monitor awakens with a warm golden glow and the scattered papers lift and stream into the screen, self-sorting into a clean dashboard of glowing folders. The character's face shifts from despair to wonder to relief. Warm, hopeful, gentle move. No text.`
+- **S3** `Montage as window light shifts morning to evening. The character works confidently with the glowing monitor: a calendar date pulses and they nod, a draft assembles on screen, a soft red warning appears and they catch it with relief. Growing ease and confidence. Warm, cozy, smooth. No text.`
+- **S4** `The character works head-down; each finished task releases a tiny glowing mote they don't notice. Camera slowly pulls back and rises, revealing the motes have woven into a vast luminous tree-like network of light behind them. The character stays small and unaware of the beautiful structure their ordinary work built. Awe-inspiring reveal. No text.`
+- **S5** `Warm dusk light. The character gives the glowing monitor a last gentle look, picks up a personal mug and leaves the frame. The desk is now clean and organized; the empty chair and the monitor still glowing warmly; a fresh coffee mug appears, hinting someone new arrives. Tender, bittersweet, slow. No text.`
+- **S6** `Camera lifts up and out over an open-plan office then over the whole building; every desk's monitor glows the same warm light, connected by delicate threads of light into one network. Inspiring, expansive, cinematic. No text.`
+- **타이틀** `The character faces forward with a gentle warm smile, centered on a clean minimal warm-lit background with empty space at the top for a title. Simple, elegant. No text.`
 
 ---
 
