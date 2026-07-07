@@ -56,36 +56,43 @@
   #s0{scrollbar-width:none}
   #s0::-webkit-scrollbar{display:none}
   #s0{background:linear-gradient(180deg, rgba(9,11,14,.42) 0%, rgba(9,11,14,.62) 55%, rgba(9,11,14,.88) 100%), url('assets/office-bg.jpg') center 68%/cover no-repeat}
-  #s0 .s0-track{height:340vh;position:relative}
+  #s0 .s0-track{height:420vh;position:relative}
   #s0 .s0-stage{position:sticky;top:0;height:100vh;overflow:hidden}
   #s0 .s0-scene{position:absolute;inset:0;transition:opacity .6s, filter .6s}
   #s0 .s0-stage.done .s0-scene{opacity:.12;filter:blur(3px)}
   #s0 .s0-eyebrow{position:absolute;top:34px;left:48px;font-size:15px;color:var(--dark-muted);letter-spacing:.01em}
-  /* 파일 더미 (상단) */
-  #s0 .s0-pile{position:absolute;top:6vh;left:63%;transform:translateX(-50%);width:250px;text-align:center}
+  /* 파일 더미 (상단, 실사 사진 — 스크롤에 맞춰 scale-down) */
+  #s0 .s0-pile{position:absolute;top:6vh;left:63%;transform:translateX(-50%);width:200px;text-align:center}
   #s0 .s0-pile-label{font-size:13.5px;color:var(--dark-muted);margin-bottom:12px;transition:opacity .5s}
-  .s0-folder{height:24px;border-radius:5px;margin-top:-7px;background:linear-gradient(#eccd77,#d9b455);border:1px solid #bd9a45;
-    box-shadow:0 3px 8px rgba(0,0,0,.4);position:relative;transition:opacity .35s, transform .35s}
-  .s0-folder::after{content:"";position:absolute;left:10%;right:10%;top:5px;height:3px;background:rgba(255,255,255,.7);border-radius:2px}
-  .s0-folder:nth-child(odd){transform:rotate(-2deg)}
-  .s0-folder:nth-child(even){transform:rotate(1.6deg)}
-  .s0-folder.gone{opacity:0;transform:translateY(22px) scale(.75)}
+  .s0-pile-img{width:100%;display:block;margin:0 auto;transform-origin:50% 0%;will-change:transform,opacity;
+    filter:drop-shadow(0 12px 20px rgba(0,0,0,.45))}
   /* 캐릭터 */
-  #s0 .s0-char{position:absolute;height:32vh;width:32vh;transform:translateX(-50%);will-change:top,left;filter:drop-shadow(0 14px 22px rgba(0,0,0,.45))}
+  #s0 .s0-char{position:absolute;height:32vh;width:32vh;transform:translateX(-50%);will-change:top,left;
+    filter:drop-shadow(0 14px 22px rgba(0,0,0,.45));transition:opacity .4s}
   #s0 .s0-char img{position:absolute;bottom:0;left:50%;transform:translateX(-50%);height:100%;width:auto;opacity:0;transition:opacity .25s}
   #s0 .s0-char img.show{opacity:1}
   /* 컴퓨터 (하단, 실사 모니터 합성) */
   #s0 .s0-pc{position:absolute;bottom:3vh;left:37%;transform:translateX(-50%);text-align:center}
-  .s0-mon-wrap{position:relative;width:360px;margin:0 auto;filter:drop-shadow(0 18px 26px rgba(0,0,0,.5));transition:filter .6s}
-  .s0-mon-wrap img{width:100%;display:block}
+  .s0-mon-wrap{position:relative;width:360px;margin:0 auto;filter:drop-shadow(0 18px 26px rgba(0,0,0,.5));transition:filter .6s;
+    transform-origin:49.9% 38.74%;will-change:transform} /* origin = .scr 중심 — 확대 시 화면이 제자리에서 커짐 */
+  .s0-mon-wrap > img{width:100%;display:block;transition:opacity .45s}
   .s0-mon-wrap .scr{position:absolute;left:12.01%;top:2.7%;width:75.78%;height:72.07%;border-radius:2px;overflow:hidden;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
     background:radial-gradient(ellipse at 50% 60%, #2a1f14 0%, #0c0d11 70%);opacity:0;transition:opacity .7s}
-  .s0-mon-wrap .scr .logo{color:var(--accent);font-weight:800;font-size:19px;letter-spacing:-.01em}
-  .s0-mon-wrap .scr .okmsg{color:#7ed67e;font-size:11px}
+  .s0-mon-wrap .scr .glow{position:absolute;inset:0;background:url('assets/ai-glow.jpg') center/cover no-repeat;opacity:.45;transition:opacity .5s}
+  .s0-stage.zooming .s0-mon-wrap .scr .glow{opacity:1}
+  .s0-mon-wrap .scr .logo{position:relative;color:var(--accent);font-weight:800;font-size:19px;letter-spacing:-.01em;transition:opacity .3s;
+    text-shadow:0 1px 8px rgba(0,0,0,.85)}
+  .s0-mon-wrap .scr .okmsg{position:relative;color:#7ed67e;font-size:11px;transition:opacity .3s;text-shadow:0 1px 6px rgba(0,0,0,.85)}
   .s0-stage.lit .s0-mon-wrap{filter:drop-shadow(0 18px 26px rgba(0,0,0,.5)) drop-shadow(0 0 55px rgba(232,89,12,.45))}
   .s0-stage.lit .s0-mon-wrap .scr{opacity:1}
-  #s0 .s0-pc-label{font-size:13.5px;color:var(--dark-muted);margin-top:10px}
+  #s0 .s0-pc-label{font-size:13.5px;color:var(--dark-muted);margin-top:10px;transition:opacity .3s}
+  /* 화면 확대(zoom-in) 전환: 모니터 프레임은 사라지고 화면 레이어만 뷰포트를 채움 */
+  .s0-stage.zooming .s0-pc{z-index:6}
+  .s0-stage.zooming .s0-mon-wrap{filter:none}
+  .s0-stage.zooming .s0-mon-wrap > img{opacity:0}
+  .s0-stage.zooming .scr .logo,.s0-stage.zooming .scr .okmsg{opacity:0}
+  .s0-stage.zooming .s0-char,.s0-stage.zooming .s0-pc-label{opacity:0}
   /* 날아가는 파일 */
   .s0-fly{position:absolute;width:56px;height:38px;border-radius:5px;background:linear-gradient(#eccd77,#d9b455);border:1px solid #bd9a45;
     box-shadow:0 4px 10px rgba(0,0,0,.4);opacity:0;pointer-events:none;z-index:5}
@@ -353,14 +360,10 @@
         <div class="s0-eyebrow">사내 AI 경진대회 제안 · 직무 메모리</div>
         <div class="s0-pile" id="s0pile">
           <div class="s0-pile-label">전임자가 남긴 업무 파일</div>
-          <div class="s0-folder"></div>
-          <div class="s0-folder"></div>
-          <div class="s0-folder"></div>
-          <div class="s0-folder"></div>
-          <div class="s0-folder"></div>
-          <div class="s0-folder"></div>
+          <img class="s0-pile-img" id="s0pileimg" src="assets/pile.png" alt="전임자가 남긴 업무 파일 더미">
         </div>
         <div class="s0-char" id="s0char">
+          <img src="assets/pose0.png" alt="서류 더미에 파묻힌 캐릭터">
           <img src="assets/pose1.png" alt="파일을 들어올리는 캐릭터">
           <img src="assets/pose2.png" alt="파일을 안고 이동하는 캐릭터">
           <img src="assets/pose3.png" alt="파일을 건네는 캐릭터">
@@ -369,7 +372,7 @@
         <div class="s0-pc">
           <div class="s0-mon-wrap">
             <img src="assets/monitor.png" alt="모니터">
-            <div class="scr"><div class="logo">직무 메모리</div><div class="okmsg">업무 기억 저장 완료 ✓</div></div>
+            <div class="scr"><div class="glow"></div><div class="logo">직무 메모리</div><div class="okmsg">업무 기억 저장 완료 ✓</div></div>
           </div>
           <div class="s0-pc-label">다음 담당자의 자리</div>
         </div>
@@ -756,30 +759,32 @@ function s0Update(){
   var max = s0.scrollHeight - s0.clientHeight;
   var p = max > 0 ? s0.scrollTop / max : 0;
   function lerp(a,b,t){ return a + (b-a)*t; }
+  function seg(a,b){ return Math.max(0, Math.min(1, (p - a) / (b - a))); }
 
-  /* 캐릭터 이동: 상단 파일 더미(우) → 하단 컴퓨터(좌) */
+  /* 캐릭터 이동: 인트로(파묻힘) 뒤 상단 파일 더미(우) → 하단 컴퓨터(좌), 0.72에 도착 */
+  var mp = seg(0.10, 0.72);
   var ch = document.getElementById('s0char');
-  ch.style.top  = lerp(20, 46, p) + 'vh';
-  ch.style.left = lerp(63, 50, p) + '%';
+  ch.style.top  = lerp(20, 46, mp) + 'vh';
+  ch.style.left = lerp(63, 50, mp) + '%';
 
-  /* 포즈 전환: 들어올리기 → 이동 → 건네기 */
-  var pose = p < 0.33 ? 0 : (p < 0.72 ? 1 : 2);
+  /* 포즈 전환: 파묻힘 → 들어올리기 → 이동 → 건네기 */
+  var pose = p < 0.10 ? 0 : (p < 0.34 ? 1 : (p < 0.64 ? 2 : 3));
   stage.querySelectorAll('.s0-char img').forEach(function(im,i){
     im.classList.toggle('show', i === pose);
   });
 
-  /* 파일 더미가 하나씩 줄어듦, 라벨도 함께 사라짐 */
-  stage.querySelectorAll('.s0-folder').forEach(function(f,i){
-    f.classList.toggle('gone', p > 0.14 + i*0.085);
-  });
+  /* 파일 더미: 인트로 컷이 끝나면 등장, 스크롤에 맞춰 점점 작아지다 소멸 */
+  var pile = document.getElementById('s0pileimg');
+  pile.style.transform = 'scale(' + lerp(1, 0.1, seg(0.12, 0.62)) + ')';
+  pile.style.opacity = Math.min(seg(0.07, 0.12), 1 - seg(0.54, 0.62));
   stage.querySelector('.s0-pile-label').style.opacity = p > 0.6 ? 0 : 1;
 
   /* 스크롤 힌트 */
   document.getElementById('s0hint').style.opacity = p < 0.04 ? 1 : 0;
 
-  /* 파일이 컴퓨터로 날아 들어감 (p 0.80~0.90) */
+  /* 파일이 컴퓨터로 날아 들어감 (p 0.72~0.80) */
   var fly = document.getElementById('s0fly');
-  var fp = Math.max(0, Math.min(1, (p - 0.80) / 0.10));
+  var fp = seg(0.72, 0.80);
   if(fp > 0 && fp < 1){
     fly.style.opacity = 1;
     fly.style.left = lerp(48, 37, fp) + '%';
@@ -790,13 +795,19 @@ function s0Update(){
   }
 
   /* 모니터 점등 + 차임 */
-  var lit = p >= 0.88;
+  var lit = p >= 0.79;
   stage.classList.toggle('lit', lit);
   if(lit && !s0LitPlayed){ s0LitPlayed = true; try{ chime(); }catch(e){} }
   if(!lit) s0LitPlayed = false;
 
+  /* 화면 확대(zoom-in): 모니터 화면이 커지며 뷰포트를 뚫고 들어감 (p 0.87~0.98) */
+  var zp = seg(0.87, 0.98);
+  stage.classList.toggle('zooming', zp > 0);
+  var wrap = stage.querySelector('.s0-mon-wrap');
+  wrap.style.transform = zp > 0 ? 'scale(' + (1 + Math.pow(zp, 2.2) * 15) + ')' : '';
+
   /* 연출 종료 → 타이틀 등장 */
-  stage.classList.toggle('done', p >= 0.955);
+  stage.classList.toggle('done', p >= 0.96);
 }
 (function initS0(){
   var s0 = document.getElementById('s0');
