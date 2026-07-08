@@ -11,6 +11,9 @@
     · 2단계: 애매하면 선택 카드 4장(clarify) → 클릭 → 화면. 그 이상 되묻지 않음
     · 4화면 = 팀원 엔진(creationy/jikmu-memory) 기능 매핑: 오늘(forecast) · 브리핑북(briefing) · 초안(draft) · 사전점검(precheck)
   디자인: docs/DESIGN.md (Apple 각색 — SF Pro · Action Blue 단일 액센트 · 여백 중심 · pill)
+  유즈케이스: 팀원 엔진(service/src/corpus.js OKF 팩)과 통일 — 지사 공무부 발전소 유지보수,
+    전임자 이지훈 과장, 순환수 펌프 정비공사(연 반복)·산출근거 표 누락 반려·감사 지적 3건.
+    데모 기준일 2026-04-06(월). 예시 질문은 엔진 QA가 실제 답하는 질문에서 발췌.
   데이터: 전부 각색 샘플 · LLM 호출 없음 (시연용 목업)
   이전 버전: v1은 질문→텍스트 답변 카드 (git 히스토리 b0cd4d9 참조)
 -->
@@ -334,45 +337,53 @@
         <div class="day today"><div class="dw">월 · 오늘</div><div class="dn">6</div><div class="ev"></div></div>
         <div class="day"><div class="dw">화</div><div class="dn">7</div><div class="ev"></div></div>
         <div class="day"><div class="dw">수</div><div class="dn">8</div><div class="ev"></div></div>
-        <div class="day"><div class="dw">목</div><div class="dn">9</div><div class="ev"></div></div>
-        <div class="day"><div class="dw">금</div><div class="dn">10</div><div class="ev"><span class="dot"></span><br>중간보고 기안</div></div>
+        <div class="day"><div class="dw">목</div><div class="dn">9</div><div class="ev"><span class="dot"></span><br>정비 보고 기안</div></div>
+        <div class="day"><div class="dw">금</div><div class="dn">10</div><div class="ev"></div></div>
       </div>
 
       <div class="sect">다가오는 반복 업무 — 예보 순</div>
       <div class="card">
         <div class="fcast">
-          <span class="dday">D-4</span>
+          <span class="dday">D-3</span>
           <div class="f-main">
-            <div class="f-title">요금정산 중간보고 기안</div>
-            <div class="f-why">작년 7/10 기안 · 3년 연속 반복 · 기준월 6월 실적</div>
+            <div class="f-title">순환수 펌프 정비공사 추진 보고</div>
+            <div class="f-why">작년 4/9 기안 · 2년 연속 · 하계 피크 전 예방정비</div>
           </div>
           <div class="f-act">
-            <button class="mini primary" onclick="go('draft','요금정산 중간보고 초안 준비')">초안 준비</button>
+            <button class="mini primary" onclick="go('draft','순환수 펌프 정비공사 보고 초안 준비')">초안 준비</button>
             <button class="mini ghost" onclick="go('brief')">업무 지도</button>
           </div>
         </div>
         <div class="fcast">
-          <span class="dday far">D-9</span>
+          <span class="dday far">9월</span>
           <div class="f-main">
-            <div class="f-title">하절기 설비 안전점검 결과 보고</div>
-            <div class="f-why">작년 7/16 기안 · 담당 박수연 대리 · 2년 연속</div>
+            <div class="f-title">유지보수 예산 요구서</div>
+            <div class="f-why">작년 9/10 기안 · 2년 연속 · 고장 전조 근거 첨부</div>
           </div>
           <div class="f-act"><button class="mini ghost" onclick="go('brief')">업무 지도</button></div>
         </div>
         <div class="fcast">
-          <span class="dday far">D-14</span>
+          <span class="dday far">10월</span>
           <div class="f-main">
-            <div class="f-title">이사회 보고 안건 자료 제출</div>
-            <div class="f-why">작년 7/21 제출 · 팀 공통 · 3년 연속</div>
+            <div class="f-title">동계 대비 차단기 예비부품 구매 품의</div>
+            <div class="f-why">작년 10/15 기안 · 2년 연속 · 작년 치수 불일치 반품 이력</div>
+          </div>
+          <div class="f-act"><button class="mini ghost" onclick="go('brief')">업무 지도</button></div>
+        </div>
+        <div class="fcast">
+          <span class="dday far">1월</span>
+          <div class="f-main">
+            <div class="f-title">동절기 옥외 설비 동파 방지 점검 보고</div>
+            <div class="f-why">작년 1/6 기안 · 2년 연속 · 열선 이상 징후 이력</div>
           </div>
           <div class="f-act"><button class="mini ghost" onclick="go('brief')">업무 지도</button></div>
         </div>
       </div>
-      <p class="foot-note">예보는 <b>최근 2~3년 이 자리의 기안 주기</b>에서 계산됩니다 — 추측이 아니라 기록입니다.</p>
+      <p class="foot-note">예보는 <b>최근 2년, 이 자리의 기안 주기</b>에서 계산됩니다 — 추측이 아니라 기록입니다.</p>
 
       <div class="actions">
-        <button class="btn btn-primary" onclick="go('draft')">D-4 초안 만들기 <span class="arr">→</span></button>
-        <a class="btn btn-ghost" href="index.html#s2">발표 데모에서 보기</a>
+        <button class="btn btn-primary" onclick="go('draft')">D-3 초안 만들기 <span class="arr">→</span></button>
+        <button class="btn btn-ghost" onclick="go('brief')">이 업무의 지도 보기</button>
       </div>
     </section>
 
@@ -380,29 +391,31 @@
     <section class="panel" id="panel-brief">
       <div class="sect">업무 개요</div>
       <div class="card">
-        <div class="row"><div class="k">무엇</div><div class="v"><b>요금정산 중간보고</b> — 상반기 실적 기준 정산 현황을 경영진에 보고<span class="sub">매년 7월 초 반복 · 3년 연속 기안</span></div></div>
-        <div class="row"><div class="k">기준</div><div class="v">6월 말 실적 마감 기준 <span class="sub">올해 신규 변수: 차세대 정산시스템 전환 일정</span></div></div>
-        <div class="row"><div class="k">전임자</div><div class="v">이정훈 과장 (2024~2025 담당) <span class="sub">구두 협의 1건은 문서 근거 없음 — 직접 확인 필요</span></div></div>
+        <div class="row"><div class="k">무엇</div><div class="v"><b>순환수 펌프 정비공사</b> — 하계 피크 전 예방정비 (분해·베어링 교체·축 정렬·시운전)<span class="sub">매년 4월 기안 · 2년 연속 · 15년 경과 설비, 진동 경향 증가</span></div></div>
+        <div class="row"><div class="k">착수 조건</div><div class="v">운영부 정지 가능 기간 확정 → 작업허가·에너지 격리 확인 후 개시 <span class="sub">시행 지침 §17 (안전)</span></div></div>
+        <div class="row"><div class="k">전임자</div><div class="v">이지훈 과장 (2024~2025 담당) <span class="sub">착수회의에서 사진 기록 지점·중간검사 포인트를 착수계에 명시하던 방식</span></div></div>
       </div>
 
       <div class="sect">업무 지도 — 이 순서대로 진행됩니다</div>
       <div class="card">
-        <div class="step"><span class="no">1</span><div class="step-main"><div class="step-t">6월 실적 마감 확인</div><div class="step-d">협조: IT운영팀 — 배포 일정이 밀리면 전체 일정이 밀립니다</div></div><span class="badge ok">근거 있음</span></div>
-        <div class="step"><span class="no">2</span><div class="step-main"><div class="step-t">정산 오차 검증</div><div class="step-d">정보화부서 합동 · 작년 신설된 절차 (회의록 MTG-2025-0708)</div></div><span class="badge ok">근거 있음</span></div>
-        <div class="step"><span class="no">3</span><div class="step-main"><div class="step-t">산출근거 표 작성</div><div class="step-d">누락 시 반려 이력 있음 — 사전점검에서 자동 확인</div></div><span class="badge warn">반려 이력</span></div>
-        <div class="step"><span class="no">4</span><div class="step-main"><div class="step-t">중간보고 기안</div><div class="step-d">작년 원문(APPR-2025-0109) 골격 재사용 가능</div></div><span class="badge ok">원문 보유</span></div>
-        <div class="step"><span class="no">5</span><div class="step-main"><div class="step-t">결재 · 결과 공유</div><div class="step-d">팀장 → 처장 · 병행 운영 점검 일정과 함께 공유</div></div><span class="badge none">구두 협의</span></div>
+        <div class="step"><span class="no">1</span><div class="step-main"><div class="step-t">문제 인식 · 방식 결정</div><div class="step-d">진동 경향 확인 → 공사/용역/구매 선판단 (지침 §13)</div></div><span class="badge ok">근거 있음</span></div>
+        <div class="step"><span class="no">2</span><div class="step-main"><div class="step-t">설계 · 내역 작성</div><div class="step-d">단가·수량 항목마다 산출근거 첨부 (지침 §12) — 누락 시 반려</div></div><span class="badge warn">반려 이력</span></div>
+        <div class="step"><span class="no">3</span><div class="step-main"><div class="step-t">부서 협의</div><div class="step-d">운영부(정지 일정) · 안전관리관(작업허가) · 품질관리부(검수 기준) · 계약부</div></div><span class="badge ok">근거 있음</span></div>
+        <div class="step"><span class="no">4</span><div class="step-main"><div class="step-t">계약 · 착수회의</div><div class="step-d">과업 해석 정렬, 분해 전 축 정렬·커플링 마킹 사진 필수 (MTG-2025-0505)</div></div><span class="badge ok">원문 보유</span></div>
+        <div class="step"><span class="no">5</span><div class="step-main"><div class="step-t">현장 변수 대응</div><div class="step-d">발견 즉시 작업 중지 — 구두 지시 선시공 금지, 변경 승인 후 착수 (지침 §14)</div></div><span class="badge warn">감사 지적</span></div>
+        <div class="step"><span class="no">6</span><div class="step-main"><div class="step-t">준공 · 정산</div><div class="step-d">작업일보·출입기록·사진대지·시험성적서 교차 확인 후 지급 (지침 §15)</div></div><span class="badge ok">근거 있음</span></div>
       </div>
 
       <div class="sect">이 업무의 주의 수칙 — 실제 반려·감사 이력</div>
       <div class="card">
-        <div class="chk"><span class="badge warn">반려</span><div class="chk-main"><div class="chk-t">산출근거 표 누락</div><div class="chk-d">2025년 연간 정산계획이 이 사유로 반려 <span class="cite">반려 이력 · <b>97%</b></span></div></div></div>
-        <div class="chk"><span class="badge warn">반려</span><div class="chk-main"><div class="chk-t">정산 기준일을 특정 날짜로 고정 표기</div><div class="chk-d">“준공검사 완료일 기준”이 지침과 일치 <span class="cite">공사정산업무지침 §8 · <b>95%</b></span></div></div></div>
+        <div class="chk"><span class="badge warn">반려</span><div class="chk-main"><div class="chk-t">산출근거 표 누락 · 과거 내역 복사</div><div class="chk-d">4분기 노후설비 내역 보고가 이 사유로 반려 <span class="cite">반려 이력 2025.10 · <b>97%</b></span></div></div></div>
+        <div class="chk"><span class="badge warn">감사 지적</span><div class="chk-main"><div class="chk-t">구두 설계변경 후 선시공</div><div class="chk-d">변경 승인 전 시공 금지 원칙 위반으로 지적 <span class="cite">자체감사 2025.06 · <b>94%</b></span></div></div></div>
+        <div class="chk"><span class="badge warn">감사 지적</span><div class="chk-main"><div class="chk-t">분해 전 사진대지 미확보</div><div class="chk-d">정비 전후 상태 비교 불가 — 주요 공정 사진 기록 의무화 <span class="cite">자체감사 2025.06 · <b>94%</b></span></div></div></div>
       </div>
 
       <div class="actions">
         <button class="btn btn-primary" onclick="go('draft')">작년 양식으로 초안 만들기 <span class="arr">→</span></button>
-        <a class="btn btn-ghost" href="index.html#s1">다음 담당자용 브리핑북</a>
+        <button class="btn btn-ghost" onclick="go('check')">기안 전 사전점검</button>
       </div>
     </section>
 
@@ -410,24 +423,26 @@
     <section class="panel" id="panel-draft">
       <div class="grid2">
         <div class="doc">
-          <div class="doc-h">작년 원문 <span class="badge none">APPR-2025-0109 · 2025-07-10 기안</span></div>
+          <div class="doc-h">작년 원문 <span class="badge none">APPR-2025-0409 · 2025-04-09 기안</span></div>
           <ul>
-            <li><span class="n">1</span>보고 개요 및 기준월</li>
-            <li><span class="n">2</span>상반기 정산 실적 총괄</li>
-            <li><span class="n">3</span>정산 오차 검증 결과</li>
-            <li><span class="n">4</span>산출근거 표</li>
-            <li><span class="n">5</span>향후 일정 및 협조 사항</li>
+            <li><span class="n">1</span>개요 — 진동 경향 증가, 하계 피크 전 예방정비</li>
+            <li><span class="n">2</span>정비 범위 — 분해 · 베어링 교체 · 축 정렬 · 시운전</li>
+            <li><span class="n">3</span>정비 일정 — 정지 기간 확정 후 착수</li>
+            <li><span class="n">4</span>소요 예산 — 총 2.3억 원</li>
+            <li><span class="n">5</span>협조 요청 — 운영 · 안전 · 품질 · 계약</li>
+            <li><span class="n">붙임</span>산출근거 표 · 시방서</li>
           </ul>
         </div>
         <div class="doc">
           <div class="doc-h">올해 초안 <span class="badge blue">골격 자동 구성</span></div>
           <ul>
-            <li><span class="n">1</span>보고 개요 및 기준월 <span class="ph">기준월: 2026년 6월</span></li>
-            <li><span class="n">2</span>상반기 정산 실적 총괄 <span class="ph">올해 수치 입력</span></li>
-            <li><span class="n">3</span>정산 오차 검증 결과 <span class="ph">검증 회의 후 입력</span></li>
-            <li><span class="n">4</span>산출근거 표 <span class="ph">표 첨부 필수</span></li>
-            <li><span class="n">5</span>향후 일정 및 협조 사항</li>
-            <li><span class="n">6</span>차세대 정산시스템 전환 일정 반영 <span class="new">올해 신규</span></li>
+            <li><span class="n">1</span>개요 <span class="ph">올해 진동 측정값 입력</span></li>
+            <li><span class="n">2</span>정비 범위 — 작년 동일 <span class="ph">변경 시 수정</span></li>
+            <li><span class="n">3</span>정비 일정 <span class="ph">운영부 정지 기간 확인</span></li>
+            <li><span class="n">4</span>소요 예산 <span class="ph">올해 수치 입력 · 노임단가 최신 기준</span></li>
+            <li><span class="n">5</span>협조 요청 — 작년 동일</li>
+            <li><span class="n">붙임</span>산출근거 표 <span class="ph">항목별 첨부 필수</span></li>
+            <li><span class="n">6</span>현장 변수 대응 절차 명시 <span class="new">감사 지적 반영</span></li>
           </ul>
         </div>
       </div>
@@ -437,47 +452,47 @@
 
       <div class="actions">
         <button class="btn btn-primary" onclick="go('check')">이 초안 사전점검 보내기 <span class="arr">→</span></button>
-        <a class="btn btn-ghost" href="index.html#s3">발표 데모에서 보기</a>
+        <button class="btn btn-ghost" onclick="go('brief')">업무 지도 다시 보기</button>
       </div>
     </section>
 
     <!-- ---------- 화면 ④ 기안 전 사전점검 ---------- -->
     <section class="panel" id="panel-check">
       <div class="sect">점검 대상 문안</div>
-      <div class="quote">… 정산 기준일은 <mark>6월 30일로 하며</mark>, 상반기 실적을 기준으로 중간보고를 실시함.
-        세부 내역은 붙임 참조. <mark>산출근거는 별도 협의</mark>된 바에 따름 …</div>
+      <div class="quote">… 소요 예산은 총 2.5억 원으로 하며, 산출근거는 <mark>기존 내역을 준용</mark>함.
+        현장 여건 변동 시 업체와 협의하여 <mark>우선 조치 후 변경계약</mark>을 진행함 …</div>
 
       <div class="sect">점검 결과 — 반려·감사 이력과 대조</div>
       <div class="card">
         <div class="chk">
           <span class="badge warn">확인 필요</span>
           <div class="chk-main">
-            <div class="chk-t">정산 기준일을 특정 날짜로 고정 표기</div>
-            <div class="chk-d">준공일 변동 시 재기안 사유가 됩니다. 2024년 5월 동일 유형 반려 이력
-              <span class="cite">반려 이력 2024.05 · <b>90%</b></span>. <b>“준공검사 완료일 기준”</b> 표기가 지침과 일치
-              <span class="cite">공사정산업무지침 §8 · <b>95%</b></span></div>
+            <div class="chk-t">“기존 내역 준용” — 산출근거 표 누락 패턴</div>
+            <div class="chk-d">과거 내역 복사 + 산출근거 미첨부로 반려된 이력이 있습니다
+              <span class="cite">반려 이력 2025.10 · <b>97%</b></span>. 단가·수량 <b>항목별 산출근거 첨부</b>가 지침과 일치
+              <span class="cite">시행 지침 §12 · <b>95%</b></span></div>
           </div>
         </div>
         <div class="chk">
           <span class="badge warn">확인 필요</span>
           <div class="chk-main">
-            <div class="chk-t">산출근거 표 없이 “별도 협의” 표현</div>
-            <div class="chk-d">산출근거 표 누락은 반려·감사 지적과 연결된 패턴입니다
-              <span class="cite">2025 반려 이력 · <b>97%</b></span> <span class="cite">2024 감사 지적 · <b>94%</b></span></div>
+            <div class="chk-t">“우선 조치 후 변경계약” — 선시공 금지 위반 소지</div>
+            <div class="chk-d">구두 지시 선시공은 감사 지적 사항입니다. <b>변경 승인 후 착수</b>로 수정 권장
+              <span class="cite">자체감사 2025.06 · <b>94%</b></span> <span class="cite">시행 지침 §14 · <b>95%</b></span></div>
           </div>
         </div>
         <div class="chk">
           <span class="badge ok">통과</span>
           <div class="chk-main">
-            <div class="chk-t">붙임 문서 목록 표기</div>
-            <div class="chk-d">체크리스트 기준 충족 <span class="cite">작성 체크리스트 · <b>89%</b></span></div>
+            <div class="chk-t">협조 부서 · 안전 조건 명시</div>
+            <div class="chk-d">작업허가·격리 확인 조항 충족 <span class="cite">시행 지침 §17 · <b>89%</b></span></div>
           </div>
         </div>
       </div>
 
       <div class="actions">
         <button class="btn btn-primary" onclick="go('draft')">지적 반영해 초안 수정 <span class="arr">→</span></button>
-        <a class="btn btn-ghost" href="index.html#s4">발표 데모에서 보기</a>
+        <button class="btn btn-ghost" onclick="go('brief')">주의 수칙 전체 보기</button>
       </div>
       <p class="disclaimer">JARVIS는 <b>“문제 없음”을 판정하지 않습니다</b> — 어떤 문서와 이력이 근거인지 보여줄 뿐,
         최종 판단은 담당자에게 있습니다. 근거가 없는 항목은 <b>근거 없음</b>으로 그대로 노출합니다.</p>
@@ -491,12 +506,12 @@
   const SCREENS = {
     today: {
       tab:"오늘", ic:"📅", clTitle:"오늘 · 일정", clDesc:"이번 주 해야 할 일, 반복 업무 예보, 마감 D-day",
-      strip:{ h:"이번 주, 이 자리에서 해야 할 일은 3건입니다.", meta:["근거 3건","최근 2~3년 기안 주기","검증됨"] },
+      strip:{ h:"이번 주 할 일 1건 — 연간 반복 3건이 예보에 있습니다.", meta:["근거 4건","최근 2년 기안 주기","검증됨"] },
       engine:"forecast",
     },
     brief: {
       tab:"브리핑북", ic:"📖", clTitle:"브리핑북 · 업무 지도", clDesc:"이 업무의 절차, 협조처, 전임자의 주의 수칙",
-      strip:{ h:"요금정산 중간보고 — 업무 지도를 열었습니다.", meta:["근거 4건","반려 이력 2건 포함","검증됨"] },
+      strip:{ h:"순환수 펌프 정비공사 — 업무 지도를 열었습니다.", meta:["근거 5건","반려·감사 이력 3건 포함","검증됨"] },
       engine:"briefing",
     },
     draft: {
@@ -506,7 +521,7 @@
     },
     check: {
       tab:"사전점검", ic:"🛡️", clTitle:"기안 전 사전점검", clDesc:"올리기 전, 반려·감사 이력과 자동 대조",
-      strip:{ h:"기안 문안을 반려·감사 이력과 대조했습니다.", meta:["이력 5건 대조","확인 필요 2건"] },
+      strip:{ h:"기안 문안을 반려·감사 이력과 대조했습니다.", meta:["반려 1건 · 감사 지적 3건 대조","확인 필요 2건"] },
       engine:"precheck",
     },
   };
@@ -514,10 +529,10 @@
 
   /* ================= 라우팅 — 1단계: 질문 → 화면 ================= */
   const PATTERNS = {
-    today: [/이번 ?주/, /다음 ?주/, /이번 ?달/, /오늘/, /내일/, /일정/, /달력/, /스케줄/, /마감/, /디데이|D-?\d/i, /예보/, /반복/, /7월/, /언제/, /뭐 ?해야/],
-    brief: [/어떻게/, /절차/, /순서/, /누구/, /담당/, /연락/, /협조/, /인수인계/, /처음이/, /매뉴얼/, /브리핑/, /업무 ?지도/, /지침/, /규정/, /뭐부터/, /주의/],
-    draft: [/초안/, /기안 ?써/, /써 ?줘/, /작성해/, /만들어/, /양식/, /골격/, /서식/, /보고서 ?써/],
-    check: [/반려/, /점검/, /검토/, /올려도/, /올리기 ?전/, /결재 ?전/, /감사/, /지적/, /누락/, /리스크/, /괜찮/, /문제 ?없/],
+    today: [/이번 ?주/, /다음 ?주/, /이번 ?달/, /오늘/, /내일/, /일정/, /달력/, /스케줄/, /마감/, /디데이|D-?\d/i, /예보/, /반복/, /도래/, /언제/, /뭐 ?해야/],
+    brief: [/어떻게/, /절차/, /순서/, /누구/, /담당/, /연락/, /협조/, /협의/, /인수인계/, /처음이/, /매뉴얼/, /브리핑/, /업무 ?지도/, /지침/, /규정/, /뭐부터/, /주의/, /위험/, /조심/],
+    draft: [/초안/, /기안 ?써/, /써 ?줘/, /작성해/, /만들어/, /양식/, /골격/, /서식/, /보고서 ?써/, /품의 ?써/],
+    check: [/반려/, /점검/, /검토/, /올려도/, /올리기 ?전/, /결재 ?전/, /감사/, /지적/, /누락/, /리스크/, /괜찮/, /문제 ?없/, /선시공/],
   };
   function route(text){
     const t = (text||"").trim();
@@ -534,10 +549,10 @@
   /* ================= 예시 질문 — 전부 4화면 중 하나로 착지 ================= */
   const EXAMPLES = [
     {q:"이번 주 뭐 해야 해?", to:"today", hint:"오늘 · 일정과 예보"},
-    {q:"7월에 반복되는 업무 뭐 있어?", to:"today", hint:"오늘 · 반복 업무 예보"},
-    {q:"요금정산 중간보고, 어떻게 하는 거야?", to:"brief", hint:"브리핑북 · 업무 지도"},
+    {q:"이번 달 도래하는 반복 업무 있어?", to:"today", hint:"오늘 · 반복 업무 예보"},
+    {q:"순환수 펌프 정비공사, 어떻게 진행해?", to:"brief", hint:"브리핑북 · 업무 지도"},
     {q:"인수인계 받았는데 뭐부터 봐야 해?", to:"brief", hint:"브리핑북 · 전임자의 지도"},
-    {q:"작년 양식으로 중간보고 초안 써줘", to:"draft", hint:"초안 스튜디오"},
+    {q:"작년 양식으로 정비공사 보고 초안 써줘", to:"draft", hint:"초안 스튜디오"},
     {q:"이 기안 그대로 올려도 반려 안 나?", to:"check", hint:"기안 전 사전점검"},
   ];
 

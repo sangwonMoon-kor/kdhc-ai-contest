@@ -17,6 +17,7 @@
 - ✅ **기획서 v2.0 완성** — `docs/직무메모리_AI업무승계비서_기획서_v2.docx`
 - ✅ **데모 사이트 완성** — `demo/index.html` (서버 불필요, 더블클릭으로 오프라인 구동)
 - ✅ **Hello JARVIS 검색 목업 v2 = "질문 → 화면 착지"** (2026-07-08) — `demo/jarvis.html`. 검색창 하나 → 규칙 기반 의도 라우팅 → **4개 업무 화면(오늘·브리핑북·초안·사전점검)에 직접 착지**. 애매한 질문은 2단계 선택 카드로 좁히고 그 이상 되묻지 않음. 4화면은 팀원 엔진 기능(forecast·briefing·draft·precheck)과 1:1 매핑. Playwright 검증 23/23 통과. v1(질문→텍스트 답변)은 git 히스토리 b0cd4d9
+- ✅ **jarvis 유즈케이스 = 팀원 엔진과 통일** (2026-07-08) — 요금정산 → **지사 공무부 발전소 유지보수**(엔진 `service/src/corpus.js` OKF 팩 기준). 전임자 이지훈 과장, 순환수 펌프 정비공사(연 반복, D-3), 산출근거 표 누락 반려(2025.10), 감사 지적 3건(구두 설계변경·규격서 모델명·사진대지). 예시 질문은 엔진 QA가 실제 답하는 질문에서 발췌 → `/api/ask` 실연결 시 그대로 통함. ⚠️ `index.html` 본편·기획서는 아직 요금정산 기준 — 발표 서사와 엮여 있어 통일 여부는 팀 결정 필요
 - ✅ **관리자 콘솔 목업 추가** — `demo/admin.html`. 직원 화면에서 숨긴 인제스트·온톨로지·검증 상태·구조화 이벤트를 심사위원용으로 시각화
 - ✅ **JARVIS 디자인 시스템 = Apple 확정** — `docs/DESIGN.md`. `awesome-design-md`의 Apple 문법(SF Pro·여백·Action Blue 단일 액센트) 각색. `demo/jarvis.html`이 Apple판 정본, 이전 콘솔 시안은 `demo/jarvis-console.html` 백업(미채택)
 - ✅ **팀 기획안(HTML)** — [`docs/plan.html`](https://sangwonmoon-kor.github.io/kdhc-ai-contest/docs/plan.html). 문제·MVP(3일)·화면·역할·협업·기술·환경·학습 개념. 두 리포(얼굴×엔진) 통합 기준 문서
