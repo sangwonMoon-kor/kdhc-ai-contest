@@ -13,12 +13,13 @@
 - ✅ 컨셉 재정의 — 중심축 = **Hello JARVIS 검색 진입 → 업무 액션 → AX 반전**
 - ✅ `demo/jarvis.html` 추가 — 구글식 단일 검색창, 사내 근거 답변, 근거 문서, 초안/점검/브리핑 액션으로 이어지는 목업
 - ✅ `demo/admin.html` 추가 — 직원 화면에서 숨긴 인제스트·파싱·온톨로지·검증 상태·구조화 이벤트를 심사위원용으로 공개하는 관리자 콘솔
-- ✅ `docs/DESIGN.md` 갱신 — `awesome-design-md`의 xAI/SpaceX/VoltAgent 문법을 차용한 cinematic dark + technical console 디자인 기준
+- ✅ **디자인 = Apple 확정 (2026-07-08)** — `demo/jarvis.html`이 Apple판 정본(SF Pro·Action Blue 단일 액센트·검색창에만 정적 글로우·헤드라인만 입체). 콘솔/HUD 시안은 `demo/jarvis-console.html` 백업(미채택). `docs/DESIGN.md`도 Apple 기준으로 갱신 — 이후 모든 화면(admin 포함)은 이 문서로 정렬
 - ✅ 발표 서사 척추 (4막 8비트) 설계
 - ✅ **영상 스토리보드 확정** (영상 중심·자막 없음 · 매개체=PC 모니터/대시보드 · 캐릭터=사용자 첨부 레퍼런스 · Flow Omni 제작) — §4
 
 **대기 / 남은 일**
 - ⏳ **팀원 엔진 실동작 통합 포인트 확정**: 현재는 `admin.html`이 심사위원용 시각 증명 역할. 다음 단계에서 `creationy/jikmu-memory`의 QA·초안·사전점검·인제스트 API를 어느 순간 실호출로 연결할지 결정.
+- ⏳ **`demo/admin.html`을 Apple 톤으로 정렬**: 현재 콘솔 미감(시안 네온·모노) → `docs/DESIGN.md`의 Apple 토큰으로 재스킨(밀도는 유지).
 - ⏳ **최종 카피 확정**: 현재 간판 후보는 "Hello JARVIS? — 회사에 쌓인 기억이, 내가 하려던 일을 먼저 준비합니다."
 - ⏳ **스토리보드 → 실제 제작**: 각 샷 **Flow Omni로 생성**(캐릭터 레퍼런스 첨부) → CapCut 편집. SHOT 1은 현 오프닝 영상 재활용 가능.
 - ⏳ (선택) 스토리보드를 팀 공유용 비주얼 보드(웹)로 렌더.

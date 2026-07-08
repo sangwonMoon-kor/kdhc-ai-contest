@@ -18,7 +18,7 @@
 - ✅ **데모 사이트 완성** — `demo/index.html` (서버 불필요, 더블클릭으로 오프라인 구동)
 - ✅ **Hello JARVIS 검색 목업 추가** — `demo/jarvis.html`. 직원 대표 진입점을 "물어보면 근거와 다음 액션까지 준비하는 사내 AI"로 재정렬
 - ✅ **관리자 콘솔 목업 추가** — `demo/admin.html`. 직원 화면에서 숨긴 인제스트·온톨로지·검증 상태·구조화 이벤트를 심사위원용으로 시각화
-- ✅ **JARVIS 디자인 시스템 정렬** — `docs/DESIGN.md`. `awesome-design-md`의 xAI/SpaceX/VoltAgent 문법을 차용해 cinematic dark 검색 화면 + technical admin console로 재정의
+- ✅ **JARVIS 디자인 시스템 = Apple 확정** — `docs/DESIGN.md`. `awesome-design-md`의 Apple 문법(SF Pro·여백·Action Blue 단일 액센트) 각색. `demo/jarvis.html`이 Apple판 정본, 이전 콘솔 시안은 `demo/jarvis-console.html` 백업(미채택)
 - ✅ **S0 영상 오프닝 교체** — `opening.mp4`로 첫 출근 몰입을 만들고, 첫 CTA를 `Hello JARVIS?` 검색 진입으로 연결 (아래 상세)
 - ✅ **S5 "내 업무 매뉴얼" 화면 추가** — 밀착형 업무 매뉴얼 · 개인별 업무 자동 분류. 화면 6개 → 7개, 비전은 S6으로 밀림 (아래 상세)
 - ⬜ 기획서 v2에 "개인별 업무 분류(기반층)" + "밀착형 업무 매뉴얼" 반영 — 데모 문구가 발표자 피드백으로 확정된 뒤 진행
