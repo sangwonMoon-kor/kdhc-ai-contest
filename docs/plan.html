@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>직무 메모리 · 기획안</title>
+<!--
+  직무 메모리 — HTML 기획안 (정본: 이 파일)
+  디자인: docs/DESIGN.md (Apple 각색) 토큰 그대로 사용.
+  근거: sangwonMoon-kor/kdhc-ai-contest(얼굴) + creationy/jikmu-memory(엔진) 2026-07-08 시점 실상태.
+  엔진 수치(테스트 34+10, OKF 12클래스/18관계)는 로컬 클론에서 직접 실행·확인한 값.
+-->
+<style>
+  :root{
+    --canvas:#ffffff; --parchment:#f5f5f7; --pearl:#fafafc;
+    --ink:#1d1d1f; --ink-2:#424245; --ink-muted:#6e6e73; --ink-faint:#86868b;
+    --hairline:#d2d2d7; --divider:#eeeef0;
+    --accent:#0066cc; --accent-2:#0071e3;
+    --ok:#248a3d; --ok-bg:#e7f7ec; --warn:#9a6400; --warn-bg:#fbf1dd; --none:#86868b; --none-bg:#f0f0f2;
+    --shadow:0 4px 24px rgba(0,0,0,.08);
+    --sans:"SF Pro Display","SF Pro Text",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard Variable",Pretendard,"Malgun Gothic",system-ui,sans-serif;
+    --mono:ui-monospace,"SF Mono",Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --canvas:#000000; --parchment:#1c1c1e; --pearl:#161617;
+    --ink:#f5f5f7; --ink-2:#d2d2d7; --ink-muted:#a1a1a6; --ink-faint:#86868b;
+    --hairline:#3a3a3c; --divider:#2a2a2c;
+    --accent:#2997ff; --accent-2:#0a84ff;
+    --ok:#30d158; --ok-bg:#122a1a; --warn:#ff9f0a; --warn-bg:#2a2110; --none:#8a8a8e; --none-bg:#1c1c1e;
+    --shadow:0 6px 34px rgba(0,0,0,.55);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--sans);background:var(--canvas);color:var(--ink);font-size:17px;line-height:1.6;
+    letter-spacing:-.011em;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+  button{font:inherit;color:inherit;cursor:pointer;border:none;background:none}
+  ::selection{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+
+  .bar{position:sticky;top:0;z-index:20;height:48px;display:flex;align-items:center;gap:12px;padding:0 22px;
+    background:var(--canvas);border-bottom:1px solid var(--divider)}
+  .brand{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600}
+  .brand .mark{width:24px;height:24px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+  .brand .mark i{width:9px;height:9px;border-radius:3px;border:2px solid #fff;display:block}
+  .brand small{color:var(--ink-muted);font-weight:400;font-size:13px}
+  .bar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .bar .date{font-size:12px;color:var(--ink-faint)}
+  .toggle{width:32px;height:32px;border-radius:50%;background:var(--parchment);color:var(--ink-2);
+    display:flex;align-items:center;justify-content:center;font-size:14px}
+  .toggle:hover{background:var(--divider)}
+
+  .wrap{max-width:880px;margin:0 auto;padding:64px 24px 120px}
+  .hero-eyebrow{font-size:14px;font-weight:600;color:var(--accent);margin-bottom:14px}
+  h1{font-size:clamp(34px,5vw,52px);font-weight:600;letter-spacing:-.03em;line-height:1.08}
+  .hero-sub{margin-top:16px;font-size:19px;color:var(--ink-muted);line-height:1.5;max-width:640px}
+  .hero-sub b{color:var(--ink-2);font-weight:600}
+
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:32px 0 0}
+  .toc a{font-size:13.5px;font-weight:500;color:var(--accent);text-decoration:none;
+    background:var(--pearl);border:1px solid var(--divider);border-radius:9999px;padding:7px 14px}
+  .toc a:hover{border-color:var(--hairline)}
+
+  section{margin-top:72px;scroll-margin-top:70px}
+  .sec-no{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.02em}
+  h2{font-size:29px;font-weight:600;letter-spacing:-.022em;margin:6px 0 8px}
+  .sec-lead{color:var(--ink-muted);font-size:16.5px;margin-bottom:24px;max-width:660px}
+  h3{font-size:18px;font-weight:600;margin:28px 0 12px}
+
+  .statement{background:var(--pearl);border:1px solid var(--divider);border-radius:18px;padding:28px 30px;
+    font-size:21px;line-height:1.55;font-weight:500;letter-spacing:-.015em}
+  .statement .blue{color:var(--accent);font-weight:600}
+  .statement + .note{margin-top:14px}
+  .note{font-size:14.5px;color:var(--ink-muted);line-height:1.6}
+  .note b{color:var(--ink-2)}
+
+  .card{background:var(--pearl);border:1px solid var(--divider);border-radius:18px;overflow:hidden}
+  .card + .card{margin-top:14px}
+  .row{display:flex;gap:16px;align-items:flex-start;padding:16px 20px}
+  .row + .row{border-top:1px solid var(--divider)}
+  .row .k{flex-shrink:0;width:118px;font-size:13px;font-weight:600;color:var(--ink-faint);padding-top:2px}
+  .row .v{flex:1;font-size:15.5px;line-height:1.6}
+  .row .v b{font-weight:600}
+  .row .v .sub{display:block;font-size:13.5px;color:var(--ink-faint);margin-top:2px}
+
+  table{width:100%;border-collapse:collapse;background:var(--pearl);border:1px solid var(--divider);
+    border-radius:18px;overflow:hidden;font-size:15px}
+  .tablewrap{overflow-x:auto;border-radius:18px}
+  th{ text-align:left;font-size:12.5px;font-weight:600;color:var(--ink-faint);letter-spacing:.02em;
+    padding:13px 18px;border-bottom:1px solid var(--divider);background:var(--parchment)}
+  td{padding:14px 18px;border-bottom:1px solid var(--divider);vertical-align:top;line-height:1.55}
+  tr:last-child td{border-bottom:none}
+  td b{font-weight:600}
+  td .sub{display:block;font-size:13px;color:var(--ink-faint);margin-top:3px}
+
+  .pill{display:inline-block;font-size:12px;font-weight:600;border-radius:9999px;padding:3px 11px;white-space:nowrap}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)}
+  .pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.none{background:var(--none-bg);color:var(--none)}
+  .pill.blue{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+
+  /* flow diagram */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin:8px 0 6px}
+  .fstep{flex:1;min-width:132px;background:var(--pearl);border:1px solid var(--divider);border-radius:14px;padding:14px 14px 12px;position:relative}
+  .fstep .fn{font-size:11.5px;font-weight:600;color:var(--accent);margin-bottom:5px}
+  .fstep b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
+  .fstep span{display:block;font-size:12px;color:var(--ink-faint);margin-top:4px;line-height:1.45}
+  .fstep.hl{border-color:var(--accent);box-shadow:var(--shadow)}
+  .farr{align-self:center;color:var(--ink-faint);font-size:16px;flex-shrink:0}
+
+  pre{background:var(--pearl);border:1px solid var(--divider);border-radius:14px;padding:18px 20px;
+    font-family:var(--mono);font-size:13px;line-height:1.65;overflow-x:auto;color:var(--ink-2)}
+  pre .c{color:var(--ink-faint)}
+  code{font-family:var(--mono);font-size:.92em;background:var(--parchment);border-radius:6px;padding:1px 6px}
+
+  ul.clean{list-style:none}
+  ul.clean li{padding:9px 0 9px 26px;position:relative;font-size:15.5px;line-height:1.55}
+  ul.clean li+li{border-top:1px solid var(--divider)}
+  ul.clean li::before{content:"";position:absolute;left:6px;top:17px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  ul.clean li b{font-weight:600}
+  ul.clean li .why{display:block;font-size:13.5px;color:var(--ink-faint);margin-top:2px}
+
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:640px){.cols2{grid-template-columns:1fr}.row{flex-direction:column;gap:4px}.row .k{width:auto}}
+
+  footer{margin-top:88px;padding-top:22px;border-top:1px solid var(--divider);font-size:13px;color:var(--ink-faint);line-height:1.7}
+  footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand"><span class="mark"><i></i></span>직무 메모리 <small>· 기획안</small></div>
+  <div class="right">
+    <span class="date">2026-07-08 · v1</span>
+    <button class="toggle" id="themeBtn" onclick="toggleTheme()" aria-label="라이트/다크">◐</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero-eyebrow">사내 AI 경진대회 · 팀 기획안</div>
+  <h1>Hello JARVIS?<br>사람은 떠나도, 업무는 남게.</h1>
+  <p class="hero-sub">직원은 <b>편해서 쓰는 사내 AI</b>를 만나고, 회사는 그 사용의 <b>부산물로 AX-ready 데이터</b>를 얻는다.
+    두 리포(얼굴 × 엔진)를 하나의 발표로 합치기 위한 기획안.</p>
+
+  <nav class="toc">
+    <a href="#p1">1 문제</a><a href="#p2">2 개발 목표(MVP)</a><a href="#p3">3 화면</a><a href="#p4">4 역할</a>
+    <a href="#p5">5 협업 방식</a><a href="#p6">6 사용 기술</a><a href="#p7">7 환경</a><a href="#p8">8 학습 개념</a>
+  </nav>
+
+  <!-- ================= 1 문제 ================= -->
+  <section id="p1">
+    <div class="sec-no">01</div>
+    <h2>문제</h2>
+    <p class="sec-lead">우리 팀이 풀려는 문제 한 문장.</p>
+    <div class="statement">
+      순환보직으로 담당자가 바뀔 때마다 <span class="blue">업무 기억이 자리에서 사라지고</span>,
+      이를 해결할 데이터 구조화(AX)는 <span class="blue">"위에서 시키면 거부당하는 일"</span>이라는 것.
+    </div>
+    <p class="note"><b>해법 한 문장</b> — 직원이 자기 좋으라고 쓰는 업무 비서(Hello JARVIS)를 주면, 그 사용 행위 자체가
+      회사가 원하던 구조화가 된다. 강제가 아니라 <b>부산물로 AX</b>. (외부 AI를 못 쓰는 공기업 보안 환경이 오히려 해자가 된다.)</p>
+  </section>
+
+  <!-- ================= 2 MVP ================= -->
+  <section id="p2">
+    <div class="sec-no">02</div>
+    <h2>개발 목표 (MVP)</h2>
+    <p class="sec-lead">3일 안에 만들 첫 버전 — "질문 → 근거 답변 → 업무 액션 → 관리자 반전"이 <b>실제 엔진으로</b> 한 바퀴 도는 발표 데모.</p>
+
+    <div class="card">
+      <div class="row"><div class="k">완성 기준</div><div class="v">발표자가 검색창에 질문을 치면 <b>팀원 엔진의 실제 답</b>(근거·검증상태 포함)이 나오고,
+        액션 버튼으로 초안·사전점검까지 간 뒤, 관리자 콘솔에서 <b>같은 행동이 온톨로지로 쌓인 흔적</b>을 보여줄 수 있다.</div></div>
+      <div class="row"><div class="k">Day 1</div><div class="v"><b>도메인 정렬 + 관리자 재스킨.</b>
+        jarvis.html의 예시 질답을 구(요금정산) 세계관 → 엔진의 현 세계관(<b>발전소 유지보수</b>: 순환수 펌프 정비, 동절기 동파 대응 등)으로 교체.
+        admin.html을 Apple 톤으로 재스킨(밀도 유지).</div></div>
+      <div class="row"><div class="k">Day 2</div><div class="v"><b>실엔진 연결.</b> jarvis.html의 목업 데이터를 <code>/api/ask</code> 실호출로 교체(로컬 :8343 → Vercel URL).
+        admin.html에 <code>/api/graph</code>·<code>/api/summary</code> 실데이터 연결. 실패 시 목업 폴백 유지(발표 안전장치).</div></div>
+      <div class="row"><div class="k">Day 3</div><div class="v"><b>발표 동선 통합.</b> 오프닝 영상 → JARVIS 검색 → 답변 → 업무 액션 → 관리자 반전, 한 동선으로 리허설.
+        전체 화면녹화 백업 제작. 최종 카피 확정 반영.</div></div>
+      <div class="row"><div class="k">범위 밖</div><div class="v">실제 전자결재·그룹웨어 연동 / LLM 도입 / 로그인·권한 / 모바일 앱 — 전부 발표 후 과제.
+        <span class="sub">엔진이 무LLM 규칙기반인 것은 약점이 아니라 "환각 없음·감사 대응"이라는 차별점으로 프레이밍한다.</span></div></div>
+    </div>
+  </section>
+
+  <!-- ================= 3 화면 ================= -->
+  <section id="p3">
+    <div class="sec-no">03</div>
+    <h2>화면</h2>
+    <p class="sec-lead">필요한 화면과 화면 간 이동. 파란 테두리가 이번 MVP에서 손대는 화면.</p>
+
+    <div class="flow">
+      <div class="fstep"><div class="fn">S0</div><b>오프닝 영상</b><span>index.html · 첫 출근 몰입 → CTA "JARVIS에게 먼저 묻기"</span></div>
+      <div class="farr">→</div>
+      <div class="fstep hl"><div class="fn">진입</div><b>Hello JARVIS 홈</b><span>jarvis.html · 검색 한 줄 + 예시 질문 (구글식)</span></div>
+      <div class="farr">→</div>
+      <div class="fstep hl"><div class="fn">답변</div><b>결과 뷰</b><span>jarvis.html · 답변 + 근거문서 + 검증배지 + 다음 액션</span></div>
+      <div class="farr">→</div>
+      <div class="fstep"><div class="fn">액션</div><b>본편 데모 S1~S5</b><span>index.html · 브리핑북 / 일기예보 / 초안 / 사전점검 / 내 매뉴얼</span></div>
+      <div class="farr">→</div>
+      <div class="fstep hl"><div class="fn">반전</div><b>관리자 콘솔</b><span>admin.html · 인제스트 파이프라인 + OKF 그래프 + 검증 상태</span></div>
+    </div>
+    <p class="note">직원 동선(진입→답변→액션)에서는 온톨로지·파싱 같은 기술이 <b>절대 보이지 않는다</b>.
+      관리자 콘솔은 발표 클라이맥스에서만 열어 "편해서 쓴 행동이 어떻게 쌓였는지"를 공개한다(심사위원용 반전).
+      상세 서사는 <code>docs/concept-and-story.md</code> 4막 8비트 참조.</p>
+  </section>
+
+  <!-- ================= 4 역할 ================= -->
+  <section id="p4">
+    <div class="sec-no">04</div>
+    <h2>역할</h2>
+    <p class="sec-lead">누가 무엇을 맡는지 — "보이는 얼굴"과 "숨은 엔진"의 분업.</p>
+    <div class="tablewrap"><table>
+      <tr><th style="width:26%">담당</th><th>맡은 것</th><th style="width:34%">산출물 위치</th></tr>
+      <tr>
+        <td><b>문상원</b><span class="sub">포장 · 얼굴</span></td>
+        <td>컨셉·발표 서사, 디자인 시스템(Apple), Hello JARVIS 화면, 관리자 콘솔 화면, 오프닝 영상·스토리보드, 최종 카피, 리허설 주도</td>
+        <td><code>sangwonMoon-kor/kdhc-ai-contest</code><span class="sub">GitHub Pages로 라이브 서빙</span></td>
+      </tr>
+      <tr>
+        <td><b>팀원</b><span class="sub">기술 · 엔진</span></td>
+        <td>OKF 온톨로지 스키마(12클래스·18관계), 문서 파싱 파이프라인, 질의(QA)·브리핑·예보·초안·사전점검 API, 유즈케이스 데이터(발전소 유지보수), 엔진 테스트</td>
+        <td><code>creationy/jikmu-memory</code><span class="sub">service/ = 실동작 엔진 (검증: 테스트 34+10 통과)</span></td>
+      </tr>
+      <tr>
+        <td><b>공동</b></td>
+        <td>도메인 언어 통일(화면 문구 = 엔진 유즈케이스), API 계약 확정, 최종 카피 결정, 통합 리허설</td>
+        <td>이 기획안 + <code>docs/concept-and-story.md</code></td>
+      </tr>
+    </table></div>
+  </section>
+
+  <!-- ================= 5 협업 방식 ================= -->
+  <section id="p5">
+    <div class="sec-no">05</div>
+    <h2>협업 방식</h2>
+    <p class="sec-lead">팀을 어떻게 나눠 만들지 — 두 리포가 부딪히지 않고 마지막에 한 번에 합쳐지는 구조.</p>
+    <div class="card">
+      <div class="row"><div class="k">분업 원칙</div><div class="v">얼굴(내 리포)과 엔진(팀원 리포)은 <b>JSON API로만 만난다</b>.
+        화면은 목업 데이터로 먼저 완성하고, 통합일에 fetch URL만 실엔진으로 교체한다. 서로의 리포를 직접 고치지 않는다.</div></div>
+      <div class="row"><div class="k">API 계약</div><div class="v"><code>POST /api/ask</code>(질의) · <code>GET /api/briefing</code> · <code>GET /api/forecast</code> ·
+        <code>POST /api/draft</code> · <code>POST /api/check</code> · <code>GET /api/graph</code><span class="sub">응답 스키마가 바뀌면 팀원이 먼저 공유 → 화면 목업 데이터를 같은 모양으로 유지</span></div></div>
+      <div class="row"><div class="k">동기화 규칙</div><div class="v"><b>세션 시작 = 무조건 <code>git pull</code> 먼저.</b> 여러 계정·에이전트(Claude/Codex)가 같은 리포에 작업하므로,
+        로컬이 뒤처진 채 작업하면 유실된다. 산출물은 채팅·아티팩트에 두지 말고 <b>반드시 리포에 커밋</b>한다(이미 한 번 잃을 뻔한 교훈).</div></div>
+      <div class="row"><div class="k">정본 문서</div><div class="v">서사·현재 상태 = <code>docs/concept-and-story.md</code> · 디자인 = <code>docs/DESIGN.md</code> · 범위·역할 = <b>이 기획안</b>.
+        누가(어느 계정·어느 도구) 이어받아도 이 셋만 읽으면 같은 방향으로 간다.</div></div>
+      <div class="row"><div class="k">배포</div><div class="v">얼굴 = GitHub Pages(푸시하면 1~2분 내 자동 반영) · 엔진 = Vercel 서버리스(+KV 상태 유지). 발표장 네트워크 불안 대비: 정적 데모는 더블클릭 오프라인 구동 + 전체 동선 화면녹화 백업.</div></div>
+    </div>
+  </section>
+
+  <!-- ================= 6 사용 기술 ================= -->
+  <section id="p6">
+    <div class="sec-no">06</div>
+    <h2>사용 기술</h2>
+    <p class="sec-lead">어떤 기술과 라이브러리로 만들지 — 양쪽 다 "의존성 0"이 원칙.</p>
+    <div class="cols2">
+      <div class="card">
+        <div class="row"><div class="k">얼굴<br>(화면)</div><div class="v">
+          순수 HTML/CSS/JS — 프레임워크·빌드 없음, 더블클릭 실행<br>
+          Apple 디자인 토큰 (<code>docs/DESIGN.md</code>)<br>
+          Three.js r149 (S0 오프닝, <code>demo/vendor/</code> 로컬 번들)<br>
+          GitHub Pages (정적 호스팅)
+        </div></div>
+      </div>
+      <div class="card">
+        <div class="row"><div class="k">엔진<br>(API)</div><div class="v">
+          Node 18+ <b>내장 모듈만</b> (외부 패키지 0)<br>
+          <b>무LLM 규칙 기반</b> 추출 — 결정론적, 환각 없음<br>
+          OKF 온톨로지 (12클래스 / 18관계, kebab-case id)<br>
+          <code>node:http</code> 서버 + 파일/KV 영속 · Vercel 서버리스
+        </div></div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:14px"><b>제작 도구</b> — 컨셉 영상: Flow Omni(캐릭터 레퍼런스 첨부 생성) + CapCut 편집.
+      <b>왜 무LLM인가</b> — 공기업은 외부 AI 사용이 막혀 있고 감사 대응이 필수. "모든 답이 원문 근거로 추적되고, 모르면 모른다고 답하는" 규칙 기반 설계가 곧 차별점. (실서비스 전환 시 추출기를 사내 LLM으로 교체 가능한 구조는 이미 확보.)</p>
+  </section>
+
+  <!-- ================= 7 환경 ================= -->
+  <section id="p7">
+    <div class="sec-no">07</div>
+    <h2>환경</h2>
+    <p class="sec-lead">폴더 구조와 준비물.</p>
+
+    <h3>폴더 구조 — 두 리포</h3>
+<pre>
+<span class="c"># 얼굴 — sangwonMoon-kor/kdhc-ai-contest (문상원)</span>
+demo/
+  index.html            <span class="c"># 발표 데모 S0~S6 (오프라인 구동)</span>
+  jarvis.html           <span class="c"># Hello JARVIS 정본 (Apple판) ← 직원 진입점</span>
+  admin.html            <span class="c"># 관리자 콘솔 (Apple 재스킨 예정)</span>
+  jarvis-console.html   <span class="c"># 이전 콘솔 시안 백업 (미채택)</span>
+  assets/ vendor/ tests/
+docs/
+  DESIGN.md             <span class="c"># 디자인 정본 (Apple 각색)</span>
+  concept-and-story.md  <span class="c"># 서사·현재상태 정본 (이어받기용)</span>
+  plan.html             <span class="c"># 이 기획안</span>
+  PRD.md / PRD.docx
+
+<span class="c"># 엔진 — creationy/jikmu-memory (팀원)</span>
+service/
+  server.js             <span class="c"># 의존성 0 HTTP 서버 (:8343)</span>
+  src/                  <span class="c"># okf(스키마) · domain(발전소 유지보수) · nlp ·</span>
+                        <span class="c"># classify · segment · relations · pipeline ·</span>
+                        <span class="c"># graph · features · qa · corpus · store</span>
+  test/                 <span class="c"># engine.test.js(34) · qa.test.js(10)</span>
+  public/               <span class="c"># 엔진 자체 SPA</span>
+demo/ poc/ 직무메모리_PRD.md 외
+</pre>
+
+    <h3>준비물 · 실행법</h3>
+    <div class="card">
+      <div class="row"><div class="k">준비물</div><div class="v">git · Node 18+ · 브라우저. (선택) Vercel 계정 — 엔진 온라인 배포용. 그 외 설치할 것 없음.</div></div>
+      <div class="row"><div class="k">화면 실행</div><div class="v"><code>demo/index.html</code> 더블클릭(오프라인) 또는 <code>npx serve demo</code> → <code>localhost:3000/jarvis.html</code></div></div>
+      <div class="row"><div class="k">엔진 실행</div><div class="v"><code>cd service && node server.js</code> → <code>http://localhost:8343</code></div></div>
+      <div class="row"><div class="k">엔진 검증</div><div class="v"><code>node test/engine.test.js</code>(34개) · <code>node test/qa.test.js</code>(10개) — 통합 전 항상 이 두 개부터.</div></div>
+      <div class="row"><div class="k">라이브</div><div class="v">화면: <code>sangwonmoon-kor.github.io/kdhc-ai-contest/demo/jarvis.html</code> (푸시 시 자동 갱신)</div></div>
+    </div>
+  </section>
+
+  <!-- ================= 8 학습 개념 ================= -->
+  <section id="p8">
+    <div class="sec-no">08</div>
+    <h2>필요한 학습 개념</h2>
+    <p class="sec-lead">이 과제를 만들려면 무엇을 배워야 하는지 — 각 항목에 "왜 필요한지"를 붙였다.</p>
+    <ul class="clean">
+      <li><b>온톨로지·지식그래프 기초</b> — 노드/관계/근거(provenance)가 무엇인지.
+        <span class="why">왜: 관리자 콘솔과 발표 반전("이렇게 쌓였다")을 자기 언어로 설명할 수 있어야 심사에서 안 흔들린다.</span></li>
+      <li><b>OKF 스키마</b> — 12클래스(사례·업무단계·역할·설비·계약유형·문서·위험·제약·암묵지·언어렌즈·판단기준·맥락) / 18관계.
+        <span class="why">왜: 팀원 엔진의 공용어. 화면 라벨·그래프 시각화·발표 멘트가 전부 이 어휘를 그대로 쓴다.</span></li>
+      <li><b>발전소 유지보수 실무 흐름</b> — 문제인식→설계·내역→부서협의→계약→업체관리→현장변경→준공정산 등 11단계.
+        <span class="why">왜: 엔진의 현 유즈케이스 도메인. 화면 예시 질답을 이 세계관으로 정렬해야 통합이 어색하지 않다. (문상원은 현직이라 최대 강점.)</span></li>
+      <li><b>규칙 기반 한국어 정보추출</b> — 정규식·가제티어로 날짜/금액/조직/직급/업무를 뽑는 방법.
+        <span class="why">왜: "LLM 없이 어떻게 되나요?"라는 질문에 답해야 한다. 결정론적 = 같은 입력, 같은 출력 = 감사 대응.</span></li>
+      <li><b>근거 인용 UX 설계</b> — 신뢰도·검증상태(후보→작성자확인→동료확인→오너승인)·"근거 없음" 정직 표시.
+        <span class="why">왜: 이 제품의 신뢰 차별점이자, 환각 이슈를 원천 차단하는 화면 문법.</span></li>
+      <li><b>fetch와 JSON API 계약</b> — 비동기 호출, 스키마 맞추기, 실패 시 목업 폴백.
+        <span class="why">왜: 목업 → 실엔진 전환(Day 2)의 전부가 이것. 발표 중 네트워크가 죽어도 데모가 살아야 한다.</span></li>
+      <li><b>GitHub Pages · Vercel 배포</b> — 정적 호스팅과 서버리스 함수(+KV 상태)의 차이.
+        <span class="why">왜: 얼굴은 Pages, 엔진은 Vercel. 어디에 뭘 올리는지 팀 전체가 같은 그림이어야 한다.</span></li>
+      <li><b>Show, don't tell 발표 설계</b> — 자막 없는 영상 스토리보드, 시연 동선, 반전 배치.
+        <span class="why">왜: 이 제안의 승부처는 기술 나열이 아니라 "편해서 썼는데 AX가 되어 있었다"는 이야기 그 자체다.</span></li>
+    </ul>
+  </section>
+
+  <footer>
+    직무 메모리 · 사내 AI 경진대회 기획안 v1 (2026-07-08) —
+    <a href="https://github.com/sangwonMoon-kor/kdhc-ai-contest">kdhc-ai-contest</a>(얼굴) ×
+    <a href="https://github.com/creationy/jikmu-memory">jikmu-memory</a>(엔진)<br>
+    정본 문서: DESIGN.md(디자인) · concept-and-story.md(서사) · plan.html(이 문서). 수치(테스트 34+10, OKF 12/18)는 2026-07-08 로컬 실행으로 확인.
+  </footer>
+</div>
+
+<script>
+  function applyTheme(t){document.documentElement.setAttribute("data-theme",t);
+    document.getElementById("themeBtn").textContent=t==="dark"?"☀":"◐";}
+  function toggleTheme(){applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");}
+  applyTheme(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");
+</script>
+</body>
+</html>
