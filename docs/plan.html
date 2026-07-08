@@ -156,7 +156,21 @@
       이를 해결할 데이터 구조화(AX)는 <span class="blue">"위에서 시키면 거부당하는 일"</span>이라는 것.
     </div>
     <p class="note"><b>해법 한 문장</b> — 직원이 자기 좋으라고 쓰는 업무 비서(Hello JARVIS)를 주면, 그 사용 행위 자체가
-      회사가 원하던 구조화가 된다. 강제가 아니라 <b>부산물로 AX</b>. (외부 AI를 못 쓰는 공기업 보안 환경이 오히려 해자가 된다.)</p>
+      회사가 원하던 구조화가 된다. 강제가 아니라 <b>부산물로 AX</b>.</p>
+
+    <h3>우리가 동시에 풀어야 하는 4가지 조건</h3>
+    <p class="sec-lead" style="margin-bottom:14px">이 넷을 동시에 만족하는 매개체를 찾는 것이 기획의 실제 난제였다. 하나라도 어기면 "그냥 또 다른 사내 시스템"이 된다.</p>
+    <div class="card">
+      <div class="row"><div class="k">① 안 보임</div><div class="v">파싱·온톨로지 같은 기술적 백데이터는 실제 사용자 화면에 <b>절대 노출하지 않는다</b>.</div></div>
+      <div class="row"><div class="k">② 안 늘어남</div><div class="v">사용자 입장에서 <b>업무가 추가되면 안 된다</b>. "새로 배워야 하는 것"이 아니라 "쓰면 편하다"는 인상을 줘야 한다.</div></div>
+      <div class="row"><div class="k">③ 매개체는 유동적</div><div class="v">순환보직 공기업 특성상 접근하기 쉬운 소재로 <b>인수인계</b>를 썼지만, 더 편리하고 공감을 얻는 기능이 있으면 그걸 대표로 부각해도 된다 — 고정관념 아님.</div></div>
+      <div class="row"><div class="k">④ 뒷면 자동 전환</div><div class="v">결국 공감을 얻는 것은 "실제 사용자가 편하네" 하며 쓰는 것뿐이지만, 그 뒷면에서는 <b>지금까지 기술적으로 하려던 것(AX 구조화)이 자동으로 이뤄져야 한다</b>.</div></div>
+    </div>
+
+    <h3>왜 지금인가 — 보안 환경이 해자</h3>
+    <p class="note">공기업은 보안상 ChatGPT 등 외부 AI 도구를 사용하지 못한다. 이것은 제약이 아니라 <b>기회</b>다 — 외부 AI와
+      "더 잘 만들기" 경쟁을 할 필요가 없다. 사내에서 <b>유일하게 쓸 수 있는 AI</b>가 되는 순간, "이미 있는 걸 더 잘 만든 것"이 아니라
+      "원래 없던 걸 처음 준 것"이 된다. 바(bar)가 낮아진다 — 이 기획 전체의 전략적 지렛대.</p>
   </section>
 
   <!-- ================= 2 MVP ================= -->
@@ -166,7 +180,7 @@
     <p class="sec-lead">3일 안에 만들 첫 버전 — "질문 → 근거 답변 → 업무 액션 → 관리자 반전"이 <b>실제 엔진으로</b> 한 바퀴 도는 발표 데모.</p>
 
     <div class="card">
-      <div class="row"><div class="k">완성 기준</div><div class="v">발표자가 검색창에 질문을 치면 <b>팀원 엔진의 실제 답</b>(근거·검증상태 포함)이 나오고,
+      <div class="row"><div class="k">완성 기준</div><div class="v">발표자가 검색창에 질문을 치면 <b>팀원2 엔진의 실제 답</b>(근거·검증상태 포함)이 나오고,
         액션 버튼으로 초안·사전점검까지 간 뒤, 관리자 콘솔에서 <b>같은 행동이 온톨로지로 쌓인 흔적</b>을 보여줄 수 있다.</div></div>
       <div class="row"><div class="k">Day 1</div><div class="v"><b>도메인 정렬 + 관리자 재스킨.</b>
         jarvis.html의 예시 질답을 구(요금정산) 세계관 → 엔진의 현 세계관(<b>발전소 유지보수</b>: 순환수 펌프 정비, 동절기 동파 대응 등)으로 교체.
@@ -178,6 +192,10 @@
       <div class="row"><div class="k">범위 밖</div><div class="v">실제 전자결재·그룹웨어 연동 / LLM 도입 / 로그인·권한 / 모바일 앱 — 전부 발표 후 과제.
         <span class="sub">엔진이 무LLM 규칙기반인 것은 약점이 아니라 "환각 없음·감사 대응"이라는 차별점으로 프레이밍한다.</span></div></div>
     </div>
+    <p class="note" style="margin-top:14px"><b>왜 검색(질의)이 얼굴인가</b> — 초안 자동작성·즉답·사전점검·근거 자동첨부·업무 매뉴얼화까지
+      다섯 후보를 놓고 저울질했다. 처음엔 "과거 기안문을 지금 상황에 맞게 자동으로 다시 써주는" <b>초안 자동작성</b>이 4가지 조건을 가장 깔끔히
+      통과해 유력했지만, 팀원2 엔진에 근거 인용·검증상태를 갖춘 질의(QA)가 이미 실동작하는 것을 확인한 뒤 <b>검색형 질의를 얼굴로,
+      초안·점검·브리핑을 "그 AI가 해주는 일"로 재배치</b>했다 — 이유와 남은 긴장은 03 화면 참조.</p>
   </section>
 
   <!-- ================= 3 화면 ================= -->
@@ -200,6 +218,34 @@
     <p class="note">직원 동선(진입→답변→액션)에서는 온톨로지·파싱 같은 기술이 <b>절대 보이지 않는다</b>.
       관리자 콘솔은 발표 클라이맥스에서만 열어 "편해서 쓴 행동이 어떻게 쌓였는지"를 공개한다(심사위원용 반전).
       상세 서사는 <code>docs/concept-and-story.md</code> 4막 8비트 참조.</p>
+
+    <h3>왜 이 구조인가 — 얼굴의 3겹</h3>
+    <ul class="clean">
+      <li><b>얼굴 (채택을 이끄는 것)</b> = Hello JARVIS 검색.
+        <span class="why">왜: 진입장벽 0, 매일·전 직원 대상이라 "일단 써보게" 만드는 힘이 다섯 후보 중 가장 크다.</span></li>
+      <li><b>효용 (구조화가 실제로 쌓이는 곳)</b> = 검색 다음의 초안 자동작성·사전점검·브리핑·예보.
+        <span class="why">왜: 검색은 소비(읽기)라 그 자체로는 구조화가 약하다. 특히 초안 자동작성처럼 사용자가 결과를 승인·수정하는 행위가
+        가장 깨끗한 구조화 신호라, 답변 뒤 액션 1순위로 배치했다.</span></li>
+      <li><b>증명 (심사위원용)</b> = 관리자 콘솔의 인제스트 파이프라인·온톨로지 그래프.
+        <span class="why">왜: 직원에겐 숨기는 것을 심사위원에겐 "실제로 일어나고 있다"고 증명해야 하기 때문.</span></li>
+      <li><b>프레임 (감정)</b> = 인수인계·순환보직 서사 (오프닝·클로징).
+        <span class="why">왜: 조건③에서 정한 대로 인수인계는 고정된 정체성이 아니라 감정적 포장재 — 기능(질의)과 분리해 다루면 둘 다 더 또렷해진다.</span></li>
+    </ul>
+
+    <h3>"그거 챗GPT 아냐?" 방어선 <span class="pill blue">차별점</span></h3>
+    <p class="note">generic AI와 갈라지는 지점은 "AI가 답을 지어내는가, 회사 자신의 기록이 답하는가"다.
+      <b>"AI가 대신 써주는 게 아니라, 회사에 쌓인 기억이 다음 문서를 써준다."</b> 모든 답변에 근거 문서·검증 상태를 붙이고,
+      근거가 없으면 형광펜 없이 <b>"근거 없음"</b>을 그대로 보여준다 — 이 규칙이 깨지면 방어선 전체가 무너진다.</p>
+
+    <h3>미해결 텐션 <span class="pill warn">다음에 정리</span></h3>
+    <p class="note">검색창은 질문을 "받는" <b>리액티브</b> UX라 근거를 앞세우지 않으면 "그냥 챗봇 아니냐"는 반박에 가장 취약한 지점이다.
+      반대로 초안 자동작성·업무 예보처럼 <b>"물어보지 않아도 먼저 준비돼 있는"</b> 프로액티브 경험이 훨씬 강한 차별점이다.
+      → 결과 화면에서 "이미 준비된 초안이 있습니다" 식으로 프로액티브 신호를 액션 버튼·뱃지로 앞세우는 연출이 필요하다. 통합 리허설(Day 3) 전 확정.</p>
+
+    <h3>반전 화면 워딩 원칙</h3>
+    <p class="note">직원의 노력을 깎거나 회사가 몰래 이용하는 뉘앙스는 금지 — <code>"한 일이 있나요? 없습니다"</code>,
+      <code>"몰래 / 위장했습니다"</code>, <code>"시킨 사람은 없었다"</code> 같은 표현은 쓰지 않는다.
+      대신 <b>"그가 자기 일을 잘 해낸 것 자체가 회사에 보탬이 됐다"</b>는 더하기 프레임으로 쓴다.</p>
   </section>
 
   <!-- ================= 4 역할 ================= -->
@@ -210,12 +256,12 @@
     <div class="tablewrap"><table>
       <tr><th style="width:26%">담당</th><th>맡은 것</th><th style="width:34%">산출물 위치</th></tr>
       <tr>
-        <td><b>문상원</b><span class="sub">포장 · 얼굴</span></td>
-        <td>컨셉·발표 서사, 디자인 시스템(Apple), Hello JARVIS 화면, 관리자 콘솔 화면, 오프닝 영상·스토리보드, 최종 카피, 리허설 주도</td>
+        <td><b>팀원1</b><span class="sub">기획 · 포장 · 얼굴</span></td>
+        <td>컨셉·발표 서사, 히어로 기능 선정(4조건·후보 비교), 디자인 시스템(Apple), Hello JARVIS 화면, 관리자 콘솔 화면, 오프닝 영상·스토리보드, 최종 카피, 리허설 주도</td>
         <td><code>sangwonMoon-kor/kdhc-ai-contest</code><span class="sub">GitHub Pages로 라이브 서빙</span></td>
       </tr>
       <tr>
-        <td><b>팀원</b><span class="sub">기술 · 엔진</span></td>
+        <td><b>팀원2</b><span class="sub">기술 · 엔진</span></td>
         <td>OKF 온톨로지 스키마(12클래스·18관계), 문서 파싱 파이프라인, 질의(QA)·브리핑·예보·초안·사전점검 API, 유즈케이스 데이터(발전소 유지보수), 엔진 테스트</td>
         <td><code>creationy/jikmu-memory</code><span class="sub">service/ = 실동작 엔진 (검증: 테스트 34+10 통과)</span></td>
       </tr>
@@ -233,15 +279,23 @@
     <h2>협업 방식</h2>
     <p class="sec-lead">팀을 어떻게 나눠 만들지 — 두 리포가 부딪히지 않고 마지막에 한 번에 합쳐지는 구조.</p>
     <div class="card">
-      <div class="row"><div class="k">분업 원칙</div><div class="v">얼굴(내 리포)과 엔진(팀원 리포)은 <b>JSON API로만 만난다</b>.
+      <div class="row"><div class="k">분업 원칙</div><div class="v">얼굴(팀원1 리포)과 엔진(팀원2 리포)은 <b>JSON API로만 만난다</b>.
         화면은 목업 데이터로 먼저 완성하고, 통합일에 fetch URL만 실엔진으로 교체한다. 서로의 리포를 직접 고치지 않는다.</div></div>
       <div class="row"><div class="k">API 계약</div><div class="v"><code>POST /api/ask</code>(질의) · <code>GET /api/briefing</code> · <code>GET /api/forecast</code> ·
-        <code>POST /api/draft</code> · <code>POST /api/check</code> · <code>GET /api/graph</code><span class="sub">응답 스키마가 바뀌면 팀원이 먼저 공유 → 화면 목업 데이터를 같은 모양으로 유지</span></div></div>
+        <code>POST /api/draft</code> · <code>POST /api/check</code> · <code>GET /api/graph</code><span class="sub">응답 스키마가 바뀌면 팀원2가 먼저 공유 → 화면 목업 데이터를 같은 모양으로 유지</span></div></div>
       <div class="row"><div class="k">동기화 규칙</div><div class="v"><b>세션 시작 = 무조건 <code>git pull</code> 먼저.</b> 여러 계정·에이전트(Claude/Codex)가 같은 리포에 작업하므로,
         로컬이 뒤처진 채 작업하면 유실된다. 산출물은 채팅·아티팩트에 두지 말고 <b>반드시 리포에 커밋</b>한다(이미 한 번 잃을 뻔한 교훈).</div></div>
       <div class="row"><div class="k">정본 문서</div><div class="v">서사·현재 상태 = <code>docs/concept-and-story.md</code> · 디자인 = <code>docs/DESIGN.md</code> · 범위·역할 = <b>이 기획안</b>.
         누가(어느 계정·어느 도구) 이어받아도 이 셋만 읽으면 같은 방향으로 간다.</div></div>
       <div class="row"><div class="k">배포</div><div class="v">얼굴 = GitHub Pages(푸시하면 1~2분 내 자동 반영) · 엔진 = Vercel 서버리스(+KV 상태 유지). 발표장 네트워크 불안 대비: 정적 데모는 더블클릭 오프라인 구동 + 전체 동선 화면녹화 백업.</div></div>
+      <div class="row"><div class="k">가설 검증<span class="pill blue" style="margin-top:6px;display:inline-block">권장</span></div><div class="v">
+        지금의 히어로 선정(질의 vs 초안작성 vs 사전점검)은 아직 <b>추론에 근거한 가설</b>이다. 동료 5~10명에게
+        "업무 중 이게 자동으로 됐으면 싶은 순간이 언제냐"를 직접 물어 검증하면, 발표에 <b>"동료 N명 중 1순위 고통이 X"</b>라는
+        실증 크레딧으로 쓸 수 있다. 30분이면 끝나는, 지금 가장 저렴하고 효과 큰 액션.</div></div>
+      <div class="row"><div class="k">남은 미결정</div><div class="v">
+        <b>(a) 최초 코퍼스 적재</b> — 발령 첫날 브리핑이 뜨려면 전임자의 과거 문서가 이미 적재돼 있어야 한다.
+        그 주체·권한을 "회사 자산의 1회 벌크 이관(top-down) → 이후 개인 사용이 정제(bottom-up)"로 설명할지 확정 필요.
+        <b>(b) 사내망 배포 현실성</b> — 결정론적 엔진(또는 향후 사내 LLM)을 실제 사내망에 올릴 수 있는지 한 줄 답변 준비.</div></div>
     </div>
   </section>
 
@@ -280,7 +334,7 @@
 
     <h3>폴더 구조 — 두 리포</h3>
 <pre>
-<span class="c"># 얼굴 — sangwonMoon-kor/kdhc-ai-contest (문상원)</span>
+<span class="c"># 얼굴 — sangwonMoon-kor/kdhc-ai-contest (팀원1)</span>
 demo/
   index.html            <span class="c"># 발표 데모 S0~S6 (오프라인 구동)</span>
   jarvis.html           <span class="c"># Hello JARVIS 정본 (Apple판) ← 직원 진입점</span>
@@ -293,7 +347,7 @@ docs/
   plan.html             <span class="c"># 이 기획안</span>
   PRD.md / PRD.docx
 
-<span class="c"># 엔진 — creationy/jikmu-memory (팀원)</span>
+<span class="c"># 엔진 — creationy/jikmu-memory (팀원2)</span>
 service/
   server.js             <span class="c"># 의존성 0 HTTP 서버 (:8343)</span>
   src/                  <span class="c"># okf(스키마) · domain(발전소 유지보수) · nlp ·</span>
@@ -320,12 +374,14 @@ demo/ poc/ 직무메모리_PRD.md 외
     <h2>필요한 학습 개념</h2>
     <p class="sec-lead">이 과제를 만들려면 무엇을 배워야 하는지 — 각 항목에 "왜 필요한지"를 붙였다.</p>
     <ul class="clean">
+      <li><b>"직원 속마음 문장" 판별법</b> — 새 기능이 "직원이 이미 머릿속으로 하던 말"(예: "이거 어떻게 처리하지", "작년 파일 어디 있더라")에 정확히 대응하는지 보는 틀.
+        <span class="why">왜: 대응하면 "새 기능"이 아니라 "내가 원하던 그거"로 느껴진다. 이번 기획의 히어로 후보 5개(초안작성·즉답·사전점검·근거첨부·매뉴얼화)를 비교할 때 실제로 쓴 잣대이고, 앞으로 기능을 더할 때도 같은 기준으로 걸러야 한다.</span></li>
       <li><b>온톨로지·지식그래프 기초</b> — 노드/관계/근거(provenance)가 무엇인지.
         <span class="why">왜: 관리자 콘솔과 발표 반전("이렇게 쌓였다")을 자기 언어로 설명할 수 있어야 심사에서 안 흔들린다.</span></li>
       <li><b>OKF 스키마</b> — 12클래스(사례·업무단계·역할·설비·계약유형·문서·위험·제약·암묵지·언어렌즈·판단기준·맥락) / 18관계.
-        <span class="why">왜: 팀원 엔진의 공용어. 화면 라벨·그래프 시각화·발표 멘트가 전부 이 어휘를 그대로 쓴다.</span></li>
+        <span class="why">왜: 팀원2 엔진의 공용어. 화면 라벨·그래프 시각화·발표 멘트가 전부 이 어휘를 그대로 쓴다.</span></li>
       <li><b>발전소 유지보수 실무 흐름</b> — 문제인식→설계·내역→부서협의→계약→업체관리→현장변경→준공정산 등 11단계.
-        <span class="why">왜: 엔진의 현 유즈케이스 도메인. 화면 예시 질답을 이 세계관으로 정렬해야 통합이 어색하지 않다. (문상원은 현직이라 최대 강점.)</span></li>
+        <span class="why">왜: 엔진의 현 유즈케이스 도메인. 화면 예시 질답을 이 세계관으로 정렬해야 통합이 어색하지 않다. (팀원1은 현직이라 최대 강점.)</span></li>
       <li><b>규칙 기반 한국어 정보추출</b> — 정규식·가제티어로 날짜/금액/조직/직급/업무를 뽑는 방법.
         <span class="why">왜: "LLM 없이 어떻게 되나요?"라는 질문에 답해야 한다. 결정론적 = 같은 입력, 같은 출력 = 감사 대응.</span></li>
       <li><b>근거 인용 UX 설계</b> — 신뢰도·검증상태(후보→작성자확인→동료확인→오너승인)·"근거 없음" 정직 표시.
