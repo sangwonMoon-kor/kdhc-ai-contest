@@ -16,7 +16,7 @@
 
 - ✅ **기획서 v2.0 완성** — `docs/직무메모리_AI업무승계비서_기획서_v2.docx`
 - ✅ **데모 사이트 완성** — `demo/index.html` (서버 불필요, 더블클릭으로 오프라인 구동)
-- ✅ **Hello JARVIS 검색 목업 추가** — `demo/jarvis.html`. 직원 대표 진입점을 "물어보면 근거와 다음 액션까지 준비하는 사내 AI"로 재정렬
+- ✅ **Hello JARVIS 검색 목업 v2 = "질문 → 화면 착지"** (2026-07-08) — `demo/jarvis.html`. 검색창 하나 → 규칙 기반 의도 라우팅 → **4개 업무 화면(오늘·브리핑북·초안·사전점검)에 직접 착지**. 애매한 질문은 2단계 선택 카드로 좁히고 그 이상 되묻지 않음. 4화면은 팀원 엔진 기능(forecast·briefing·draft·precheck)과 1:1 매핑. Playwright 검증 23/23 통과. v1(질문→텍스트 답변)은 git 히스토리 b0cd4d9
 - ✅ **관리자 콘솔 목업 추가** — `demo/admin.html`. 직원 화면에서 숨긴 인제스트·온톨로지·검증 상태·구조화 이벤트를 심사위원용으로 시각화
 - ✅ **JARVIS 디자인 시스템 = Apple 확정** — `docs/DESIGN.md`. `awesome-design-md`의 Apple 문법(SF Pro·여백·Action Blue 단일 액센트) 각색. `demo/jarvis.html`이 Apple판 정본, 이전 콘솔 시안은 `demo/jarvis-console.html` 백업(미채택)
 - ✅ **팀 기획안(HTML)** — [`docs/plan.html`](https://sangwonmoon-kor.github.io/kdhc-ai-contest/docs/plan.html). 문제·MVP(3일)·화면·역할·협업·기술·환경·학습 개념. 두 리포(얼굴×엔진) 통합 기준 문서
@@ -115,7 +115,8 @@ demo/admin.html 더블클릭 → 숨은 엔진/AX 전환 관리자 콘솔 실행
 - 화면 이동: `←` `→` 방향키, 또는 숫자키 `0`~`6`으로 직행
 - `A` 키: 업무 일기예보 화면(S2)에서 알림 배너 재연출
 - 딥링크: `index.html#s4` 뒤에 `?auto=1`을 붙이면 사전 점검 화면이 자동 실행됨
-- `jarvis.html` 예시 질문: 정산시스템 전환 선행 확인 / 요금정산 중간보고 / 산출근거 표 누락 / 7월 반복 업무
+- `jarvis.html` 흐름: 질문 입력 → 오늘/브리핑북/초안/사전점검 중 한 화면으로 착지 (애매하면 선택 카드 한 번).
+  딥링크 `jarvis.html#today` `#brief` `#draft` `#check`, ESC = 처음으로, 예시 질문 6종은 화면 4개를 모두 커버
 
 화면 구성: S0 인트로 → S1 브리핑북 → S2 업무 일기예보 → S3 초안 → S4 사전 점검 →
 **S5 내 업무 매뉴얼(6개월 뒤)** → S6 비전.
