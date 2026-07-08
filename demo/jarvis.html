@@ -152,9 +152,20 @@
 
   .search{position:relative;max-width:620px;margin:46px auto 0}
   .ai-glow{position:absolute;inset:-4px;border-radius:22px;z-index:0;opacity:.3;pointer-events:none;
-    background:linear-gradient(120deg,#0a84ff,#5e5ce6 38%,#bf5af2 62%,#0a84ff);
-    filter:blur(18px);transition:opacity .5s}
-  .search:focus-within .ai-glow{opacity:.55}
+    background:linear-gradient(120deg,#0a84ff,#5e5ce6 30%,#bf5af2 52%,#ff9f0a 74%,#0a84ff);
+    background-size:280% 280%;filter:blur(18px);
+    animation:glowmove 7s linear infinite, glowpulse 3.4s ease-in-out infinite}
+  .search:focus-within .ai-glow{animation-duration:3.2s,1.6s}
+  @keyframes glowmove{from{background-position:0% 50%}to{background-position:280% 50%}}
+  @keyframes glowpulse{0%,100%{opacity:.24;filter:blur(17px)}50%{opacity:.58;filter:blur(24px)}}
+
+  /* 타자 인트로 + 순차 등장 */
+  .type-caret{display:inline-block;width:4px;height:.8em;margin-left:7px;border-radius:2px;
+    background:var(--accent);transform:translateY(.08em);animation:blink .85s step-end infinite;transition:opacity .45s}
+  .type-caret.off{opacity:0}
+  @keyframes blink{50%{opacity:0}}
+  .rise{opacity:0;transform:translateY(14px);transition:opacity .65s cubic-bezier(.22,1,.36,1),transform .65s cubic-bezier(.22,1,.36,1)}
+  .rise.in{opacity:1;transform:none}
   .field{position:relative;z-index:1;display:flex;align-items:center;gap:10px;background:var(--parchment);
     border:1px solid transparent;border-radius:var(--r-lg);padding:6px 6px 6px 20px;box-shadow:var(--shadow);transition:background .25s,border-color .25s}
   .search:focus-within .field{background:var(--canvas);border-color:var(--hairline)}
@@ -379,11 +390,11 @@
 
     <div class="hero-center">
       <div class="logo-tile"><div class="mark-lg"><i></i></div></div>
-      <h1 class="display"><span class="d3">Hello,</span> <span class="d3 accent">JARVIS?</span></h1>
-      <div class="display-sub">일한 만큼, 준비됩니다.</div>
-      <p class="lead">오늘의 나에게도, 내일의 나에게도.</p>
+      <h1 class="display" aria-label="Hello, JARVIS?"><span class="d3" id="tw1"></span> <span class="d3 accent" id="tw2"></span><span class="type-caret" id="twCaret" aria-hidden="true"></span></h1>
+      <div class="display-sub rise" id="subLine">일한 만큼, 준비됩니다.</div>
+      <p class="lead rise" id="leadLine">오늘의 나에게도, 내일의 나에게도.</p>
 
-      <div class="search">
+      <div class="search rise" id="searchWrap">
         <div class="ai-glow" aria-hidden="true"></div>
         <form class="field" onsubmit="return ask()">
           <span class="ico" aria-hidden="true">⌕</span>
@@ -394,7 +405,7 @@
     </div>
   </div>
 
-  <div class="entry-below">
+  <div class="entry-below rise" id="entryBelow">
     <div class="ex-label">이렇게 물어보세요 — 질문은 아래 4개 화면 중 하나로 착지합니다</div>
     <div class="ex-grid" id="exGrid"></div>
   </div>
@@ -757,6 +768,35 @@
       if(seq === engineSeq) el.style.display = "none";   // 오프라인/차단 → 조용히 목업만
     }finally{ clearTimeout(to); }
   }
+
+  /* ================= 홈 인트로 — 타자 → 캐치프레이즈 순차 등장 ================= */
+  (function heroIntro(){
+    const t1 = $("tw1"), t2 = $("tw2"), caret = $("twCaret");
+    const seqEls = [$("subLine"), $("leadLine"), $("searchWrap"), $("entryBelow")];
+    function showAll(){
+      t1.textContent = "Hello,"; t2.textContent = "JARVIS?";
+      if(caret) caret.remove();
+      seqEls.forEach(el => el && el.classList.add("in"));
+    }
+    // 딥링크 진입·모션 최소화 설정이면 즉시 완성 상태로
+    if(location.hash || window.matchMedia("(prefers-reduced-motion: reduce)").matches){ showAll(); return; }
+    function type(el, text, done){
+      el.after(caret);
+      let i = 0;
+      const iv = setInterval(() => {
+        el.textContent = text.slice(0, ++i);
+        if(i >= text.length){ clearInterval(iv); done && done(); }
+      }, 64);
+    }
+    setTimeout(() => {
+      type(t1, "Hello,", () => setTimeout(() => {
+        type(t2, "JARVIS?", () => {
+          setTimeout(() => { caret.classList.add("off"); setTimeout(() => caret.remove(), 500); }, 900);
+          seqEls.forEach((el, i) => el && setTimeout(() => el.classList.add("in"), 320 + i * 300));
+        });
+      }, 200));
+    }, 450);
+  })();
 
   function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
