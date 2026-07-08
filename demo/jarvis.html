@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hello JARVIS? · 직무 메모리</title>
+<!--
+  Hello JARVIS? — 직무 메모리 검색 목업 (재조립본)
+  기준: docs/DESIGN.md (IBM Carbon 각색 + 웜 액센트)
+  플랫 0-radius · 화이트/차콜 · 얇은 헤어라인 타일 · 그림자 없음 · 라이트 웨이트 대형 디스플레이 · 8px 그리드 · 시맨틱 상태색
+  원본 아티팩트가 리포에 커밋되지 않아(다른 계정 소유) DESIGN.md 기준으로 재조립함.
+-->
+<style>
+  /* ============ tokens (docs/DESIGN.md) ============ */
+  :root{
+    --canvas:#ffffff; --surface-1:#f5f3f0; --surface-2:#e8e4dd;
+    --ink:#17181a; --ink-muted:#565961; --ink-subtle:#8a8d94;
+    --hairline:#e3dfd7; --hairline-strong:#c9c3b8;
+    --accent:#e8590c; --accent-deep:#b8470a; --accent-soft:#fbeee4; --accent-line:#f2c8a9;
+    --ok:#198038; --ok-soft:#e6f3ea; --warn:#8a6d00; --warn-soft:#f7f0dc; --danger:#da1e28; --danger-soft:#fbeaea;
+    --sans:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  }
+  html[data-theme="dark"]{
+    --canvas:#161719; --surface-1:#1e2023; --surface-2:#262a2e;
+    --ink:#f2f1ee; --ink-muted:#a0a3ab; --ink-subtle:#71747c;
+    --hairline:#2c2f34; --hairline-strong:#3c4046;
+    --accent:#f2792f; --accent-deep:#e8590c; --accent-soft:#2a2119; --accent-line:#5a3d24;
+    --ok:#42be65; --ok-soft:#182a1e; --warn:#d2a106; --warn-soft:#2a2410; --danger:#fa4d56; --danger-soft:#2d1719;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:var(--sans);background:var(--canvas);color:var(--ink);font-size:15.5px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;transition:background .25s, color .25s}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  ::selection{background:var(--accent-soft);color:var(--accent-deep)}
+
+  /* ============ eyebrow / label ============ */
+  .label{font-size:12.5px;font-weight:600;letter-spacing:.08em;color:var(--ink-subtle)}
+  .label .lat{text-transform:uppercase}
+
+  /* ============ top bar ============ */
+  .bar{display:flex;align-items:center;gap:14px;height:52px;padding:0 24px;border-bottom:1px solid var(--hairline)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.01em}
+  .brand .mark{width:24px;height:24px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+  .brand .mark i{width:10px;height:10px;border:2px solid #fff;display:block}
+  .brand small{font-weight:400;color:var(--ink-muted);font-size:12.5px}
+  .bar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .proto{font-size:12px;color:var(--ink-subtle);border:1px solid var(--hairline);padding:4px 10px}
+  .toggle{width:34px;height:34px;border:1px solid var(--hairline-strong);display:flex;align-items:center;justify-content:center;
+    font-size:15px;transition:border-color .15s, background .15s}
+  .toggle:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+  /* ============ views ============ */
+  .view{display:none}
+  .view.active{display:block;animation:fade .35s cubic-bezier(.16,1,.3,1)}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.view.active{animation:none}*{transition-duration:.001s!important;animation-duration:.001s!important}}
+
+  /* ============ ENTRY ============ */
+  .entry-inner{max-width:720px;margin:0 auto;padding:96px 24px 64px;text-align:center}
+  .entry .mark-lg{width:56px;height:56px;background:var(--accent);margin:0 auto 32px;display:flex;align-items:center;justify-content:center}
+  .entry .mark-lg i{width:22px;height:22px;border:3px solid #fff;display:block}
+  .display{font-size:clamp(38px,5.4vw,58px);font-weight:300;letter-spacing:-.03em;line-height:1.05}
+  .display .accent{color:var(--accent)}
+  .lead{margin-top:20px;font-size:17px;font-weight:400;color:var(--ink-muted);line-height:1.5}
+
+  /* Carbon field */
+  .field{margin:40px auto 0;max-width:640px;display:flex;align-items:stretch;background:var(--surface-1);
+    border:1px solid var(--hairline);border-bottom:2px solid var(--hairline-strong);transition:border-color .15s}
+  .field:focus-within{border-color:var(--accent);border-bottom-color:var(--accent)}
+  .field .ico{display:flex;align-items:center;padding:0 4px 0 16px;color:var(--ink-subtle);font-size:19px}
+  .field input{flex:1;background:none;border:none;outline:none;color:var(--ink);font:inherit;font-size:16px;padding:15px 12px}
+  .field input::placeholder{color:var(--ink-subtle)}
+  .field .go{background:var(--accent);color:#fff;font-weight:600;font-size:15px;padding:0 22px;transition:background .15s}
+  .field .go:hover{background:var(--accent-deep)}
+
+  /* examples */
+  .examples{margin-top:40px;text-align:left}
+  .ex-label{margin-bottom:12px}
+  .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--hairline)}
+  .tile{text-align:left;padding:16px 18px;font-size:14.5px;color:var(--ink);line-height:1.45;background:var(--canvas);
+    border-right:1px solid var(--hairline);border-bottom:1px solid var(--hairline);transition:background .15s, box-shadow .15s;position:relative}
+  .ex-grid .tile:nth-child(2n){border-right:none}
+  .ex-grid .tile:nth-last-child(-n+2){border-bottom:none}
+  .tile:hover{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--accent)}
+  .tile .q{font-weight:500}
+  .tile .h{display:block;margin-top:5px;font-size:12.5px;color:var(--ink-subtle);letter-spacing:.02em}
+
+  /* ============ RESULTS ============ */
+  .results-inner{max-width:840px;margin:0 auto;padding:32px 24px 80px}
+  .field.sm{margin:0 0 32px;max-width:none}
+  .field.sm input{font-size:15px;padding:12px}
+  .field .back{display:flex;align-items:center;padding:0 14px;color:var(--ink-muted);font-size:18px;border-right:1px solid var(--hairline);transition:color .15s,background .15s}
+  .field .back:hover{color:var(--accent);background:var(--accent-soft)}
+
+  .block{margin-bottom:36px}
+  .block > .label{margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .block > .label .sep{width:3px;height:3px;background:var(--ink-subtle)}
+  .verified{color:var(--ok);font-weight:600}
+
+  .answer-q{font-size:clamp(22px,2.6vw,28px);font-weight:500;letter-spacing:-.02em;line-height:1.3;margin-bottom:18px}
+  .answer-body{font-size:16px;line-height:1.75;color:var(--ink)}
+  .answer-body p+p{margin-top:14px}
+  .em{background:none;color:var(--ink);font-weight:600;border-bottom:2px solid var(--accent);padding-bottom:1px}
+  .cite{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);border:1px solid var(--accent-line);
+    border-radius:2px;font-size:12.5px;font-weight:500;color:var(--accent-deep);padding:1px 8px;white-space:nowrap;vertical-align:1px;margin:0 1px}
+  .cite b{font-weight:700}
+
+  /* source list — square numbers, hairline grid, no shadow */
+  .src-list{list-style:none;border:1px solid var(--hairline)}
+  .src{display:flex;align-items:flex-start;gap:16px;padding:16px 18px;transition:background .15s}
+  .src+.src{border-top:1px solid var(--hairline)}
+  .src:hover{background:var(--surface-1)}
+  .src .num{width:28px;height:28px;flex-shrink:0;background:var(--surface-2);color:var(--ink);font-size:13px;font-weight:600;
+    display:flex;align-items:center;justify-content:center}
+  .src-main{flex:1;min-width:0}
+  .src-title{font-size:15px;font-weight:500;line-height:1.4}
+  .src-note{font-size:13px;color:var(--ink-subtle);margin-top:3px;letter-spacing:.01em}
+  .src-meta{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .conf{font-size:13px;font-weight:700;color:var(--ink-muted);font-variant-numeric:tabular-nums}
+  .badge{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:0;white-space:nowrap;letter-spacing:.02em}
+  .badge.ok{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+  .badge.none{background:var(--surface-1);color:var(--ink-subtle);border:1px solid var(--hairline-strong)}
+
+  /* actions — square buttons */
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;padding:13px 20px;transition:background .15s, border-color .15s, color .15s}
+  .btn .arr{transition:transform .18s}
+  .btn:hover .arr{transform:translateX(3px)}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-deep)}
+  .btn-ghost{background:var(--canvas);border:1px solid var(--hairline-strong);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-deep)}
+
+  .disclaimer{font-size:13px;color:var(--ink-muted);line-height:1.6;border-left:2px solid var(--hairline-strong);padding:2px 0 2px 14px}
+  .disclaimer b{color:var(--ink);font-weight:600}
+
+  /* loading */
+  .thinking{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:500;color:var(--accent-deep);padding:8px 0}
+  .thinking .spin{width:14px;height:14px;border:2px solid var(--accent-line);border-top-color:var(--accent);border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+  .skel{height:14px;background:var(--surface-1);margin:11px 0}
+  .skel.w80{width:80%}.skel.w60{width:60%}
+
+  @media (max-width:600px){
+    .bar{gap:8px;padding:0 14px}
+    .brand{white-space:nowrap}
+    .brand small{display:none}
+    .proto{display:none}
+    .ex-grid{grid-template-columns:1fr}
+    .ex-grid .tile{border-right:none!important}
+    .ex-grid .tile:not(:last-child){border-bottom:1px solid var(--hairline)!important}
+    .entry-inner{padding:56px 18px 48px}
+    .src-meta{flex-direction:column;align-items:flex-end;gap:4px}
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand"><span class="mark"><i></i></span>직무 메모리 <small>· 업무 승계 비서</small></div>
+  <div class="right">
+    <span class="proto">시연용 목업 · 샘플 데이터</span>
+    <button class="toggle" id="themeBtn" onclick="toggleTheme()" aria-label="테마 전환" title="라이트/다크">◐</button>
+  </div>
+</header>
+
+<!-- ================= ENTRY ================= -->
+<main class="view entry active" id="entry">
+  <div class="entry-inner">
+    <div class="mark-lg"><i></i></div>
+    <h1 class="display">Hello, <span class="accent">JARVIS?</span></h1>
+    <p class="lead">지금·올해 내가 뭘 해야 하는지, 내 <b>과거 전자결재</b>에게 물어보세요.</p>
+
+    <form class="field" onsubmit="return ask()">
+      <span class="ico" aria-hidden="true">⌕</span>
+      <input id="q" type="text" autocomplete="off" placeholder="예: 올해 요금정산 중간보고, 언제 어떻게 기안하지?">
+      <button class="go" type="submit">묻기</button>
+    </form>
+
+    <div class="examples">
+      <div class="ex-label label">예시 질문</div>
+      <div class="ex-grid" id="exGrid"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ================= RESULTS ================= -->
+<main class="view results" id="results">
+  <div class="results-inner">
+    <form class="field sm" onsubmit="return ask()">
+      <button class="back" type="button" onclick="home()" aria-label="처음으로">←</button>
+      <span class="ico" aria-hidden="true">⌕</span>
+      <input id="q2" type="text" autocomplete="off">
+      <button class="go" type="submit">묻기</button>
+    </form>
+
+    <div id="stream"></div>
+  </div>
+</main>
+
+<script>
+  /* ---------- 예시 질문 + 답변 (샘플 데이터, 데모 세계관 연동) ---------- */
+  const ANSWERS = {
+    mid: {
+      q: "요금정산 중간보고, 작년엔 어떻게 기안했지?",
+      hint: "반복 업무 · 근거 3건",
+      meta: "근거 3건", verified: true,
+      body: `<p>작년 기준 요금정산 중간보고는 <mark class="em">7월 10일에 기안</mark>되었고, <mark class="em">3년 연속</mark> 반복된 업무입니다
+        <span class="cite">2025 중간보고 · <b>96%</b></span>. 보고 기준월은 <mark class="em">6월 말 실적</mark>이며, 올해는
+        <mark class="em">차세대 정산시스템 전환 일정</mark>을 신규 변수로 반영해야 합니다
+        <span class="cite">차세대 전환계획 · <b>88%</b></span>.</p>
+        <p>초안은 작년 원문을 골격으로 자동 구성할 수 있습니다. 아래 <b>초안 스튜디오</b>에서 바로 열어 올해 수치만 갱신하세요.</p>`,
+      sources: [
+        {t:"2025년 7월 요금정산 중간보고 기안", n:"작년 원문 · 기안일 2025-07-10", s:"ok", c:96},
+        {t:"정산시스템 차세대 전환 계획", n:"2025-09 · 진행 중 이슈", s:"ok", c:88},
+        {t:"요금정산 연간계획 수립(2025-03)", n:"기준월 표기가 상이 — 확인 권장", s:"warn", c:71},
+        {t:"정산 단가 산정 기준 협의", n:"구두 협의만 확인 · 문서 없음", s:"none", c:null},
+      ],
+    },
+    july: {
+      q: "이 자리에서 7월에 반복되는 업무는?",
+      hint: "업무 일기예보 · 근거 3건",
+      meta: "근거 3건", verified: true,
+      body: `<p>요금정산팀 7월에는 <mark class="em">3건</mark>이 반복됩니다: <mark class="em">중간보고 기안(D-4)</mark>,
+        하절기 설비 안전점검 결과 보고(D-9), 이사회 보고 안건 자료 제출(D-14)
+        <span class="cite">최근 2~3년 기안주기</span>. 모두 최근 몇 년 같은 시기에 기안되어, 다가오는 순서대로 예보로 잡았습니다.</p>`,
+      sources: [
+        {t:"요금정산 중간보고 (내 자리)", n:"작년 7/10 · 3년 연속 · D-4", s:"ok", c:94},
+        {t:"하절기 설비 안전점검 결과 보고", n:"작년 7/16 · 담당 박수연 대리 · D-9", s:"ok", c:82},
+        {t:"이사회 보고 안건 자료 제출", n:"작년 7/21 · 팀 공통 · D-14", s:"ok", c:79},
+      ],
+    },
+    sujeu: {
+      q: "수의계약 기안할 때 뭘 조심해야 해?",
+      hint: "사전 점검 · 감사 지적 대조",
+      meta: "근거 2건", verified: true,
+      body: `<p>과거 감사 기준으로 핵심은 <mark class="em">수의계약 사유의 구체성</mark>입니다.
+        "긴급한 사유"만 쓰면 <mark class="em">2023년 종합감사 지적 패턴</mark>과 동일합니다
+        <span class="cite">종합감사 지적 제7호 · <b>93%</b></span>. 누수 측정값·공급 차질 예상 규모 등
+        <mark class="em">객관적 근거</mark>를 본문에 명시하는 것이 안전합니다
+        <span class="cite">계약사무처리규정 §12 · <b>97%</b></span>.</p>`,
+      sources: [
+        {t:"계약사무처리규정 제12조(수의계약의 사유)", n:"사규 원문", s:"ok", c:97},
+        {t:"2023년 종합감사 지적 제7호", n:"유사 표현 지적 이력", s:"ok", c:93},
+      ],
+    },
+    jeongsan: {
+      q: "정산 기준일, 어떻게 써야 반려 안 나?",
+      hint: "사전 점검 · 반려 이력 대조",
+      meta: "근거 2건", verified: true,
+      body: `<p>정산 기준일을 <mark class="em">특정 날짜(예: 6월 30일)로 고정</mark>하면 준공일 변동 시 재기안 사유가 됩니다.
+        2024년 5월 동일 유형 기안이 <mark class="em">반려된 이력</mark>이 있습니다
+        <span class="cite">반려 이력 2024.05 · <b>90%</b></span>. <mark class="em">"준공검사 완료일 기준"</mark>으로
+        표기하는 것이 공사정산업무지침과 일치합니다
+        <span class="cite">공사정산업무지침 §8 · <b>95%</b></span>.</p>`,
+      sources: [
+        {t:"공사정산업무지침 제8조(정산 기준)", n:"지침 원문", s:"ok", c:95},
+        {t:"2024.05 유사 기안 반려 이력", n:"반려 사유 동일", s:"ok", c:90},
+      ],
+    },
+  };
+  const EXAMPLES = ["mid","july","sujeu","jeongsan"];
+  const BADGE = {ok:"검증됨", warn:"주의", none:"근거 없음"};
+
+  /* ---------- render example tiles ---------- */
+  const exGrid = document.getElementById("exGrid");
+  exGrid.innerHTML = EXAMPLES.map(k=>{
+    const a = ANSWERS[k];
+    return `<button class="tile" onclick="ask('${k}')"><span class="q">${a.q}</span><span class="h">${a.hint}</span></button>`;
+  }).join("");
+
+  /* ---------- routing ---------- */
+  const vEntry = document.getElementById("entry");
+  const vResults = document.getElementById("results");
+  const q = document.getElementById("q");
+  const q2 = document.getElementById("q2");
+  const stream = document.getElementById("stream");
+  const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+  function show(view){
+    vEntry.classList.toggle("active", view==="entry");
+    vResults.classList.toggle("active", view==="results");
+  }
+  function home(){ show("entry"); q.value=""; setTimeout(()=>q.focus(),50); }
+
+  function findKey(text){
+    if(ANSWERS[text]) return text;               // called with a key from a tile
+    const t = (text||"").trim();
+    if(!t) return "mid";
+    // 아주 단순한 키워드 매칭 (목업)
+    if(/7월|반복|예보|이번 ?달/.test(t)) return "july";
+    if(/수의|계약/.test(t)) return "sujeu";
+    if(/기준일|반려|정산 ?기준/.test(t)) return "jeongsan";
+    return "mid";
+  }
+
+  function ask(preset){
+    let key, typed;
+    if(typeof preset === "string"){ key = preset; typed = ANSWERS[key] ? ANSWERS[key].q : preset; }
+    else { typed = (vResults.classList.contains("active") ? q2.value : q.value); key = findKey(typed); if(!typed) typed = ANSWERS[key].q; }
+    q.value = typed; q2.value = typed;
+    show("results");
+    window.scrollTo(0,0);
+    render(key, typed);
+    return false; // prevent form submit
+  }
+
+  function render(key, typed){
+    const a = ANSWERS[key] || ANSWERS.mid;
+    // 1) 로딩
+    stream.innerHTML = `
+      <div class="thinking"><span class="spin"></span>과거 전자결재에서 근거를 찾는 중…</div>
+      <div class="skel"></div><div class="skel w80"></div><div class="skel w60"></div>`;
+    const reveal = ()=>{
+      const srcRows = a.sources.map((s,i)=>`
+        <li class="src">
+          <span class="num">${i+1}</span>
+          <div class="src-main"><div class="src-title">${s.t}</div><div class="src-note">${s.n}</div></div>
+          <div class="src-meta">
+            ${s.c!=null?`<span class="conf">${s.c}%</span>`:""}
+            <span class="badge ${s.s}">${BADGE[s.s]}</span>
+          </div>
+        </li>`).join("");
+      stream.innerHTML = `
+        <div class="block">
+          <div class="label">답변 <span class="sep"></span> ${a.meta} <span class="sep"></span>
+            <span class="${a.verified?'verified':''}">${a.verified?'검증됨':'검증 필요'}</span></div>
+          <div class="answer-q">${typed}</div>
+          <div class="answer-body">${a.body}</div>
+        </div>
+        <div class="block">
+          <div class="label">근거 문서</div>
+          <ol class="src-list">${srcRows}</ol>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="return false">이 문구로 사전점검 실행 <span class="arr">→</span></button>
+          <button class="btn btn-ghost" onclick="return false">초안 스튜디오에서 열기</button>
+          <button class="btn btn-ghost" onclick="return false">브리핑북에서 보기</button>
+        </div>
+        <p class="disclaimer">JARVIS는 <b>"문제 없음"을 판정하지 않습니다</b> — 근거와 검증 상태를 보여줄 뿐, 최종 판단은 담당자에게 있습니다.
+          근거가 없는 항목은 <b>근거 없음</b>으로 그대로 노출합니다.</p>`;
+    };
+    reduce ? reveal() : setTimeout(reveal, 620);
+  }
+
+  /* ---------- theme ---------- */
+  function applyTheme(t){ document.documentElement.setAttribute("data-theme", t);
+    document.getElementById("themeBtn").textContent = t==="dark" ? "☀" : "◐"; }
+  function toggleTheme(){ applyTheme(document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark"); }
+  applyTheme(matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
+
+  /* ---------- keys ---------- */
+  addEventListener("keydown", e=>{ if(e.key==="Escape" && vResults.classList.contains("active")) home(); });
+  q.focus();
+</script>
+</body>
+</html>
