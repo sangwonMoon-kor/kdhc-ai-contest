@@ -71,7 +71,71 @@
   @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){.view.active{animation:none}*{transition-duration:.001s!important;animation-duration:.001s!important}}
 
-  /* ============ ENTRY ============ */
+  /* ============ ENTRY — 페이퍼 콜라주 히어로 (ChronoTask 레퍼런스) ============ */
+  body.at-entry .bar{display:none}
+  .hero-canvas{position:relative;margin:12px;min-height:calc(100vh - 24px);border-radius:26px;
+    background:var(--pearl);border:1px solid var(--divider);overflow:hidden;
+    display:flex;align-items:center;justify-content:center;padding:72px 24px}
+  .hero-canvas::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
+    background-image:radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) 1px, transparent 1.5px);
+    background-size:22px 22px}
+  .hero-center{position:relative;z-index:2;text-align:center;max-width:720px;width:100%}
+  .logo-tile{width:96px;height:96px;margin:0 auto 32px;background:var(--canvas);border:1px solid var(--divider);
+    border-radius:24px;display:flex;align-items:center;justify-content:center;transform:rotate(-3deg);
+    box-shadow:0 18px 40px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.05)}
+  .logo-tile .mark-lg{margin:0;width:48px;height:48px;border-radius:13px;box-shadow:none}
+  .logo-tile .mark-lg i{width:20px;height:20px;border-width:2.5px;border-radius:6px}
+  .display-sub{font-size:clamp(36px,5.4vw,58px);font-weight:600;letter-spacing:-.035em;line-height:1.12;
+    color:var(--ink-faint);margin-top:2px}
+
+  /* 떠 있는 종이 카드 — 각 카드는 실제 화면 미리보기, 클릭 시 이동 */
+  .fl{position:absolute;z-index:1;background:var(--canvas);border:1px solid var(--divider);border-radius:16px;
+    box-shadow:0 18px 40px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.05);cursor:pointer;text-align:left;
+    transform:rotate(var(--rot,0deg));transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s;
+    animation:floaty 7s ease-in-out infinite}
+  .fl:hover{transform:rotate(var(--rot,0deg)) translateY(-5px);box-shadow:0 26px 54px rgba(0,0,0,.14),0 3px 8px rgba(0,0,0,.06)}
+  @keyframes floaty{0%,100%{translate:0 0}50%{translate:0 -7px}}
+  .fl .ft{font-size:13px;font-weight:600;color:var(--ink-2);letter-spacing:-.01em}
+
+  .fl-note{--rot:-4deg;top:7%;left:4.5%;width:216px;border:none;border-radius:5px;padding:24px 20px 20px;
+    background:linear-gradient(178deg,#fdf6bd,#f6e785);color:#4c431f;font-size:14.5px;font-weight:500;
+    line-height:1.55;box-shadow:0 14px 30px rgba(120,100,20,.22),0 2px 5px rgba(0,0,0,.08);animation-delay:.8s}
+  .fl-note b{font-weight:700;color:#3d3312}
+  .fl-note .pin{position:absolute;top:-7px;left:50%;margin-left:-7px;width:14px;height:14px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#ff6b60,#d92c22);box-shadow:0 3px 6px rgba(0,0,0,.35)}
+  [data-theme="dark"] .fl-note{background:linear-gradient(178deg,#e8dfa0,#d9c968)}
+
+  .fl-chk{--rot:-7deg;top:27%;left:12%;width:76px;height:76px;border-radius:20px;cursor:default;
+    display:flex;align-items:center;justify-content:center;animation-delay:2.2s}
+  .fl-chk .cbx{width:40px;height:40px;border-radius:11px;background:var(--accent);color:#fff;
+    font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+  .fl-remind{--rot:3deg;top:8%;right:4.5%;width:236px;padding:15px 15px 13px;animation-delay:1.4s}
+  .fl-remind .inner{margin-top:10px;background:var(--pearl);border:1px solid var(--divider);border-radius:11px;padding:12px 13px}
+  .fl-remind .rt{font-size:13.5px;font-weight:600;line-height:1.4}
+  .fl-remind .rs{font-size:11.5px;color:var(--ink-faint);margin-top:3px}
+  .fl-remind .rd{display:inline-block;margin-top:9px;background:var(--accent);color:#fff;font-size:11.5px;
+    font-weight:700;border-radius:9999px;padding:3px 10px}
+
+  .fl-tasks{--rot:-2deg;bottom:7%;left:4.5%;width:256px;padding:16px 16px 8px;animation-delay:3s}
+  .fl-tasks .trow{display:flex;align-items:center;gap:9px;padding:10px 0;border-top:1px solid var(--divider);margin-top:2px}
+  .fl-tasks .trow:first-of-type{border-top:none;margin-top:6px}
+  .fl-tasks .td{width:10px;height:10px;border-radius:3.5px;flex-shrink:0}
+  .fl-tasks .td.g{background:#34c759}.fl-tasks .td.b{background:var(--accent)}
+  .fl-tasks .trow>div:not(.tbar){flex:1;min-width:0}
+  .fl-tasks .trow b{display:block;font-size:12px;font-weight:600;line-height:1.35;letter-spacing:-.01em}
+  .fl-tasks .trow i{font-style:normal;font-size:10.5px;color:var(--ink-faint)}
+  .fl-tasks .tbar{width:42px;height:4px;border-radius:2px;background:var(--divider);flex-shrink:0;overflow:hidden}
+  .fl-tasks .tbar s{display:block;height:100%;background:var(--accent);text-decoration:none}
+
+  .fl-docs{--rot:3deg;bottom:9%;right:5.5%;width:218px;padding:16px;animation-delay:.3s}
+  .fl-docs .dico{display:flex;gap:10px;margin:11px 0 9px}
+  .fl-docs .dico span{width:46px;height:46px;border-radius:12px;background:var(--pearl);border:1px solid var(--divider);
+    font-size:22px;display:flex;align-items:center;justify-content:center}
+  .fl-docs .ds{font-size:11.5px;color:var(--ink-faint)}
+
+  @media (max-width:1080px){.fl{display:none}.hero-canvas{min-height:auto;padding:84px 20px 68px}}
+
   .entry-inner{max-width:740px;margin:0 auto;padding:110px 24px 80px;text-align:center}
   .mark-lg{width:66px;height:66px;margin:0 auto 34px;border-radius:17px;background:var(--accent);
     display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
@@ -103,6 +167,7 @@
   .field .back:hover{background:var(--divider);color:var(--ink)}
 
   .examples{margin-top:54px;text-align:left}
+  .entry-below{max-width:760px;margin:0 auto;padding:40px 24px 84px;text-align:left}
   .ex-label{font-size:13px;font-weight:500;color:var(--ink-faint);letter-spacing:-.01em;margin:0 0 14px 4px}
   .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .tile{text-align:left;background:var(--pearl);border:1px solid var(--divider);border-radius:var(--r-md);
@@ -272,7 +337,7 @@
   }
 </style>
 </head>
-<body>
+<body class="at-entry">
 
 <header class="bar">
   <div class="brand" onclick="home()"><span class="mark"><i></i></span>직무 메모리 <small>· 업무 승계 비서</small></div>
@@ -286,24 +351,52 @@
 
 <!-- ================= 1단계 · ENTRY — 검색창 하나 ================= -->
 <main class="view active" id="entry">
-  <div class="entry-inner">
-    <div class="mark-lg"><i></i></div>
-    <h1 class="display"><span class="d3">Hello,</span> <span class="d3 accent">JARVIS?</span></h1>
-    <p class="lead"><b>일한 만큼, 준비됩니다.</b> 오늘의 나에게도, 내일의 나에게도.<br>사내 결재문서 · 규정 · 회의록을 근거로 <b>당신의 업무 화면</b>을 바로 열어 드립니다.</p>
-
-    <div class="search">
-      <div class="ai-glow" aria-hidden="true"></div>
-      <form class="field" onsubmit="return ask()">
-        <span class="ico" aria-hidden="true">⌕</span>
-        <input id="q" type="text" autocomplete="off" placeholder="예: 이번 주 뭐 해야 해?">
-        <button class="go" type="submit">묻기</button>
-      </form>
+  <div class="hero-canvas">
+    <!-- 콜라주 카드 = 4화면 미리보기 (클릭 시 이동) -->
+    <div class="fl fl-note" onclick="go('today','이번 주 뭐 해야 해?')" role="button" tabindex="0" aria-label="오늘 화면 열기">
+      <span class="pin" aria-hidden="true"></span>
+      목요일, 펌프 정비 보고<br>기안 잊지 말 것 — <b>D-3</b> ✍️
+    </div>
+    <div class="fl fl-chk" aria-hidden="true"><span class="cbx">✓</span></div>
+    <div class="fl fl-remind" onclick="go('today')" role="button" tabindex="0" aria-label="업무 일기예보 열기">
+      <div class="ft">업무 일기예보</div>
+      <div class="inner">
+        <div class="rt">순환수 펌프 정비공사 보고</div>
+        <div class="rs">작년 4/9 기안 · 2년 연속</div>
+        <span class="rd">D-3</span>
+      </div>
+    </div>
+    <div class="fl fl-tasks" onclick="go('brief')" role="button" tabindex="0" aria-label="브리핑북 열기">
+      <div class="ft">오늘 처리한 업무</div>
+      <div class="trow"><span class="td g"></span><div><b>냉각수 정비용역 준공검수</b><i>결재 완료</i></div><div class="tbar"><s style="width:100%"></s></div></div>
+      <div class="trow"><span class="td b"></span><div><b>차단기 예비부품 입고 확인</b><i>진행 중</i></div><div class="tbar"><s style="width:60%"></s></div></div>
+    </div>
+    <div class="fl fl-docs" onclick="go('draft')" role="button" tabindex="0" aria-label="초안 스튜디오 열기">
+      <div class="ft">근거 문서 연결</div>
+      <div class="dico"><span>📄</span><span>📋</span><span>📑</span></div>
+      <div class="ds">전자결재 · 회의록 · 규정 — 모든 답에 원문 링크</div>
     </div>
 
-    <div class="examples">
-      <div class="ex-label">이렇게 물어보세요 — 질문은 아래 4개 화면 중 하나로 착지합니다</div>
-      <div class="ex-grid" id="exGrid"></div>
+    <div class="hero-center">
+      <div class="logo-tile"><div class="mark-lg"><i></i></div></div>
+      <h1 class="display"><span class="d3">Hello,</span> <span class="d3 accent">JARVIS?</span></h1>
+      <div class="display-sub">일한 만큼, 준비됩니다.</div>
+      <p class="lead">오늘의 나에게도, 내일의 나에게도.</p>
+
+      <div class="search">
+        <div class="ai-glow" aria-hidden="true"></div>
+        <form class="field" onsubmit="return ask()">
+          <span class="ico" aria-hidden="true">⌕</span>
+          <input id="q" type="text" autocomplete="off" placeholder="예: 이번 주 뭐 해야 해?">
+          <button class="go" type="submit">묻기</button>
+        </form>
+      </div>
     </div>
+  </div>
+
+  <div class="entry-below">
+    <div class="ex-label">이렇게 물어보세요 — 질문은 아래 4개 화면 중 하나로 착지합니다</div>
+    <div class="ex-grid" id="exGrid"></div>
   </div>
 </main>
 
@@ -584,6 +677,7 @@
     `<button class="tab" data-k="${k}" onclick="go('${k}')">${SCREENS[k].ic} ${SCREENS[k].tab}</button>`).join("");
 
   function show(view){
+    document.body.classList.toggle("at-entry", view==="entry");
     vEntry.classList.toggle("active", view==="entry");
     vClarify.classList.toggle("active", view==="clarify");
     vApp.classList.toggle("active", view==="app");
