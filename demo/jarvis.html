@@ -154,8 +154,8 @@
   .ai-glow{position:absolute;inset:-4px;border-radius:22px;z-index:0;opacity:.3;pointer-events:none;
     background:linear-gradient(120deg,#0a84ff,#5e5ce6 30%,#bf5af2 52%,#ff9f0a 74%,#0a84ff);
     background-size:280% 280%;filter:blur(18px);
-    animation:glowmove 7s linear infinite, glowpulse 3.4s ease-in-out infinite}
-  .search:focus-within .ai-glow{animation-duration:3.2s,1.6s}
+    animation:glowmove 11s linear infinite, glowpulse 5.2s ease-in-out infinite}
+  .search:focus-within .ai-glow{animation-duration:5.5s,2.8s}
   @keyframes glowmove{from{background-position:0% 50%}to{background-position:280% 50%}}
   @keyframes glowpulse{0%,100%{opacity:.24;filter:blur(17px)}50%{opacity:.58;filter:blur(24px)}}
 
@@ -164,7 +164,7 @@
     background:var(--accent);transform:translateY(.08em);animation:blink .85s step-end infinite;transition:opacity .45s}
   .type-caret.off{opacity:0}
   @keyframes blink{50%{opacity:0}}
-  .rise{opacity:0;transform:translateY(14px);transition:opacity .65s cubic-bezier(.22,1,.36,1),transform .65s cubic-bezier(.22,1,.36,1)}
+  .rise{opacity:0;transform:translateY(14px);transition:opacity .9s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1)}
   .rise.in{opacity:1;transform:none}
   .field{position:relative;z-index:1;display:flex;align-items:center;gap:10px;background:var(--parchment);
     border:1px solid transparent;border-radius:var(--r-lg);padding:6px 6px 6px 20px;box-shadow:var(--shadow);transition:background .25s,border-color .25s}
@@ -786,16 +786,16 @@
       const iv = setInterval(() => {
         el.textContent = text.slice(0, ++i);
         if(i >= text.length){ clearInterval(iv); done && done(); }
-      }, 64);
+      }, 100);
     }
     setTimeout(() => {
       type(t1, "Hello,", () => setTimeout(() => {
         type(t2, "JARVIS?", () => {
-          setTimeout(() => { caret.classList.add("off"); setTimeout(() => caret.remove(), 500); }, 900);
-          seqEls.forEach((el, i) => el && setTimeout(() => el.classList.add("in"), 320 + i * 300));
+          setTimeout(() => { caret.classList.add("off"); setTimeout(() => caret.remove(), 600); }, 1200);
+          seqEls.forEach((el, i) => el && setTimeout(() => el.classList.add("in"), 500 + i * 480));
         });
-      }, 200));
-    }, 450);
+      }, 340));
+    }, 650);
   })();
 
   function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
