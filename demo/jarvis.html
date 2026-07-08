@@ -237,6 +237,14 @@
     border-radius:9999px;font-size:12.5px;font-weight:500;color:var(--ink-muted);padding:2px 10px;white-space:nowrap;vertical-align:1px;margin:0 2px}
   .cite b{color:var(--ink-2);font-weight:600}
 
+  /* engine live-response card (엔진 연결 시에만 노출) */
+  .eng{margin:-8px 0 30px;background:var(--pearl);border:1px solid var(--divider);border-radius:var(--r-lg);padding:18px 20px}
+  .eng .eh{font-size:12.5px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .eng .ea{font-size:15px;line-height:1.62;color:var(--ink-2)}
+  .eng .ea p+p{margin-top:8px}
+  .eng .ek{margin-top:12px;padding-top:10px;border-top:1px solid var(--divider);font-size:13.5px;color:var(--ink-muted);line-height:1.7}
+  .eng .ek .conf{font-weight:600;color:var(--ink-2)}
+
   /* actions + disclaimer */
   .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
   .btn{display:inline-flex;align-items:center;gap:7px;font-size:16px;font-weight:500;letter-spacing:-.01em;
@@ -330,6 +338,8 @@
       <h2 id="stripH"></h2>
       <div class="meta" id="stripMeta"></div>
     </div>
+
+    <div class="eng" id="engine" style="display:none"></div>
 
     <!-- ---------- 화면 ① 오늘 · 업무 일기예보 ---------- -->
     <section class="panel" id="panel-today">
@@ -616,6 +626,42 @@
     q2.value = "";
     history.replaceState(null,"","#"+key);
     window.scrollTo(0,0);
+    askEngine(lastQ);
+  }
+
+  /* ================= 엔진 실연결 (선택 · 실패 시 목업으로 자동 폴백) =================
+     사용: jarvis.html?engine=http://localhost:8399  (한 번 지정하면 localStorage에 기억, ?engine= 로 해제)
+     팀원 엔진(creationy/jikmu-memory)은 CORS 헤더가 없으므로 demo/engine-proxy.js를 앞에 세워 호출한다. */
+  const _engParam = new URLSearchParams(location.search).get("engine");
+  const ENGINE = (_engParam !== null ? _engParam : (localStorage.getItem("jm-engine") || "")).replace(/\/+$/,"");
+  if(_engParam !== null){ try{ localStorage.setItem("jm-engine", ENGINE); }catch(e){} }
+  let engineSeq = 0;
+  async function askEngine(question){
+    const el = $("engine");
+    const seq = ++engineSeq;
+    if(!ENGINE || !question){ el.style.display = "none"; return; }
+    el.style.display = "";
+    el.innerHTML = `<div class="eh">⚡ 직무 메모리 엔진</div><div class="ea">엔진에 묻는 중…</div>`;
+    const ctrl = new AbortController();
+    const to = setTimeout(()=>ctrl.abort(), 3000);
+    try{
+      const res = await fetch(ENGINE + "/api/ask", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ question }), signal: ctrl.signal,
+      });
+      const r = await res.json();
+      if(seq !== engineSeq) return;
+      const ans = (r.answer||[]).map(a=>`<p>${escapeHtml(String(a))}</p>`).join("");
+      const kn = (r.knowledge||[]).slice(0,3).map(k=>
+        `<div>• ${escapeHtml(String(k.text||""))} <span class="conf">${Math.round((k.confidence||0)*100)}%</span></div>`).join("");
+      el.innerHTML =
+        `<div class="eh">⚡ 직무 메모리 엔진 — 실응답
+           <span class="badge ${r.grounded?"ok":"none"}">${r.grounded?"근거 있음":"근거 없음"}</span></div>
+         <div class="ea">${ans || "응답이 비어 있습니다."}</div>
+         ${kn ? `<div class="ek">${kn}</div>` : ""}`;
+    }catch(e){
+      if(seq === engineSeq) el.style.display = "none";   // 오프라인/차단 → 조용히 목업만
+    }finally{ clearTimeout(to); }
   }
 
   function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
