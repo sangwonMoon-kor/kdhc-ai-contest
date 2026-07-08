@@ -125,7 +125,7 @@
 
   /* actions — square buttons */
   .actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
-  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;padding:13px 20px;transition:background .15s, border-color .15s, color .15s}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;padding:13px 20px;transition:background .15s, border-color .15s, color .15s;text-decoration:none}
   .btn .arr{transition:transform .18s}
   .btn:hover .arr{transform:translateX(3px)}
   .btn-primary{background:var(--accent);color:#fff}
@@ -171,11 +171,11 @@
   <div class="entry-inner">
     <div class="mark-lg"><i></i></div>
     <h1 class="display">Hello, <span class="accent">JARVIS?</span></h1>
-    <p class="lead">지금·올해 내가 뭘 해야 하는지, 내 <b>과거 전자결재</b>에게 물어보세요.</p>
+    <p class="lead">사내 결재문서 · 규정 · 회의록 · 반려 이력을 근거로 답하는<br><b>우리 회사 전용 업무 비서</b>입니다.</p>
 
     <form class="field" onsubmit="return ask()">
       <span class="ico" aria-hidden="true">⌕</span>
-      <input id="q" type="text" autocomplete="off" placeholder="예: 올해 요금정산 중간보고, 언제 어떻게 기안하지?">
+      <input id="q" type="text" autocomplete="off" placeholder="예: 정산시스템 전환은 뭘 먼저 확인해야 해?">
       <button class="go" type="submit">묻기</button>
     </form>
 
@@ -201,8 +201,28 @@
 </main>
 
 <script>
-  /* ---------- 예시 질문 + 답변 (샘플 데이터, 데모 세계관 연동) ---------- */
+  /* ---------- 예시 질문 + 답변 (팀원 엔진 QA/초안/점검 흐름을 목업화) ---------- */
   const ANSWERS = {
+    prep: {
+      q: "정산시스템 전환은 뭘 먼저 확인해야 해?",
+      hint: "업무 맥락 · 의존관계",
+      meta: "근거 4건", verified: true,
+      body: `<p>정산시스템 전환을 시작하기 전에는 <mark class="em">IT운영팀 배포 일정</mark>을 먼저 확인해야 합니다
+        <span class="cite">작성자확인 · <b>87%</b></span>. 이 일정이 지연되면 전환 보고와 병행 운영 점검도 함께 밀릴 수 있습니다.</p>
+        <p>작년 전환 보고 문서에는 병행 운영 중 <mark class="em">정산 오차 검증 절차</mark>를 신설한 이력이 있고,
+        올해 계획 수립 시 전환 일정 반영이 필요하다고 표시되어 있습니다.</p>`,
+      sources: [
+        {t:"2025년 정산시스템 전환 2단계 추진 보고", n:"APPR-2025-0109 · 전환 일정 근거", s:"ok", c:87},
+        {t:"2024년 정산시스템 전환 1단계 추진 보고", n:"APPR-2024-0111 · 반복 업무 근거", s:"ok", c:84},
+        {t:"차세대 정산시스템 오차 검증 회의록", n:"MTG-2025-0708 · 정보화부서 협조", s:"ok", c:78},
+        {t:"정산시스템 병행 운영 구두 협의", n:"근거 문서 없음 · 전임자 확인 필요", s:"none", c:null},
+      ],
+      actions: [
+        {kind:"primary", label:"전환 보고 초안 열기", href:"index.html#s3"},
+        {kind:"ghost", label:"관련 브리핑북 보기", href:"index.html#s1"},
+        {kind:"ghost", label:"기안 전 사전점검", href:"index.html#s4"},
+      ],
+    },
     mid: {
       q: "요금정산 중간보고, 작년엔 어떻게 기안했지?",
       hint: "반복 업무 · 근거 3건",
@@ -218,6 +238,11 @@
         {t:"요금정산 연간계획 수립(2025-03)", n:"기준월 표기가 상이 — 확인 권장", s:"warn", c:71},
         {t:"정산 단가 산정 기준 협의", n:"구두 협의만 확인 · 문서 없음", s:"none", c:null},
       ],
+      actions: [
+        {kind:"primary", label:"작년 양식으로 초안 만들기", href:"index.html#s3"},
+        {kind:"ghost", label:"업무 일기예보 보기", href:"index.html#s2"},
+        {kind:"ghost", label:"사전점검으로 넘기기", href:"index.html#s4"},
+      ],
     },
     july: {
       q: "이 자리에서 7월에 반복되는 업무는?",
@@ -231,19 +256,29 @@
         {t:"하절기 설비 안전점검 결과 보고", n:"작년 7/16 · 담당 박수연 대리 · D-9", s:"ok", c:82},
         {t:"이사회 보고 안건 자료 제출", n:"작년 7/21 · 팀 공통 · D-14", s:"ok", c:79},
       ],
+      actions: [
+        {kind:"primary", label:"D-4 업무 초안 준비", href:"index.html#s3"},
+        {kind:"ghost", label:"달력 대시보드 열기", href:"index.html#s2"},
+        {kind:"ghost", label:"근거 문서 보기", href:"index.html#s1"},
+      ],
     },
-    sujeu: {
-      q: "수의계약 기안할 때 뭘 조심해야 해?",
-      hint: "사전 점검 · 감사 지적 대조",
-      meta: "근거 2건", verified: true,
-      body: `<p>과거 감사 기준으로 핵심은 <mark class="em">수의계약 사유의 구체성</mark>입니다.
-        "긴급한 사유"만 쓰면 <mark class="em">2023년 종합감사 지적 패턴</mark>과 동일합니다
-        <span class="cite">종합감사 지적 제7호 · <b>93%</b></span>. 누수 측정값·공급 차질 예상 규모 등
-        <mark class="em">객관적 근거</mark>를 본문에 명시하는 것이 안전합니다
-        <span class="cite">계약사무처리규정 §12 · <b>97%</b></span>.</p>`,
+    risk: {
+      q: "산출근거 표 누락으로 반려된 적 있어?",
+      hint: "사전 점검 · 반려/감사 이력",
+      meta: "근거 5건", verified: true,
+      body: `<p>있습니다. 계획·보고 유형 기안에서 <mark class="em">산출근거 표 누락</mark>은 과거 반려·감사 지적과 연결된 리스크입니다
+        <span class="cite">작성자확인 · <b>97%</b></span>. 같은 표현이나 표 누락 패턴이 보이면 사전점검에서 확인 필요로 표시됩니다.</p>
+        <p>JARVIS는 "문제 없음"을 단정하지 않고, 어떤 문서와 이력이 리스크 판단의 근거인지 먼저 보여줍니다.</p>`,
       sources: [
-        {t:"계약사무처리규정 제12조(수의계약의 사유)", n:"사규 원문", s:"ok", c:97},
-        {t:"2023년 종합감사 지적 제7호", n:"유사 표현 지적 이력", s:"ok", c:93},
+        {t:"2025년 연간 정산계획 반려 사유", n:"산출근거 표 누락 · 반려 이력", s:"ok", c:97},
+        {t:"2024년 감사 지적 사례", n:"근거 자료 미첨부 유형", s:"ok", c:94},
+        {t:"계획·보고 작성 체크리스트", n:"표·수치 출처 확인 항목", s:"ok", c:89},
+        {t:"구두 협의 기반 일정", n:"문서 근거 없음 · 보완 필요", s:"none", c:null},
+      ],
+      actions: [
+        {kind:"primary", label:"이 문구로 사전점검 실행", href:"index.html#s4"},
+        {kind:"ghost", label:"보완 초안 열기", href:"index.html#s3"},
+        {kind:"ghost", label:"관련 브리핑북 보기", href:"index.html#s1"},
       ],
     },
     jeongsan: {
@@ -259,9 +294,14 @@
         {t:"공사정산업무지침 제8조(정산 기준)", n:"지침 원문", s:"ok", c:95},
         {t:"2024.05 유사 기안 반려 이력", n:"반려 사유 동일", s:"ok", c:90},
       ],
+      actions: [
+        {kind:"primary", label:"정산 기준일 사전점검", href:"index.html#s4"},
+        {kind:"ghost", label:"초안 스튜디오에서 수정", href:"index.html#s3"},
+        {kind:"ghost", label:"업무 지침 보기", href:"index.html#s1"},
+      ],
     },
   };
-  const EXAMPLES = ["mid","july","sujeu","jeongsan"];
+  const EXAMPLES = ["prep","mid","risk","july"];
   const BADGE = {ok:"검증됨", warn:"주의", none:"근거 없음"};
 
   /* ---------- render example tiles ---------- */
@@ -290,8 +330,9 @@
     const t = (text||"").trim();
     if(!t) return "mid";
     // 아주 단순한 키워드 매칭 (목업)
+    if(/전환|정산시스템|IT|정보화|먼저|협의|확인/.test(t)) return "prep";
     if(/7월|반복|예보|이번 ?달/.test(t)) return "july";
-    if(/수의|계약/.test(t)) return "sujeu";
+    if(/산출근거|누락|리스크|감사|지적|조심/.test(t)) return "risk";
     if(/기준일|반려|정산 ?기준/.test(t)) return "jeongsan";
     return "mid";
   }
@@ -311,7 +352,7 @@
     const a = ANSWERS[key] || ANSWERS.mid;
     // 1) 로딩
     stream.innerHTML = `
-      <div class="thinking"><span class="spin"></span>과거 전자결재에서 근거를 찾는 중…</div>
+      <div class="thinking"><span class="spin"></span>사내 결재문서·규정·회의록에서 근거를 찾는 중…</div>
       <div class="skel"></div><div class="skel w80"></div><div class="skel w60"></div>`;
     const reveal = ()=>{
       const srcRows = a.sources.map((s,i)=>`
@@ -323,6 +364,9 @@
             <span class="badge ${s.s}">${BADGE[s.s]}</span>
           </div>
         </li>`).join("");
+      const actionRows = (a.actions || []).map(x =>
+        `<a class="btn ${x.kind==="primary"?"btn-primary":"btn-ghost"}" href="${x.href}">${x.label}${x.kind==="primary"?` <span class="arr">→</span>`:""}</a>`
+      ).join("");
       stream.innerHTML = `
         <div class="block">
           <div class="label">답변 <span class="sep"></span> ${a.meta} <span class="sep"></span>
@@ -335,9 +379,7 @@
           <ol class="src-list">${srcRows}</ol>
         </div>
         <div class="actions">
-          <button class="btn btn-primary" onclick="return false">이 문구로 사전점검 실행 <span class="arr">→</span></button>
-          <button class="btn btn-ghost" onclick="return false">초안 스튜디오에서 열기</button>
-          <button class="btn btn-ghost" onclick="return false">브리핑북에서 보기</button>
+          ${actionRows}
         </div>
         <p class="disclaimer">JARVIS는 <b>"문제 없음"을 판정하지 않습니다</b> — 근거와 검증 상태를 보여줄 뿐, 최종 판단은 담당자에게 있습니다.
           근거가 없는 항목은 <b>근거 없음</b>으로 그대로 노출합니다.</p>`;

@@ -3,230 +3,135 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PRD — 직무 메모리</title>
+<title>PRD — 직무 메모리 (AI 업무 승계 비서)</title>
 <style>
 :root{color-scheme:light;--bg:#f4f5f7;--paper:#fff;--ink:#1d2126;--muted:#68717d;--line:#e3e6ea;--accent:#e8590c;--accent-soft:#fff2e9;--ok:#15803d;--warn:#b45309;--shadow:0 16px 48px rgba(20,26,34,.10)}
-*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:linear-gradient(180deg,#f8fafc,#eef1f5);color:var(--ink);font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;line-height:1.72;font-size:16px} a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
-.top{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)} .top-inner{max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:14px}.brand{font-weight:850;letter-spacing:-.02em}.badge{margin-left:auto;font-size:12px;font-weight:800;color:#9a3412;background:var(--accent-soft);border:1px solid #fed7aa;border-radius:999px;padding:4px 10px}.layout{max-width:1180px;margin:0 auto;padding:34px 24px 70px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:26px}.toc{position:sticky;top:70px;align-self:start;max-height:calc(100vh - 94px);overflow:auto;padding:18px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.74)}.toc-title{font-size:12px;font-weight:850;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}.toc a{display:block;color:#3d4651;padding:5px 0;font-size:13px;line-height:1.35}.toc .toc-l1{font-weight:850;color:var(--ink);margin-top:8px}.toc .toc-l2{padding-left:8px}.toc .toc-l3{padding-left:20px;color:var(--muted)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(180deg,#f8fafc,#eef1f5);color:var(--ink);font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;line-height:1.72;font-size:16px}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.top{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.top-inner{max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:14px}.brand{font-weight:850;letter-spacing:-.02em}.badge{margin-left:auto;font-size:12px;font-weight:800;color:#9a3412;background:var(--accent-soft);border:1px solid #fed7aa;border-radius:999px;padding:4px 10px}.layout{max-width:1180px;margin:0 auto;padding:34px 24px 70px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:26px}.toc{position:sticky;top:70px;align-self:start;max-height:calc(100vh - 94px);overflow:auto;padding:18px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.74)}.toc-title{font-size:12px;font-weight:850;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}.toc a{display:block;color:#3d4651;padding:5px 0;font-size:13px;line-height:1.35}.toc .toc-l1{font-weight:850;color:var(--ink);margin-top:8px}.toc .toc-l2{padding-left:8px}.toc .toc-l3{padding-left:20px;color:var(--muted)}
 .doc{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:48px 54px}.meta{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 24px}.pill{font-size:12px;font-weight:800;color:var(--muted);background:#f5f6f8;border:1px solid var(--line);border-radius:999px;padding:5px 11px}h1,h2,h3,h4{letter-spacing:-.025em;line-height:1.25;margin:1.35em 0 .55em}h1{font-size:40px;margin-top:0}h2{font-size:27px;border-top:1px solid var(--line);padding-top:30px}h3{font-size:21px}h4{font-size:18px}p{margin:.65em 0}blockquote{margin:22px 0;padding:16px 20px;border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 12px 12px 0;font-weight:750}hr{border:0;border-top:1px solid var(--line);margin:34px 0}ul,ol{padding-left:1.35em;margin:.65em 0 1em}li{margin:.24em 0}code{font-family:"Cascadia Mono",Consolas,monospace;font-size:.92em;background:#f1f3f5;border:1px solid #e8eaee;border-radius:6px;padding:.12em .36em}pre{overflow:auto;background:#12161d;color:#f4f6f8;border-radius:14px;padding:20px;border:1px solid #252b35}pre code{background:transparent;border:0;color:inherit;padding:0}.table-wrap{overflow:auto;margin:16px 0 22px;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:620px}th,td{padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}th{background:#f8fafc;font-size:13px;font-weight:850;color:#3d4651}tr:last-child td{border-bottom:0}.anchor{opacity:0;margin-left:8px;font-size:.72em;color:#a1a8b2}h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}.star{color:#e8590c}.ok{color:var(--ok)}.todo{color:#64748b}.warn{color:var(--warn)}.footer{margin-top:36px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
 @media(max-width:900px){.layout{display:block;padding:20px 14px 48px}.toc{position:static;margin-bottom:16px;max-height:none}.doc{padding:30px 22px;border-radius:14px}h1{font-size:30px}h2{font-size:23px}.top-inner{padding:10px 14px}.badge{display:none}table{min-width:560px}}
 @media print{.top,.toc{display:none}.layout{display:block;padding:0}.doc{border:0;box-shadow:none;padding:0}body{background:#fff}.anchor{display:none}}
 </style>
 </head>
 <body>
-<header class="top"><div class="top-inner"><div class="brand">직무 메모리 PRD</div><span class="badge">HTML · 2026-07-07</span></div></header>
+<header class="top"><div class="top-inner"><div class="brand">직무 메모리 PRD</div><span class="badge">HTML · 2026-07-08</span></div></header>
 <div class="layout">
 <nav class="toc" aria-label="목차"><div class="toc-title">Contents</div><a class="toc-l1" href="#prd-직무-메모리-ai-업무-승계-비서">PRD — 직무 메모리 (AI 업무 승계 비서)</a>
 <a class="toc-l2" href="#1-제품-개요">1. 제품 개요</a>
-<a class="toc-l3" href="#1-1-한-줄-정의">1.1 한 줄 정의</a>
-<a class="toc-l3" href="#1-2-목표-우선순위-순">1.2 목표 (우선순위 순)</a>
-<a class="toc-l3" href="#1-3-핵심-가치">1.3 핵심 가치</a>
+<a class="toc-l3" href="#11-한-줄-정의">1.1 한 줄 정의</a>
+<a class="toc-l3" href="#12-목표-우선순위-순">1.2 목표 (우선순위 순)</a>
+<a class="toc-l3" href="#13-핵심-가치">1.3 핵심 가치</a>
 <a class="toc-l2" href="#2-배경-및-문제-정의">2. 배경 및 문제 정의</a>
-<a class="toc-l3" href="#2-1-문제">2.1 문제</a>
-<a class="toc-l3" href="#2-2-전략적-포지셔닝-경진대회-차별화-논리">2.2 전략적 포지셔닝 (경진대회 차별화 논리)</a>
-<a class="toc-l3" href="#2-3-페르소나">2.3 페르소나</a>
-<a class="toc-l2" href="#3-제품-구조-v2-0-3대-기능-기반층-3대-기능">3. 제품 구조 <span class="star">⭐</span> (v2.0 "3대 기능" → "기반층 + 3대 기능")</a>
-<a class="toc-l3" href="#3-0-기반층-개인별-업무-분류-밀착형-업무-매뉴얼">3.0 기반층 — 개인별 업무 분류 · 밀착형 업무 매뉴얼 <span class="star">⭐</span></a>
-<a class="toc-l3" href="#3-1-기능-브리핑북-과거-승계-p1">3.1 기능 ① 브리핑북 (과거 · 승계) — P1</a>
-<a class="toc-l3" href="#3-2-기능-업무-일기예보-현재-예보-p1">3.2 기능 ② 업무 일기예보 (현재 · 예보) — P1</a>
-<a class="toc-l3" href="#3-3-기능-사전-점검-보호-점검-p2">3.3 기능 ③ 사전 점검 (보호 · 점검) — P2</a>
-<a class="toc-l3" href="#3-4-명시적-비범위-out-of-scope">3.4 명시적 비범위 (Out of Scope)</a>
+<a class="toc-l3" href="#21-문제">2.1 문제</a>
+<a class="toc-l3" href="#22-전략적-포지셔닝-경진대회-차별화-논리">2.2 전략적 포지셔닝 (경진대회 차별화 논리)</a>
+<a class="toc-l3" href="#23-페르소나">2.3 페르소나</a>
+<a class="toc-l2" href="#3-제품-구조-v20-3대-기능-기반층-3대-기능">3. 제품 구조 <span class="star">⭐</span> (v2.0 &quot;3대 기능&quot; → &quot;기반층 + 3대 기능&quot;)</a>
+<a class="toc-l3" href="#30-p0-hello-jarvis-사내-근거-검색-진입점">3.0 P0 — Hello JARVIS? 사내 근거 검색 진입점 <span class="star">⭐</span></a>
+<a class="toc-l3" href="#31-기반층-개인별-업무-분류-밀착형-업무-매뉴얼">3.1 기반층 — 개인별 업무 분류 · 밀착형 업무 매뉴얼 <span class="star">⭐</span></a>
+<a class="toc-l3" href="#32-기능-①-브리핑북-과거-승계-p1">3.2 기능 ① 브리핑북 (과거 · 승계) — P1</a>
+<a class="toc-l3" href="#33-기능-②-업무-일기예보-초안-준비-현재-예보-p1">3.3 기능 ② 업무 일기예보 + 초안 준비 (현재 · 예보) — P1</a>
+<a class="toc-l3" href="#34-기능-③-사전-점검-보호-점검-p2">3.4 기능 ③ 사전 점검 (보호 · 점검) — P2</a>
+<a class="toc-l3" href="#35-명시적-비범위-out-of-scope">3.5 명시적 비범위 (Out of Scope)</a>
 <a class="toc-l2" href="#4-경진대회-데모-요구사항-1차-산출물-구현-완료">4. 경진대회 데모 요구사항 (1차 산출물 — 구현 완료)</a>
-<a class="toc-l3" href="#4-1-원칙">4.1 원칙</a>
-<a class="toc-l3" href="#4-2-화면-구성-7화면-v2-0-기획서는-6화면-기준-10-3절-갱신-필요">4.2 화면 구성 — 7화면 <span class="star">⭐</span> (v2.0 기획서는 6화면 기준, 10.3절 갱신 필요)</a>
-<a class="toc-l3" href="#4-3-s0-상세-스토리보드-컷신-오프닝-기획서-미반영">4.3 S0 상세 (스토리보드 컷신 오프닝 — 기획서 미반영 <span class="star">⭐</span>)</a>
-<a class="toc-l3" href="#4-4-s5-상세-신규">4.4 S5 상세 (신규 <span class="star">⭐</span>)</a>
-<a class="toc-l3" href="#4-5-조작-체계">4.5 조작 체계</a>
+<a class="toc-l3" href="#41-원칙">4.1 원칙</a>
+<a class="toc-l3" href="#42-화면-구성-검색-목업-7화면">4.2 화면 구성 — 검색 목업 + 7화면 <span class="star">⭐</span></a>
+<a class="toc-l3" href="#43-s0-상세-영상-오프닝-jarvis-진입-기획서-미반영">4.3 S0 상세 (영상 오프닝 + JARVIS 진입 — 기획서 미반영 <span class="star">⭐</span>)</a>
+<a class="toc-l3" href="#44-s5-상세-신규">4.4 S5 상세 (신규 <span class="star">⭐</span>)</a>
+<a class="toc-l3" href="#45-조작-체계">4.5 조작 체계</a>
 <a class="toc-l2" href="#5-실서비스-아키텍처-요약-상세는-기획서-5장">5. 실서비스 아키텍처 (요약 — 상세는 기획서 5장)</a>
 <a class="toc-l2" href="#6-데이터-요구사항-요약-상세는-기획서-6장">6. 데이터 요구사항 (요약 — 상세는 기획서 6장)</a>
-<a class="toc-l2" href="#7-로드맵-kpi-요약-상세는-기획서-7-8장">7. 로드맵 · KPI (요약 — 상세는 기획서 7~8장)</a>
+<a class="toc-l2" href="#7-로드맵-kpi-요약-상세는-기획서-78장">7. 로드맵 · KPI (요약 — 상세는 기획서 7~8장)</a>
 <a class="toc-l2" href="#8-리스크-요약-상세는-기획서-9장">8. 리스크 (요약 — 상세는 기획서 9장)</a>
 <a class="toc-l2" href="#9-발표-시연-동선-5분-7화면-반영-개정안-리허설에서-확정">9. 발표 시연 동선 (5분) — 7화면 반영 개정안 <span class="star">⭐</span> (리허설에서 확정)</a>
-<a class="toc-l2" href="#10-현재-상태-및-남은-작업-2026-07-07-기준">10. 현재 상태 및 남은 작업 (2026-07-07 기준)</a>
+<a class="toc-l2" href="#10-현재-상태-및-남은-작업-2026-07-08-기준">10. 현재 상태 및 남은 작업 (2026-07-08 기준)</a>
 <a class="toc-l3" href="#완료">완료</a>
 <a class="toc-l3" href="#남은-작업-우선순위-순">남은 작업 (우선순위 순)</a>
 <a class="toc-l3" href="#알려진-이슈">알려진 이슈</a></nav>
 <main class="doc">
-<div class="meta"><span class="pill">Product Requirements Document</span><span class="pill">AI 업무 승계 비서</span><span class="pill">2026-07-07 기준</span></div>
+<div class="meta"><span class="pill">Product Requirements Document</span><span class="pill">Hello JARVIS</span><span class="pill">2026-07-08</span></div>
 <h1 id="prd-직무-메모리-ai-업무-승계-비서">PRD — 직무 메모리 (AI 업무 승계 비서)<a class="anchor" href="#prd-직무-메모리-ai-업무-승계-비서" aria-label="section link">#</a></h1>
-<blockquote>"사람은 떠나도, 업무는 남게."</blockquote>
-<div class="table-wrap"><table><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody><tr><td>문서 성격</td><td>제품 요구사항 정의서 (Product Requirements Document)</td></tr><tr><td>버전</td><td>v1.0 (2026-07-07) — 기획서 v2.0 + 데모 구현 현황 + <strong>기반층·S5 신규 개념</strong> 통합</td></tr><tr><td>원본 문서</td><td><code>docs/직무메모리_AI업무승계비서_기획서_v2.docx</code> (상세 명세), <code>README.md</code> (구현 현황)</td></tr><tr><td>기반 환경</td><td>사내 LLM(Gemma 4) · 사내 RAG 플랫폼</td></tr></tbody></table></div>
-<p><strong>이 문서와 기획서 v2.0의 관계</strong>: 기획서 v2.0 작성 이후 결정된 사항(<span class="star">⭐</span> 표시)이 이 PRD에는 반영되어 있고 기획서에는 아직 없다 — ① 기반층 "개인별 업무 분류" 격상, ② 데모 S5 "내 업무 매뉴얼" 화면, ③ 데모 화면 7개 체계(비전 S5→S6), ④ S0 스토리보드 컷신 오프닝. 기획서 갱신 시 이 PRD가 기준.</p>
+<blockquote>&quot;사람은 떠나도, 업무는 남게.&quot;</blockquote>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody><tr><td>문서 성격</td><td>제품 요구사항 정의서 (Product Requirements Document)</td></tr><tr><td>버전</td><td>v1.1 (2026-07-08) — 기획서 v2.0 + 데모 구현 현황 + <strong>Hello JARVIS 검색 진입점·기반층·S5 신규 개념</strong> 통합</td></tr><tr><td>원본 문서</td><td><code>docs/직무메모리_AI업무승계비서_기획서_v2.docx</code> (상세 명세), <code>README.md</code> (구현 현황)</td></tr><tr><td>기반 환경</td><td>사내 LLM(Gemma 4) · 사내 RAG 플랫폼</td></tr></tbody></table></div>
+<p><strong>이 문서와 기획서 v2.0의 관계</strong>: 기획서 v2.0 작성 이후 결정된 사항(<span class="star">⭐</span> 표시)이 이 PRD에는 반영되어 있고 기획서에는 아직 없다 — ① 직원 대표 진입점 &quot;Hello JARVIS?&quot; 검색 목업, ② 기반층 &quot;개인별 업무 분류&quot; 격상, ③ 데모 S5 &quot;내 업무 매뉴얼&quot; 화면, ④ 데모 화면 7개 체계(비전 S5→S6), ⑤ S0 영상 오프닝과 JARVIS 진입 CTA. 기획서 갱신 시 이 PRD가 기준.</p>
 <hr>
 <h2 id="1-제품-개요">1. 제품 개요<a class="anchor" href="#1-제품-개요" aria-label="section link">#</a></h2>
-<h3 id="1-1-한-줄-정의">1.1 한 줄 정의<a class="anchor" href="#1-1-한-줄-정의" aria-label="section link">#</a></h3>
-<p>순환근무 조직(한국지역난방공사)의 업무 기억을 사람이 아닌 <strong>자리(직무)</strong>에 귀속시키는 AI 업무 승계 비서. 발령 첫날 브리핑북이 기다리고, 시즌이 오면 업무가 예보되고, 기안 전 AI가 리스크를 점검하며, <strong>평소에는 내 업무가 자동 분류되어 나만의 매뉴얼로 쌓인다.</strong> <span class="star">⭐</span></p>
-<h3 id="1-2-목표-우선순위-순">1.2 목표 (우선순위 순)<a class="anchor" href="#1-2-목표-우선순위-순" aria-label="section link">#</a></h3>
-<ol>
-<li><strong>사내 AI 경진대회 우승</strong> — 실서비스 구현이 아니라 직원 공감과 발표 임팩트가 최우선</li>
-<li>심사위원·투표 직원이 데모 3분 안에 "저거 우리 부서에 있으면 쓰겠다"를 느끼게 할 것</li>
-<li>후속 개발 조직(IT부서·외부 파트너)이 문서만으로 착수 가능한 수준의 명세 제공 (기획서 4~7장)</li>
-</ol>
-<h3 id="1-3-핵심-가치">1.3 핵심 가치<a class="anchor" href="#1-3-핵심-가치" aria-label="section link">#</a></h3>
-<div class="table-wrap"><table><thead><tr><th>가치</th><th>설명</th><th>담당 기능</th></tr></thead><tbody><tr><td>시간을 아낀다</td><td>인수인계 적응 단축, 반복 문서 작성 절감</td><td>기능 ①②</td></tr><tr><td>직원을 지킨다</td><td>감사 지적·반려 사전 예방 — "나를 보호하는 AI"</td><td>기능 ③</td></tr><tr><td>조직에 남긴다</td><td>문서 적재·태깅이 누적될수록 강해지는 구조</td><td>기반층 <span class="star">⭐</span></td></tr><tr><td><strong>나를 위한 도구</strong> <span class="star">⭐</span></td><td>쌓는 게 아니라 <strong>쓰다 보면 쌓여 있는</strong> 구조 — 도입 동기 선순환</td><td>기반층(밀착형 업무 매뉴얼)</td></tr></tbody></table></div>
+<h3 id="11-한-줄-정의">1.1 한 줄 정의<a class="anchor" href="#11-한-줄-정의" aria-label="section link">#</a></h3>
+<p>순환근무 조직(한국지역난방공사)의 업무 기억을 사람이 아닌 <strong>자리(직무)</strong>에 귀속시키는 사내 업무 비서. 직원은 <strong>Hello JARVIS?</strong> 검색창에 묻고, 시스템은 사내 결재문서·규정·회의록·반려 이력을 근거로 답하며, 바로 초안 작성·사전점검·브리핑북으로 이어준다. 발령 첫날에는 브리핑북이 기다리고, 시즌이 오면 업무가 예보되며, <strong>평소에는 내 업무가 자동 분류되어 나만의 매뉴얼로 쌓인다.</strong> <span class="star">⭐</span></p>
+<h3 id="12-목표-우선순위-순">1.2 목표 (우선순위 순)<a class="anchor" href="#12-목표-우선순위-순" aria-label="section link">#</a></h3>
+<ol><li><strong>사내 AI 경진대회 우승</strong> — 실서비스 구현이 아니라 직원 공감과 발표 임팩트가 최우선</li><li>심사위원·투표 직원이 데모 3분 안에 &quot;저거 우리 부서에 있으면 쓰겠다&quot;를 느끼게 할 것</li><li>후속 개발 조직(IT부서·외부 파트너)이 문서만으로 착수 가능한 수준의 명세 제공 (기획서 4~7장)</li></ol>
+<h3 id="13-핵심-가치">1.3 핵심 가치<a class="anchor" href="#13-핵심-가치" aria-label="section link">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>가치</th><th>설명</th><th>담당 기능</th></tr></thead><tbody><tr><td>시간을 아낀다</td><td>인수인계 적응 단축, 반복 문서 작성 절감</td><td>기능 ①②</td></tr><tr><td>직원을 지킨다</td><td>감사 지적·반려 사전 예방 — &quot;나를 보호하는 AI&quot;</td><td>기능 ③</td></tr><tr><td>조직에 남긴다</td><td>문서 적재·태깅이 누적될수록 강해지는 구조</td><td>기반층 <span class="star">⭐</span></td></tr><tr><td><strong>나를 위한 도구</strong> <span class="star">⭐</span></td><td>물어보면 바로 답과 다음 액션을 얻고, 쓰다 보면 업무 기억이 쌓이는 구조</td><td>Hello JARVIS + 기반층</td></tr></tbody></table></div>
 <hr>
 <h2 id="2-배경-및-문제-정의">2. 배경 및 문제 정의<a class="anchor" href="#2-배경-및-문제-정의" aria-label="section link">#</a></h2>
-<h3 id="2-1-문제">2.1 문제<a class="anchor" href="#2-1-문제" aria-label="section link">#</a></h3>
-<div class="table-wrap"><table><thead><tr><th>상황</th><th>현상</th><th>결과</th></tr></thead><tbody><tr><td>발령 직후</td><td>인수인계가 형식적 문서 한 장으로 종료, 과거 문서 소재 파악 불가</td><td>전임자에게 전화 문의, 적응에 1~2개월</td></tr><tr><td>연간 반복업무</td><td>작년 문서를 못 찾거나 존재를 모름</td><td>70~80% 동일 문서를 매년 처음부터 작성</td></tr><tr><td>기안·결재</td><td>감사 지적·반려 이력이 개인 기억에만 존재</td><td>같은 지적·반려 반복, 심리적 부담</td></tr><tr><td><strong>평소</strong> <span class="star">⭐</span></td><td>업무 지식 정리는 "인수인계 때 몰아서 하는 일"로 인식</td><td>정리 유인 부재 → 데이터 공백의 근본 원인</td></tr></tbody></table></div>
-<h3 id="2-2-전략적-포지셔닝-경진대회-차별화-논리">2.2 전략적 포지셔닝 (경진대회 차별화 논리)<a class="anchor" href="#2-2-전략적-포지셔닝-경진대회-차별화-논리" aria-label="section link">#</a></h3>
-<ul>
-<li><strong>사무 AX 공백</strong>: 공사 AX 로드맵(2025.8 발표, 2025.9 AX추진단 출범) 2단계 과제가 전부</li>
-</ul>
-<p>설비·현장 중심(안전·열수요예측·경제운전·설비진단) → 전 직원이 매일 하는 기안·인수인계·감사 영역이 빈칸. 본 제안이 <strong>사무 AX 첫 사례</strong>이자 3단계(AI Agent)로 가는 디딤돌.</p>
-<ul>
-<li><strong>선행 사례 대비</strong>: 포스코 P-GPT·한화 AIDA는 "검색(수동)", 한국도로공사 AI Draft는 "초안(단건 생성)"에</li>
-</ul>
-<p>머묾. 인천공항공사가 2025 공공 AI 왕중왕전 대상을 받은 공식은 <strong>"예측 + 화면 표출"</strong> → 기능 ②를 알림에서 대시보드로 승격한 근거. SKT "1인 1 AI 에이전트"는 확산 비전(1자리 1메모리)의 근거.</p>
-<ul>
-<li><strong>순환근무·감사라는 공기업 고유 맥락</strong>을 정면으로 다루는 사례는 국내 미확인.</li>
-<li><strong>도입 동기 방어</strong> <span class="star">⭐</span>: 심사 단골 질문 "직원들이 왜 데이터를 쌓겠나?"에 기반층으로 선제 답변 —</li>
-</ul>
-<p>직원은 평소처럼 일할 뿐이고, 그 결과물이 자동 분류되어 본인 매뉴얼(= 미래의 브리핑북)이 된다.</p>
-<h3 id="2-3-페르소나">2.3 페르소나<a class="anchor" href="#2-3-페르소나" aria-label="section link">#</a></h3>
+<h3 id="21-문제">2.1 문제<a class="anchor" href="#21-문제" aria-label="section link">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>상황</th><th>현상</th><th>결과</th></tr></thead><tbody><tr><td>발령 직후</td><td>인수인계가 형식적 문서 한 장으로 종료, 과거 문서 소재 파악 불가</td><td>전임자에게 전화 문의, 적응에 1~2개월</td></tr><tr><td>연간 반복업무</td><td>작년 문서를 못 찾거나 존재를 모름</td><td>70~80% 동일 문서를 매년 처음부터 작성</td></tr><tr><td>기안·결재</td><td>감사 지적·반려 이력이 개인 기억에만 존재</td><td>같은 지적·반려 반복, 심리적 부담</td></tr><tr><td>사내 AI 사용 제약 <span class="star">⭐</span></td><td>외부 ChatGPT류 도구는 보안상 사용 곤란, 내부 문서도 알 수 없음</td><td>직원은 &quot;회사 자료를 아는 AI&quot;에 가장 목마름</td></tr><tr><td><strong>평소</strong> <span class="star">⭐</span></td><td>업무 지식 정리는 &quot;인수인계 때 몰아서 하는 일&quot;로 인식</td><td>정리 유인 부재 → 데이터 공백의 근본 원인</td></tr></tbody></table></div>
+<h3 id="22-전략적-포지셔닝-경진대회-차별화-논리">2.2 전략적 포지셔닝 (경진대회 차별화 논리)<a class="anchor" href="#22-전략적-포지셔닝-경진대회-차별화-논리" aria-label="section link">#</a></h3>
+<ul><li><strong>사무 AX 공백</strong>: 공사 AX 로드맵(2025.8 발표, 2025.9 AX추진단 출범) 2단계 과제가 전부 설비·현장 중심(안전·열수요예측·경제운전·설비진단) → 전 직원이 매일 하는 기안·인수인계·감사 영역이 빈칸. 본 제안이 <strong>사무 AX 첫 사례</strong>이자 3단계(AI Agent)로 가는 디딤돌.</li><li><strong>선행 사례 대비</strong>: 포스코 P-GPT·한화 AIDA는 &quot;검색(수동)&quot;, 한국도로공사 AI Draft는 &quot;초안(단건 생성)&quot;에 머묾. 인천공항공사가 2025 공공 AI 왕중왕전 대상을 받은 공식은 <strong>&quot;예측 + 화면 표출&quot;</strong> → 기능 ②를 알림에서 대시보드로 승격한 근거. SKT &quot;1인 1 AI 에이전트&quot;는 확산 비전(1자리 1메모리)의 근거.</li><li><strong>순환근무·감사라는 공기업 고유 맥락</strong>을 정면으로 다루는 사례는 국내 미확인.</li><li><strong>도입 동기 방어</strong> <span class="star">⭐</span>: 직원은 데이터를 쌓으려고 들어오지 않는다. &quot;Hello JARVIS?&quot;에 질문하고, 답변에서 초안·점검·브리핑을 바로 열어 편해지기 때문에 쓴다. 그 사용 결과가 자동 분류되어 본인 매뉴얼(= 미래의 브리핑북)이 된다.</li></ul>
+<h3 id="23-페르소나">2.3 페르소나<a class="anchor" href="#23-페르소나" aria-label="section link">#</a></h3>
 <p><strong>김민준 과장</strong> — 1월 2일 자로 ○○지사 요금정산팀 발령. 전임자는 이미 본사로 이동. 발표·데모의 전 서사가 이 한 사람의 하루(발령 첫날 → 6개월 뒤 평소 <span class="star">⭐</span>)를 따라간다. 기능 나열 금지.</p>
 <hr>
-<h2 id="3-제품-구조-v2-0-3대-기능-기반층-3대-기능">3. 제품 구조 <span class="star">⭐</span> (v2.0 "3대 기능" → "기반층 + 3대 기능")<a class="anchor" href="#3-제품-구조-v2-0-3대-기능-기반층-3대-기능" aria-label="section link">#</a></h2>
-<pre><code>        ┌─────────────┐ ┌───────────────┐ ┌─────────────┐
-        │ ① 브리핑북    │ │ ② 업무 일기예보 │ │ ③ 사전 점검  │
-        │ (과거·승계)   │ │ (현재·예보)     │ │ (보호·점검)  │
-        └──────┬──────┘ └───────┬───────┘ └──────┬──────┘
-               └────────────────┼─────────────────┘
-                ┌───────────────┴────────────────┐
-                │   기반층: 개인별 업무 분류        │ ⭐
-                │   (밀착형 업무 매뉴얼)            │
-                │   결재·메일·회의록 → 업무 단위     │
-                │   자동 분류 → 개인 매뉴얼 상시 축적 │
-                └────────────────────────────────┘</code></pre>
-<h3 id="3-0-기반층-개인별-업무-분류-밀착형-업무-매뉴얼">3.0 기반층 — 개인별 업무 분류 · 밀착형 업무 매뉴얼 <span class="star">⭐</span><a class="anchor" href="#3-0-기반층-개인별-업무-분류-밀착형-업무-매뉴얼" aria-label="section link">#</a></h3>
-<ul>
-<li><strong>정의</strong>: AI가 각자의 결재·메일·회의록을 업무 단위로 자동 분류해 "밀착형 업무 매뉴얼"로</li>
-</ul>
-<p>상시 축적하는 층. 직원 입장에서는 매일 쓰는 개인 비서(내 업무 지도·문서 찾기·업무별 요령), 조직 입장에서는 3대 기능의 데이터 기반.</p>
-<ul>
-<li><strong>핵심 논리</strong>: 브리핑북 = 전임자의 밀착형 매뉴얼. 인수인계 준비가 별도 작업이 아니라</li>
-</ul>
-<p>평소 사용의 부산물이 된다.</p>
-<ul>
-<li>기술적으로는 기획서 5장 "② 지식 계층(직무-문서 매핑 메타데이터)"의 사용자向 표출 개념 —</li>
-</ul>
-<p>아키텍처 신규 요소가 아니라 기존 계층의 재포지셔닝.</p>
-<h3 id="3-1-기능-브리핑북-과거-승계-p1">3.1 기능 ① 브리핑북 (과거 · 승계) — P1<a class="anchor" href="#3-1-기능-브리핑북-과거-승계-p1" aria-label="section link">#</a></h3>
-<ul>
-<li>발령 이벤트 시 직무 최근 2~3년 문서로 신임자용 요약 리포트 자동 생성.</li>
-<li>구성: 직무 개요·핵심 업무 / 연간 업무 달력 / 최근 주요 이슈 3~5건 / 협조처 / 원문 링크.</li>
-<li>품질: 모든 항목에 근거 문서 링크 필수, 근거 없으면 "문서 근거 없음" 명시 (환각 방지).</li>
-<li>생성: 섹션별 분할 요약 후 통합(맵-리듀스), Gemma 4 중형(256K 컨텍스트). 인사연동은 P2(파일럿은 수동).</li>
-</ul>
-<h3 id="3-2-기능-업무-일기예보-현재-예보-p1">3.2 기능 ② 업무 일기예보 (현재 · 예보) — P1<a class="anchor" href="#3-2-기능-업무-일기예보-현재-예보-p1" aria-label="section link">#</a></h3>
-<ul>
-<li>과거 기안 시점 기반 반복 업무 도래를 달력·예보 카드로 선제 표출, 승인 시 작년 문서 기반 초안 즉시 생성.</li>
-<li>예보 로직: <strong>연 1회 이상 · 2년 연속</strong> 반복 패턴 탐지 — LLM 불필요, 규칙 기반 배치.</li>
-</ul>
-<p>(∴ 데이터 요건: 전자결재 PDF 최소 2년치, 권장 2~3년 — 1년치로는 성립 불가)</p>
-<ul>
-<li>대시보드: 월간 달력 + 주간 예보 카드(업무명·작년 기안일·근거 문서 수·D-day) + 부서 뷰/내 자리 뷰.</li>
-<li>초안: 전년 문서 구조 분해 → 섹션 단위 생성(장문 일괄 생성 금지). 변경 필요 항목(연도·수치·일정)</li>
-</ul>
-<p>하이라이트. 수치·금액은 원문 인용만 허용(생성 금지). "AI 생성 초안 — 검토 필수" 고정 표기.</p>
-<h3 id="3-3-기능-사전-점검-보호-점검-p2">3.3 기능 ③ 사전 점검 (보호 · 점검) — P2<a class="anchor" href="#3-3-기능-사전-점검-보호-점검-p2" aria-label="section link">#</a></h3>
-<ul>
-<li>기안 제출 전 감사 지적사례·반려 이력·사규와 RAG 대조, 리스크 문구 하이라이트(주의/확인요망) + 근거 제시.</li>
-<li>오탐 감수·미탐 최소화의 보수적 설정. <strong>"문제 없음" 확정 표현 금지</strong> — 최종 판단은 사람.</li>
-<li>감사 데이터 민감성으로 P2 후순위(익명화·유형화 사례집으로 감사부서 협약 후 적재).</li>
-</ul>
-<p>경진대회 시연은 각색 샘플로 수행. 발표에서는 이 기능이 감정적 클라이맥스.</p>
-<h3 id="3-4-명시적-비범위-out-of-scope">3.4 명시적 비범위 (Out of Scope)<a class="anchor" href="#3-4-명시적-비범위-out-of-scope" aria-label="section link">#</a></h3>
-<ul>
-<li>자율 에이전트(도구 선택·자동 기안·자동 결재) — AX 3단계 시점 재검토</li>
-<li>외부 클라우드 LLM API — 사내망 원칙 위배</li>
-<li>암묵지(대인관계·구두 관행) 승계 — 문서에 없는 지식은 범위 밖임을 UI에 명시</li>
-</ul>
+<h2 id="3-제품-구조-v20-3대-기능-기반층-3대-기능">3. 제품 구조 <span class="star">⭐</span> (v2.0 &quot;3대 기능&quot; → &quot;기반층 + 3대 기능&quot;)<a class="anchor" href="#3-제품-구조-v20-3대-기능-기반층-3대-기능" aria-label="section link">#</a></h2>
+<pre><code>        ┌────────────────────────────────────────┐
+        │ P0. Hello JARVIS? — 사내 근거 검색 진입점 │ ⭐
+        │ 질문 → 근거 답변 → 초안/점검/브리핑 액션    │
+        └───────────────┬────────────────────────┘
+        ┌───────────────┴───────────────┐
+        │ 기반층: 개인별 업무 분류         │ ⭐
+        │ 결재·메일·회의록 → 업무 단위      │
+        │ 자동 분류 → 개인 매뉴얼 상시 축적  │
+        └──────┬────────────┬────────────┘
+        ┌──────┴──────┐ ┌───┴────────┐ ┌──────┴──────┐
+        │ ① 브리핑북   │ │ ② 업무 예보 │ │ ③ 사전 점검 │
+        │ 과거·승계    │ │ 현재·초안   │ │ 보호·근거    │
+        └─────────────┘ └────────────┘ └─────────────┘</code></pre>
+<h3 id="30-p0-hello-jarvis-사내-근거-검색-진입점">3.0 P0 — Hello JARVIS? 사내 근거 검색 진입점 <span class="star">⭐</span><a class="anchor" href="#30-p0-hello-jarvis-사내-근거-검색-진입점" aria-label="section link">#</a></h3>
+<ul><li><strong>정의</strong>: 직원이 업무명을 몰라도 자연어로 물으면, 사내 결재문서·규정·회의록·반려 이력을 근거로 답하고 근거 문서·검증상태·신뢰도와 함께 다음 업무 액션(초안 작성, 사전점검, 브리핑북, 업무 예보)을 제시하는 첫 화면.</li><li><strong>UX 원칙</strong>: 구글 첫 화면처럼 검색창 하나로 진입한다. 답변 화면은 챗봇보다 &quot;근거 있는 업무 검색 결과&quot;에 가깝게 구성한다. 기술어(온톨로지, 파싱)는 숨기고, 근거·검증상태·다음 액션만 보인다.</li><li><strong>채택 논리</strong>: 외부 AI 사용이 어려운 공기업에서 직원이 가장 쉽게 공감하는 니즈는 &quot;우리 회사 자료를 아는 AI에게 묻고 싶다&quot;이다. 질문은 업무 추가가 아니며, 답변 뒤 액션으로 초안·점검·브리핑 사용을 끌어낸다.</li><li><strong>구현 목업</strong>: <code>demo/jarvis.html</code> (Carbon 각색 디자인 시스템 기반).</li></ul>
+<h3 id="31-기반층-개인별-업무-분류-밀착형-업무-매뉴얼">3.1 기반층 — 개인별 업무 분류 · 밀착형 업무 매뉴얼 <span class="star">⭐</span><a class="anchor" href="#31-기반층-개인별-업무-분류-밀착형-업무-매뉴얼" aria-label="section link">#</a></h3>
+<ul><li><strong>정의</strong>: AI가 각자의 결재·메일·회의록을 업무 단위로 자동 분류해 &quot;밀착형 업무 매뉴얼&quot;로 상시 축적하는 층. 직원 입장에서는 매일 쓰는 개인 비서(내 업무 지도·문서 찾기·업무별 요령), 조직 입장에서는 3대 기능의 데이터 기반.</li><li><strong>핵심 논리</strong>: 브리핑북 = 전임자의 밀착형 매뉴얼. 인수인계 준비가 별도 작업이 아니라 평소 사용의 부산물이 된다.</li><li>기술적으로는 기획서 5장 &quot;② 지식 계층(직무-문서 매핑 메타데이터)&quot;의 사용자向 표출 개념 — 아키텍처 신규 요소가 아니라 기존 계층의 재포지셔닝.</li></ul>
+<h3 id="32-기능-①-브리핑북-과거-승계-p1">3.2 기능 ① 브리핑북 (과거 · 승계) — P1<a class="anchor" href="#32-기능-①-브리핑북-과거-승계-p1" aria-label="section link">#</a></h3>
+<ul><li>발령 이벤트 시 직무 최근 2~3년 문서로 신임자용 요약 리포트 자동 생성.</li><li>구성: 직무 개요·핵심 업무 / 연간 업무 달력 / 최근 주요 이슈 3~5건 / 협조처 / 원문 링크.</li><li>품질: 모든 항목에 근거 문서 링크 필수, 근거 없으면 &quot;문서 근거 없음&quot; 명시 (환각 방지).</li><li>생성: 섹션별 분할 요약 후 통합(맵-리듀스), Gemma 4 중형(256K 컨텍스트). 인사연동은 P2(파일럿은 수동).</li></ul>
+<h3 id="33-기능-②-업무-일기예보-초안-준비-현재-예보-p1">3.3 기능 ② 업무 일기예보 + 초안 준비 (현재 · 예보) — P1<a class="anchor" href="#33-기능-②-업무-일기예보-초안-준비-현재-예보-p1" aria-label="section link">#</a></h3>
+<ul><li>과거 기안 시점 기반 반복 업무 도래를 달력·예보 카드로 선제 표출, 승인 시 작년 문서 기반 초안 즉시 생성.</li><li>예보 로직: <strong>연 1회 이상 · 2년 연속</strong> 반복 패턴 탐지 — LLM 불필요, 규칙 기반 배치. (∴ 데이터 요건: 전자결재 PDF 최소 2년치, 권장 2~3년 — 1년치로는 성립 불가)</li><li>대시보드: 월간 달력 + 주간 예보 카드(업무명·작년 기안일·근거 문서 수·D-day) + 부서 뷰/내 자리 뷰.</li><li>초안: 전년 문서 구조 분해 → 섹션 단위 생성(장문 일괄 생성 금지). 변경 필요 항목(연도·수치·일정) 하이라이트. 수치·금액은 원문 인용만 허용(생성 금지). &quot;AI 생성 초안 — 검토 필수&quot; 고정 표기.</li></ul>
+<h3 id="34-기능-③-사전-점검-보호-점검-p2">3.4 기능 ③ 사전 점검 (보호 · 점검) — P2<a class="anchor" href="#34-기능-③-사전-점검-보호-점검-p2" aria-label="section link">#</a></h3>
+<ul><li>기안 제출 전 감사 지적사례·반려 이력·사규와 RAG 대조, 리스크 문구 하이라이트(주의/확인요망) + 근거 제시.</li><li>오탐 감수·미탐 최소화의 보수적 설정. <strong>&quot;문제 없음&quot; 확정 표현 금지</strong> — 최종 판단은 사람.</li><li>감사 데이터 민감성으로 P2 후순위(익명화·유형화 사례집으로 감사부서 협약 후 적재). 경진대회 시연은 각색 샘플로 수행. 발표에서는 이 기능이 감정적 클라이맥스.</li></ul>
+<h3 id="35-명시적-비범위-out-of-scope">3.5 명시적 비범위 (Out of Scope)<a class="anchor" href="#35-명시적-비범위-out-of-scope" aria-label="section link">#</a></h3>
+<ul><li>자율 에이전트(도구 선택·자동 기안·자동 결재) — AX 3단계 시점 재검토</li><li>외부 클라우드 LLM API — 사내망 원칙 위배</li><li>암묵지(대인관계·구두 관행) 승계 — 문서에 없는 지식은 범위 밖임을 UI에 명시</li></ul>
 <hr>
 <h2 id="4-경진대회-데모-요구사항-1차-산출물-구현-완료">4. 경진대회 데모 요구사항 (1차 산출물 — 구현 완료)<a class="anchor" href="#4-경진대회-데모-요구사항-1차-산출물-구현-완료" aria-label="section link">#</a></h2>
-<h3 id="4-1-원칙">4.1 원칙<a class="anchor" href="#4-1-원칙" aria-label="section link">#</a></h3>
-<ul>
-<li>실서비스가 아닌 <strong>시연용 프로토타입</strong>. 전 데이터 하드코딩 샘플(실제 부서명·사업명·인명·감사사례</li>
-</ul>
-<p>미사용, 각색), LLM 호출 없이 사전 연출. 발표 시 정직 포지션: "화면은 프로토타입, 파이프라인은 사내 인프라(5장 아키텍처)로 구현 가능."</p>
-<ul>
-<li>단일 HTML(<code>demo/index.html</code>) + <code>demo/assets/</code> — 서버·네트워크 불필요, 더블클릭 구동.</li>
-<li>해상도 1920×1080(16:9) 고정, 본문 최소 18px(뒷좌석 가독).</li>
-</ul>
-<h3 id="4-2-화면-구성-7화면-v2-0-기획서는-6화면-기준-10-3절-갱신-필요">4.2 화면 구성 — 7화면 <span class="star">⭐</span> (v2.0 기획서는 6화면 기준, 10.3절 갱신 필요)<a class="anchor" href="#4-2-화면-구성-7화면-v2-0-기획서는-6화면-기준-10-3절-갱신-필요" aria-label="section link">#</a></h3>
-<div class="table-wrap"><table><thead><tr><th>화면</th><th>이름</th><th>서사 역할</th><th>상태</th></tr></thead><tbody><tr><td>S0</td><td>인트로 — 김 과장의 첫 출근</td><td>페르소나 몰입. 문서요정이 서류 수집→OCR→자동 분류→대시보드 완성으로 이어지는 스토리보드 컷신 오프닝(스크롤 연동) + 타이틀 전환 <span class="star">⭐</span></td><td><span class="ok">✅</span></td></tr><tr><td>S1</td><td>브리핑북</td><td>기능 ① Before/After. "전화로 물어볼 필요가 없다" + "문서 근거 없음" 신뢰 포인트</td><td><span class="ok">✅</span></td></tr><tr><td>S2</td><td>업무 일기예보 대시보드</td><td>기능 ② 메인. 발표 중 실시간 '띵' 알림(A키) → 클릭 → S3</td><td><span class="ok">✅</span></td></tr><tr><td>S3</td><td>초안 생성</td><td>기능 ② 완결. 섹션별 타이핑 연출, 노란 하이라이트 + 체크리스트</td><td><span class="ok">✅</span></td></tr><tr><td>S4</td><td>사전 점검</td><td>기능 ③ <strong>클라이맥스</strong>. 리스크 2건 하이라이트 + 근거 패널 + "최종 판단은 담당자"</td><td><span class="ok">✅</span></td></tr><tr><td><strong>S5</strong> <span class="star">⭐</span></td><td><strong>내 업무 매뉴얼 — 6개월 뒤</strong></td><td><strong>시점 반전</strong>: 받는 사람 → 쌓는 사람. 결재·메일·회의록 4건이 실시간 자동 분류되어 개인 매뉴얼 갱신(버전 bump·문서 수 증가) → "일했을 뿐인데 매뉴얼이 쌓였습니다" → "떠나는 날 이것이 다음 사람의 브리핑북"</td><td><span class="ok">✅</span></td></tr><tr><td>S6</td><td>비전 — 1자리 1메모리</td><td>조직도 점등 + 설비 카르테 한 줄 + 클로징 "당신의 다음 발령지에도, 이게 먼저 가 있습니다"</td><td><span class="ok">✅</span> (구 S5)</td></tr></tbody></table></div>
-<h3 id="4-3-s0-상세-스토리보드-컷신-오프닝-기획서-미반영">4.3 S0 상세 (스토리보드 컷신 오프닝 — 기획서 미반영 <span class="star">⭐</span>)<a class="anchor" href="#4-3-s0-상세-스토리보드-컷신-오프닝-기획서-미반영" aria-label="section link">#</a></h3>
-<p>스크롤 연동 6컷 이미지 시퀀스(트랙 520vh, 되감기 가능, <code>→</code>로 건너뛰기): 문서요정이 서류 더미에 묻힌 상태(CUT 01) → 벌떡 일어나 정리 자동화 시작(CUT 02) → 필요한 서류를 빠르게 수집(CUT 03) → 모니터가 스캔·OCR 인식(CUT 04) → 계약서·보고서·영수증·신청서 자동 분류(CUT 05) → 정리된 문서와 대시보드 완성(CUT 06) → 컷신이 은은하게 배경화되며 타이틀 "사람은 떠나도, 업무는 남게." 등장(0.96~). 컷 이미지는 <code>demo/assets/storyboard/s0-cut-01.jpg</code>~<code>s0-cut-06.jpg</code>에 저장. 상세 구현·검증 결과는 README 참조.</p>
-<h3 id="4-4-s5-상세-신규">4.4 S5 상세 (신규 <span class="star">⭐</span>)<a class="anchor" href="#4-4-s5-상세-신규" aria-label="section link">#</a></h3>
-<p>진입 시 자동 재생 (<code>runManual()</code>): 어두운 시점 자막(2.2초, "발령 6개월 뒤 · 2026년 7월") → 피드 4건이 2.3초 간격 유입(전자결재·회신 메일·전자결재·회의록), 각 건이 서류 칩으로 해당 분류에 꽂히며 분류 카드 하이라이트 + 버전 bump(v2.3→v2.4) + 문서 수 +1 + 틱 사운드 → 클로징 오버레이 (~13초) → CTA(비전 보기 / 다시 보기). 매뉴얼 분류 4종(요금 정산 / 정산 민원 대응 / 정산시스템 전환 / 계획·보고)은 S1 핵심 업무 4개와 대응. 문구 데이터: <code>index.html</code>의 <code>MFEED</code> / <code>MBASE</code>.</p>
-<h3 id="4-5-조작-체계">4.5 조작 체계<a class="anchor" href="#4-5-조작-체계" aria-label="section link">#</a></h3>
-<p><code>←</code>/<code>→</code> 화면 이동 · 숫자키 <code>0</code>~<code>6</code> 직행 <span class="star">⭐</span> · <code>A</code> = S2 알림 재연출 · 딥링크 <code>#s0</code>~<code>#s6</code> (+<code>#s4?auto=1</code> 점검 자동 실행) · S4 하단 버튼 "6개월 뒤 →"(S5 진입) <span class="star">⭐</span></p>
+<h3 id="41-원칙">4.1 원칙<a class="anchor" href="#41-원칙" aria-label="section link">#</a></h3>
+<ul><li>실서비스가 아닌 <strong>시연용 프로토타입</strong>. 전 데이터 하드코딩 샘플(실제 부서명·사업명·인명·감사사례 미사용, 각색), LLM 호출 없이 사전 연출. 발표 시 정직 포지션: &quot;화면은 프로토타입, 파이프라인은 사내 인프라(5장 아키텍처)로 구현 가능.&quot;</li><li>단일 HTML(<code>demo/index.html</code>, <code>demo/jarvis.html</code>) + <code>demo/assets/</code> — 서버·네트워크 불필요, 더블클릭 구동.</li><li>해상도 1920×1080(16:9) 고정, 본문 최소 18px(뒷좌석 가독).</li></ul>
+<h3 id="42-화면-구성-검색-목업-7화면">4.2 화면 구성 — 검색 목업 + 7화면 <span class="star">⭐</span><a class="anchor" href="#42-화면-구성-검색-목업-7화면" aria-label="section link">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>산출물</th><th>이름</th><th>서사 역할</th><th>상태</th></tr></thead><tbody><tr><td><code>jarvis.html</code> <span class="star">⭐</span></td><td>Hello JARVIS?</td><td>직원 대표 진입점. 사내 근거 검색 → 답변 → 근거 문서 → 초안/점검/브리핑 액션. 기술 엔진은 숨기고 &quot;편해서 쓰는&quot; 경험을 보여줌</td><td><span class="ok">✅</span></td></tr></tbody></table></div>
+<p>기존 발표 데모 본편:</p>
+<div class="table-wrap"><table><thead><tr><th>화면</th><th>이름</th><th>서사 역할</th><th>상태</th></tr></thead><tbody><tr><td>S0</td><td>인트로 — 김 과장의 첫 출근</td><td>페르소나 몰입. <code>opening.mp4</code> 영상 오프닝 후 &quot;Hello JARVIS? 업무는 먼저 준비되게.&quot; 타이틀과 검색 진입 CTA 노출 <span class="star">⭐</span></td><td><span class="ok">✅</span></td></tr><tr><td>S1</td><td>브리핑북</td><td>기능 ① Before/After. &quot;전화로 물어볼 필요가 없다&quot; + &quot;문서 근거 없음&quot; 신뢰 포인트</td><td><span class="ok">✅</span></td></tr><tr><td>S2</td><td>업무 일기예보 대시보드</td><td>기능 ② 메인. 발표 중 실시간 '띵' 알림(A키) → 클릭 → S3</td><td><span class="ok">✅</span></td></tr><tr><td>S3</td><td>초안 생성</td><td>기능 ② 완결. 섹션별 타이핑 연출, 노란 하이라이트 + 체크리스트</td><td><span class="ok">✅</span></td></tr><tr><td>S4</td><td>사전 점검</td><td>기능 ③ <strong>클라이맥스</strong>. 리스크 2건 하이라이트 + 근거 패널 + &quot;최종 판단은 담당자&quot;</td><td><span class="ok">✅</span></td></tr><tr><td><strong>S5</strong> <span class="star">⭐</span></td><td><strong>내 업무 매뉴얼 — 6개월 뒤</strong></td><td><strong>시점 반전</strong>: 받는 사람 → 쌓는 사람. 결재·메일·회의록 4건이 실시간 자동 분류되어 개인 매뉴얼 갱신(버전 bump·문서 수 증가) → &quot;일했을 뿐인데 매뉴얼이 쌓였습니다&quot; → &quot;떠나는 날 이것이 다음 사람의 브리핑북&quot;</td><td><span class="ok">✅</span></td></tr><tr><td>S6</td><td>비전 — 1자리 1메모리</td><td>조직도 점등 + 설비 카르테 한 줄 + 클로징 &quot;당신의 다음 발령지에도, 이게 먼저 가 있습니다&quot;</td><td><span class="ok">✅</span> (구 S5)</td></tr></tbody></table></div>
+<h3 id="43-s0-상세-영상-오프닝-jarvis-진입-기획서-미반영">4.3 S0 상세 (영상 오프닝 + JARVIS 진입 — 기획서 미반영 <span class="star">⭐</span>)<a class="anchor" href="#43-s0-상세-영상-오프닝-jarvis-진입-기획서-미반영" aria-label="section link">#</a></h3>
+<p><code>demo/assets/opening.mp4</code>가 첫 출근 장면을 짧게 보여준 뒤, 타이틀 &quot;Hello JARVIS? 업무는 먼저 준비되게.&quot;로 전환된다. 첫 CTA는 <code>demo/jarvis.html</code>로 연결되어 사용자가 구글 첫 화면처럼 업무 질문을 입력하고, 답변·근거 문서·검증 상태·다음 액션을 확인한다. 이후 결과 액션에서 S1 브리핑북, S2 업무 일기예보, S3 초안, S4 사전점검으로 이어져 기존 본편 데모와 자연스럽게 결합된다. 상세 구현·검증 결과는 README와 <code>demo/tests/verify-s0-cutscene.js</code> 참조.</p>
+<h3 id="44-s5-상세-신규">4.4 S5 상세 (신규 <span class="star">⭐</span>)<a class="anchor" href="#44-s5-상세-신규" aria-label="section link">#</a></h3>
+<p>진입 시 자동 재생 (<code>runManual()</code>): 어두운 시점 자막(2.2초, &quot;발령 6개월 뒤 · 2026년 7월&quot;) → 피드 4건이 2.3초 간격 유입(전자결재·회신 메일·전자결재·회의록), 각 건이 서류 칩으로 해당 분류에 꽂히며 분류 카드 하이라이트 + 버전 bump(v2.3→v2.4) + 문서 수 +1 + 틱 사운드 → 클로징 오버레이 (~13초) → CTA(비전 보기 / 다시 보기). 매뉴얼 분류 4종(요금 정산 / 정산 민원 대응 / 정산시스템 전환 / 계획·보고)은 S1 핵심 업무 4개와 대응. 문구 데이터: <code>index.html</code>의 <code>MFEED</code> / <code>MBASE</code>.</p>
+<h3 id="45-조작-체계">4.5 조작 체계<a class="anchor" href="#45-조작-체계" aria-label="section link">#</a></h3>
+<p><code>jarvis.html</code>: 예시 질문 클릭/검색 → 결과 화면, <code>Esc</code>/뒤로 버튼으로 홈 복귀, 결과 액션은 <code>index.html#s1~#s4</code>로 연결.</p>
+<p><code>index.html</code>: <code>←</code>/<code>→</code> 화면 이동 · 숫자키 <code>0</code>~<code>6</code> 직행 <span class="star">⭐</span> · <code>A</code> = S2 알림 재연출 · 딥링크 <code>#s0</code>~<code>#s6</code> (+<code>#s4?auto=1</code> 점검 자동 실행) · S4 하단 버튼 &quot;6개월 뒤 →&quot;(S5 진입) <span class="star">⭐</span></p>
 <hr>
 <h2 id="5-실서비스-아키텍처-요약-상세는-기획서-5장">5. 실서비스 아키텍처 (요약 — 상세는 기획서 5장)<a class="anchor" href="#5-실서비스-아키텍처-요약-상세는-기획서-5장" aria-label="section link">#</a></h2>
-<ul>
-<li><strong>설계 원칙</strong>: ① 에이전트가 아닌 고정 워크플로우(트리거→검색→생성→전달; 예측 가능성·구축 난도</li>
-</ul>
-<p>통제, AX 3단계에 에이전트로 승격 경로 확보) ② 기존 인프라 재사용(사내 Gemma 4 + RAG 플랫폼, 신규 도입·외부 API 없음) ③ 근거 우선(원문 링크 강제, 근거 없는 문장 미출력)</p>
-<ul>
-<li><strong>5계층</strong>: 데이터 수집·전처리(HWP/PDF 파서, 메타데이터 태거) → 지식 계층(문서 저장소 + 벡터</li>
-</ul>
-<p>인덱스 + 직무-문서 매핑 DB) → 워크플로우 계층(스케줄러/이벤트 핸들러/파이프라인) → 생성 계층 (Gemma 4 중형 26B MoE 권장, 프롬프트 템플릿 3종) → 사용자 접점(웹 대시보드 + 알림 채널)</p>
-<ul>
-<li>업무 일기예보는 LLM 미사용(규칙 기반 배치), 브리핑북·초안은 섹션 분할 생성 필수.</li>
-</ul>
+<ul><li><strong>설계 원칙</strong>: ① 에이전트가 아닌 고정 워크플로우(트리거→검색→생성→전달; 예측 가능성·구축 난도 통제, AX 3단계에 에이전트로 승격 경로 확보) ② 기존 인프라 재사용(사내 Gemma 4 + RAG 플랫폼, 신규 도입·외부 API 없음) ③ 근거 우선(원문 링크 강제, 근거 없는 문장 미출력)</li><li><strong>5계층</strong>: 데이터 수집·전처리(HWP/PDF 파서, 메타데이터 태거) → 지식 계층(문서 저장소 + 벡터 인덱스 + 직무-문서 매핑 DB) → 워크플로우 계층(스케줄러/이벤트 핸들러/파이프라인) → 생성 계층 (Gemma 4 중형 26B MoE 권장, 프롬프트 템플릿 3종) → 사용자 접점(웹 대시보드 + 알림 채널)</li><li>업무 일기예보는 LLM 미사용(규칙 기반 배치), 브리핑북·초안은 섹션 분할 생성 필수.</li></ul>
 <h2 id="6-데이터-요구사항-요약-상세는-기획서-6장">6. 데이터 요구사항 (요약 — 상세는 기획서 6장)<a class="anchor" href="#6-데이터-요구사항-요약-상세는-기획서-6장" aria-label="section link">#</a></h2>
-<ul>
-<li>수집: 기안문·품의서(전자결재) / 사업계획·실적보고(공유폴더) / 복명서·회의록 / 감사 지적사례·반려</li>
-</ul>
-<p>이력(감사부서) / 사규·지침(기존 RAG 기적재 추정)</p>
-<ul>
-<li><strong>핵심 공수 = HWP 파싱</strong> (HWPX 우선, 표 손실률 파일럿 측정) + 메타데이터 태깅(문서ID·기안일자·</li>
-</ul>
-<p>직무코드·문서유형 등) + <strong>직무코드 체계 확정(인사부서 협의 — 개발 착수 전 선결 과제)</strong></p>
-<ul>
-<li>반복 탐지 요건: 전자결재 문서 <strong>최소 2년치(권장 2~3년)</strong></li>
-<li>보안: 원 시스템 권한 상속, 감사 지식베이스 별도 등급, 전 처리 사내망 내 수행</li>
-</ul>
-<h2 id="7-로드맵-kpi-요약-상세는-기획서-7-8장">7. 로드맵 · KPI (요약 — 상세는 기획서 7~8장)<a class="anchor" href="#7-로드맵-kpi-요약-상세는-기획서-7-8장" aria-label="section link">#</a></h2>
-<ul>
-<li><strong>1단계 파일럿(~3개월)</strong>: 직무 1개(반복 기안 多·문서 정리 양호), 기능 ①②.</li>
-</ul>
-<p>완료 기준: 실사용 후기 ≥3건, 초안의 실제 기안 활용 ≥5건</p>
-<ul>
-<li><strong>2단계 확산(~6개월)</strong>: 파일럿 부서 전체 + 인접 2~3개 부서, 기능 ③ 착수(감사부서 협약)</li>
-<li><strong>3단계 전사</strong>: 발령→브리핑북 자동 발급, 에이전트형 확장·설비 카르테 타당성 검토</li>
-<li>KPI(파일럿): 반복 문서 작성 시간 50%↓ 체감 / 브리핑북 "도움 됨" 80%↑ / 초안 실사용률 40%↑ /</li>
-</ul>
-<p>문서 적재율 80%↑ / 재사용 의향 70%↑. 오픈 전 내부 검수(생성물 20건 샘플 평가) 통과제.</p>
-<ul>
-<li>원칙: <strong>좁게 시작해야 진짜 효과가 난다</strong> — 전사 일괄 오픈 금지, 파일럿 성공 후기로 확산.</li>
-</ul>
+<ul><li>수집: 기안문·품의서(전자결재) / 사업계획·실적보고(공유폴더) / 복명서·회의록 / 감사 지적사례·반려 이력(감사부서) / 사규·지침(기존 RAG 기적재 추정)</li><li><strong>핵심 공수 = HWP 파싱</strong> (HWPX 우선, 표 손실률 파일럿 측정) + 메타데이터 태깅(문서ID·기안일자· 직무코드·문서유형 등) + <strong>직무코드 체계 확정(인사부서 협의 — 개발 착수 전 선결 과제)</strong></li><li>반복 탐지 요건: 전자결재 문서 <strong>최소 2년치(권장 2~3년)</strong></li><li>보안: 원 시스템 권한 상속, 감사 지식베이스 별도 등급, 전 처리 사내망 내 수행</li></ul>
+<h2 id="7-로드맵-kpi-요약-상세는-기획서-78장">7. 로드맵 · KPI (요약 — 상세는 기획서 7~8장)<a class="anchor" href="#7-로드맵-kpi-요약-상세는-기획서-78장" aria-label="section link">#</a></h2>
+<ul><li><strong>1단계 파일럿(~3개월)</strong>: 직무 1개(반복 기안 多·문서 정리 양호), 기능 ①②. 완료 기준: 실사용 후기 ≥3건, 초안의 실제 기안 활용 ≥5건</li><li><strong>2단계 확산(~6개월)</strong>: 파일럿 부서 전체 + 인접 2~3개 부서, 기능 ③ 착수(감사부서 협약)</li><li><strong>3단계 전사</strong>: 발령→브리핑북 자동 발급, 에이전트형 확장·설비 카르테 타당성 검토</li><li>KPI(파일럿): 반복 문서 작성 시간 50%↓ 체감 / 브리핑북 &quot;도움 됨&quot; 80%↑ / 초안 실사용률 40%↑ / 문서 적재율 80%↑ / 재사용 의향 70%↑. 오픈 전 내부 검수(생성물 20건 샘플 평가) 통과제.</li><li>원칙: <strong>좁게 시작해야 진짜 효과가 난다</strong> — 전사 일괄 오픈 금지, 파일럿 성공 후기로 확산.</li></ul>
 <h2 id="8-리스크-요약-상세는-기획서-9장">8. 리스크 (요약 — 상세는 기획서 9장)<a class="anchor" href="#8-리스크-요약-상세는-기획서-9장" aria-label="section link">#</a></h2>
-<p>데이터 분산·미적재 / HWP 파싱 품질 / 환각 / 감사 데이터 민감성 / 초기 품질로 인한 이탈 / 기대 과잉("인수인계 완전 대체" 오인) / AX 과제 중복 오해(→ 2.4절 정렬 논리로 선제 대응). 심사 Q&amp;A 대비 논리는 기획서 부록 A.3.</p>
+<p>데이터 분산·미적재 / HWP 파싱 품질 / 환각 / 감사 데이터 민감성 / 초기 품질로 인한 이탈 / 기대 과잉(&quot;인수인계 완전 대체&quot; 오인) / AX 과제 중복 오해(→ 2.4절 정렬 논리로 선제 대응). 심사 Q&amp;A 대비 논리는 기획서 부록 A.3.</p>
 <hr>
 <h2 id="9-발표-시연-동선-5분-7화면-반영-개정안-리허설에서-확정">9. 발표 시연 동선 (5분) — 7화면 반영 개정안 <span class="star">⭐</span> (리허설에서 확정)<a class="anchor" href="#9-발표-시연-동선-5분-7화면-반영-개정안-리허설에서-확정" aria-label="section link">#</a></h2>
-<div class="table-wrap"><table><thead><tr><th>시간</th><th>화면</th><th>핵심 멘트·행동</th></tr></thead><tbody><tr><td>00:00</td><td>(화면 없음)</td><td>"발령 첫 주, 인수인계서 몇 장 받으셨어요?" — 형식적 인수인계서 1장. 웃음·공감</td></tr><tr><td>00:30</td><td>S0 → S1</td><td>문서요정 컷신 오프닝 스크롤 → 김 과장 페르소나 → 브리핑북. "전임자에게 전화하지 않았습니다"</td></tr><tr><td>01:50</td><td>S2 → S3</td><td>'띵' 알림 실시간 연출 → 청중 앞에서 클릭 → 초안 생성. "반나절이 3분이 됐습니다"</td></tr><tr><td>03:00</td><td>S4</td><td>"지금부터는 당신을 지키는 AI입니다" — 리스크 하이라이트 + 근거. <strong>클라이맥스</strong></td></tr><tr><td>04:00</td><td><strong>S5</strong> <span class="star">⭐</span></td><td>"그런데 이 브리핑북, 누가 만들었을까요?" — 6개월 뒤 김 과장의 평소. "일했을 뿐인데 매뉴얼이 쌓였습니다" — 개인 공감 + 데이터 선순환 답변</td></tr><tr><td>04:40</td><td>S6</td><td>1자리 1메모리 점등 → "그래서 파일럿부터"(신뢰) → "당신의 다음 발령지에도, 이게 먼저 가 있습니다."</td></tr></tbody></table></div>
-<p>감정 곡선: 효율(빌드업, ①②) → 보호(클라이맥스, ③) → <strong>나의 것(반전·공감, 기반층)</strong> <span class="star">⭐</span> → 비전(여운).</p>
+<div class="table-wrap"><table><thead><tr><th>시간</th><th>화면</th><th>핵심 멘트·행동</th></tr></thead><tbody><tr><td>00:00</td><td><code>jarvis.html</code></td><td>&quot;외부 AI는 못 쓰지만, 우리 회사 문서에게는 물어볼 수 있습니다.&quot; — Hello JARVIS? 검색창에 질문</td></tr><tr><td>00:40</td><td>JARVIS 결과</td><td>답변 + 근거 문서 + 검증상태 + 다음 액션. &quot;답만 주는 게 아니라, 초안·점검·브리핑으로 바로 이어집니다.&quot;</td></tr><tr><td>01:30</td><td>S2 → S3</td><td>반복 업무 예보에서 초안 준비. &quot;작년 양식과 근거로 출발점을 준비합니다.&quot;</td></tr><tr><td>02:40</td><td>S4</td><td>&quot;지금부터는 당신을 지키는 AI입니다&quot; — 반려·감사 리스크 하이라이트 + 근거. <strong>클라이맥스</strong></td></tr><tr><td>03:40</td><td><strong>S5</strong> <span class="star">⭐</span></td><td>&quot;그런데 이 편한 사용이 쌓이면?&quot; — 평소 업무가 자동 분류되어 내 매뉴얼이 됨</td></tr><tr><td>04:40</td><td>S6</td><td>1자리 1메모리 점등 → &quot;당신의 다음 발령지에도, 이게 먼저 가 있습니다.&quot;</td></tr></tbody></table></div>
+<p>감정 곡선: 편의(물어보면 답함) → 실행(초안/예보) → 보호(사전점검) → <strong>나의 것(자동 매뉴얼)</strong> → 승계(여운).</p>
 <hr>
-<h2 id="10-현재-상태-및-남은-작업-2026-07-07-기준">10. 현재 상태 및 남은 작업 (2026-07-07 기준)<a class="anchor" href="#10-현재-상태-및-남은-작업-2026-07-07-기준" aria-label="section link">#</a></h2>
+<h2 id="10-현재-상태-및-남은-작업-2026-07-08-기준">10. 현재 상태 및 남은 작업 (2026-07-08 기준)<a class="anchor" href="#10-현재-상태-및-남은-작업-2026-07-08-기준" aria-label="section link">#</a></h2>
 <h3 id="완료">완료<a class="anchor" href="#완료" aria-label="section link">#</a></h3>
-<ul>
-<li>기획서 v2.0 (docx) / 데모 7화면 전체 구현·검증(콘솔 에러 0) / S0 스토리보드 컷신 오프닝 /</li>
-</ul>
-<p>S5 내 업무 매뉴얼 / GitHub 리포 관리 (<code>sangwonMoon-kor/kdhc-ai-contest</code>)</p>
+<ul><li>기획서 v2.0 (docx) / 데모 7화면 전체 구현·검증(콘솔 에러 0) / S0 영상 오프닝 + JARVIS 진입 / S5 내 업무 매뉴얼 / Hello JARVIS 검색 목업 / GitHub 리포 관리 (<code>sangwonMoon-kor/kdhc-ai-contest</code>)</li></ul>
 <h3 id="남은-작업-우선순위-순">남은 작업 (우선순위 순)<a class="anchor" href="#남은-작업-우선순위-순" aria-label="section link">#</a></h3>
-<ol>
-<li>S5 문구·연출 사용자(발표자) 피드백 반영</li>
-<li><strong>기획서 v2 → v2.1 갱신</strong>: 기반층 개념(3장·4장), S5 화면(10.3절), 7화면 동선표(10.4절·부록 A)</li>
-<li>발표 리허설 ≥3회 (제3자 클릭 테스트 포함, 기획서 10.5 체크리스트)</li>
-<li>전체 동선 화면녹화 백업 1벌 (사운드 포함)</li>
-<li>발표장 PC 사전 점검 (1920×1080, 오프라인, <code>demo</code> 폴더째 복사 — assets 필수)</li>
-<li>(선택) <code>pile.png</code> 영어 라벨 재생성, 데모 스크린샷 7화면 기준 재캡처</li>
-</ol>
+<ol><li>S5 문구·연출 사용자(발표자) 피드백 반영</li><li><strong>기획서 v2 → v2.1 갱신</strong>: 기반층 개념(3장·4장), S5 화면(10.3절), 7화면 동선표(10.4절·부록 A)</li><li>발표 리허설 ≥3회 (제3자 클릭 테스트 포함, 기획서 10.5 체크리스트)</li><li>전체 동선 화면녹화 백업 1벌 (사운드 포함)</li><li>발표장 PC 사전 점검 (1920×1080, 오프라인, <code>demo</code> 폴더째 복사 — assets 필수)</li><li>(선택) <code>pile.png</code> 영어 라벨 재생성, 데모 스크린샷 7화면 기준 재캡처</li></ol>
 <h3 id="알려진-이슈">알려진 이슈<a class="anchor" href="#알려진-이슈" aria-label="section link">#</a></h3>
-<ul>
-<li>기획서 10.3/10.4절 화면 번호가 데모(7화면)와 어긋남 — 위 남은 작업 2에서 해소</li>
-<li><code>demo/assets/pile.png</code>에 영어 라벨(ARCHIVE 2022 등) 잔존 — 축소 연출이라 눈에 잘 안 띄나 재생성 옵션 있음</li>
-</ul>
+<ul><li>기획서 10.3/10.4절 화면 번호가 데모(7화면)와 어긋남 — 위 남은 작업 2에서 해소</li><li><code>demo/assets/pile.png</code>에 영어 라벨(ARCHIVE 2022 등) 잔존 — 축소 연출이라 눈에 잘 안 띄나 재생성 옵션 있음</li></ul>
 <div class="footer">Generated from <code>docs/PRD.md</code>. GitHub 공개용 정적 HTML.</div>
 </main>
 </div>

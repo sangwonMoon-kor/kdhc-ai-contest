@@ -51,7 +51,7 @@
   .screen.curtain.active{display:flex;align-items:center;justify-content:center}
   .curtain .inner{max-width:1020px;padding:0 48px;width:100%}
 
-  /* S0 — storyboard cutscene opener */
+  /* S0 — video opener */
   #s0.active{display:block}
   #s0{scrollbar-width:none}
   #s0::-webkit-scrollbar{display:none}
@@ -143,10 +143,14 @@
   #s0 .cta{margin-top:36px;opacity:0}
   #s0 .s0-stage.done .cta{animation:rise .7s .85s forwards cubic-bezier(.16,1,.3,1)}
   .btn-primary{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#fff;font-weight:700;
-    font-size:16.5px;padding:15px 28px;border-radius:999px;transition:background .2s, transform .15s}
+    font-size:16.5px;padding:15px 28px;border-radius:999px;transition:background .2s, transform .15s;text-decoration:none}
   .btn-primary:hover{background:var(--accent-deep)}
   .btn-primary .arr{transition:transform .2s}
   .btn-primary:hover .arr{transform:translateX(3px)}
+  .btn-ghost-dark{display:inline-flex;align-items:center;gap:10px;color:var(--dark-ink);font-weight:700;font-size:16.5px;
+    padding:14px 24px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(15,18,23,.32);
+    backdrop-filter:blur(8px);text-decoration:none;transition:background .2s,border-color .2s,transform .15s}
+  .btn-ghost-dark:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.38)}
 
   /* ============ app shell (S1~S4) ============ */
   .shell{display:grid;grid-template-rows:56px 1fr;height:100%}
@@ -440,8 +444,8 @@
       <div class="s0-hero">
         <div class="inner">
           <div class="eyebrow0">사내 AI 경진대회 제안 · 직무 메모리</div>
-          <h1>사람은 떠나도,<br>업무는 <span class="accent">남게.</span></h1>
-          <p class="sub">순환근무 조직의 업무 기억을 자리에 남기는 AI 업무 승계 비서입니다.</p>
+          <h1>Hello <span class="accent">JARVIS?</span><br>업무는 먼저 준비되게.</h1>
+          <p class="sub">사내 문서에 묻고, 근거와 다음 액션까지 받는 AI 업무 비서입니다.</p>
           <div class="persona">
             <div class="face">김</div>
             <div>
@@ -450,7 +454,8 @@
             </div>
           </div>
           <div class="cta">
-            <button class="btn-primary" onclick="go(1)">김 과장의 첫 출근 따라가기 <span class="arr">→</span></button>
+            <a class="btn-primary" href="jarvis.html">JARVIS에게 먼저 묻기 <span class="arr">→</span></a>
+            <button class="btn-ghost-dark" onclick="go(1)" style="margin-left:10px">발표 본편 보기</button>
           </div>
         </div>
       </div>
