@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hello JARVIS 관리자 콘솔 · 직무 메모리</title>
+<style>
+  :root{
+    --canvas:#070808;
+    --surface:#101214;
+    --surface-2:#171a1d;
+    --surface-3:#20262b;
+    --ink:#f5f8f8;
+    --ink-soft:#c6d0d4;
+    --muted:#7f8c93;
+    --line:#263038;
+    --line-strong:#3a4b54;
+    --cyan:#00e5ff;
+    --cyan-soft:#102a31;
+    --cyan-line:#155563;
+    --green:#00d992;
+    --green-soft:#10291f;
+    --amber:#ffb545;
+    --amber-soft:#291f10;
+    --red:#ff5a66;
+    --red-soft:#30161b;
+    --radius:8px;
+    --sans:Inter,"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    --mono:"SFMono-Regular","Cascadia Mono","JetBrains Mono",Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    min-height:100vh;
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.55;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:72px 72px;
+    mask-image:linear-gradient(180deg, rgba(0,0,0,.92), rgba(0,0,0,.28) 62%, rgba(0,0,0,.9));
+  }
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:linear-gradient(180deg,rgba(0,229,255,.06),transparent 18%,transparent 76%,rgba(0,0,0,.48));
+  }
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit}
+  .app{position:relative;z-index:1;min-height:100vh;display:grid;grid-template-rows:64px 1fr}
+  .topbar{
+    height:64px;padding:0 28px;
+    display:flex;align-items:center;gap:18px;
+    border-bottom:1px solid var(--line);
+    background:rgba(7,8,8,.84);
+    backdrop-filter:blur(18px);
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-weight:650}
+  .mark{
+    width:30px;height:30px;border:1px solid var(--green);border-radius:50%;
+    display:grid;place-items:center;color:var(--green);
+    box-shadow:0 0 28px rgba(0,217,146,.18) inset;
+  }
+  .mark::before{content:"";width:10px;height:10px;border:2px solid currentColor;border-radius:50%}
+  .brand small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+  .topbar nav{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .navlink{
+    min-height:36px;display:inline-flex;align-items:center;
+    padding:0 14px;border:1px solid transparent;border-radius:999px;
+    color:var(--ink-soft);font-size:13px;
+  }
+  .navlink:hover{border-color:var(--line-strong);background:var(--surface)}
+  .navlink.primary{color:var(--cyan);border-color:rgba(0,229,255,.3)}
+  .status{
+    display:inline-flex;align-items:center;gap:8px;
+    color:var(--muted);font-family:var(--mono);font-size:12px;
+  }
+  .status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(0,217,146,.8)}
+
+  main{padding:30px 24px 72px}
+  .shell{width:min(1240px,100%);margin:0 auto}
+  .hero{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 360px;
+    gap:22px;
+    align-items:end;
+    margin-bottom:22px;
+  }
+  .kicker{
+    color:var(--green);
+    font-family:var(--mono);
+    font-size:12px;
+    margin-bottom:14px;
+  }
+  h1{
+    font-size:46px;
+    line-height:1.08;
+    font-weight:420;
+    letter-spacing:0;
+    max-width:780px;
+  }
+  h1 span{color:var(--cyan);text-shadow:0 0 24px rgba(0,229,255,.28)}
+  .lead{
+    color:var(--ink-soft);
+    margin-top:18px;
+    max-width:780px;
+    font-size:17px;
+  }
+  .lead strong{color:var(--ink);font-weight:650}
+  .operator{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:rgba(16,18,20,.9);
+    padding:18px;
+  }
+  .operator-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .operator b{font-size:14px}
+  .operator span{display:block;color:var(--muted);font-family:var(--mono);font-size:12px;margin-top:5px}
+  .toggle{
+    width:54px;height:28px;border-radius:999px;
+    border:1px solid rgba(0,217,146,.42);
+    background:var(--green-soft);
+    position:relative;
+  }
+  .toggle::before{
+    content:"";
+    position:absolute;top:5px;right:6px;
+    width:16px;height:16px;border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 16px rgba(0,217,146,.6);
+  }
+
+  .metrics{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .metric{
+    min-height:122px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:rgba(16,18,20,.9);
+    padding:18px;
+  }
+  .metric label{display:block;color:var(--muted);font-family:var(--mono);font-size:12px;margin-bottom:16px}
+  .metric strong{display:block;font-size:34px;line-height:1;font-weight:460}
+  .metric span{display:block;margin-top:12px;color:var(--ink-soft);font-size:13px}
+  .metric.good strong{color:var(--green)}
+  .metric.cyan strong{color:var(--cyan)}
+  .metric.warn strong{color:var(--amber)}
+
+  .grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.18fr) minmax(360px,.82fr);
+    gap:18px;
+    align-items:start;
+  }
+  .panel{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:rgba(16,18,20,.92);
+    overflow:hidden;
+  }
+  .panel-head{
+    min-height:58px;
+    padding:0 18px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    border-bottom:1px solid var(--line);
+  }
+  .panel-head h2{font-size:16px;font-weight:650}
+  .panel-head span{color:var(--muted);font-family:var(--mono);font-size:12px}
+  .panel-body{padding:18px}
+
+  .pipeline{display:grid;gap:10px}
+  .stage{
+    display:grid;
+    grid-template-columns:132px minmax(0,1fr) 86px;
+    gap:16px;
+    align-items:center;
+    min-height:62px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:rgba(23,26,29,.68);
+    padding:12px 14px;
+  }
+  .stage b{font-size:14px;font-weight:650}
+  .stage p{color:var(--muted);font-size:13px}
+  .bar{
+    height:8px;border-radius:999px;
+    background:var(--surface-3);
+    overflow:hidden;
+  }
+  .bar i{display:block;height:100%;border-radius:999px;background:var(--green)}
+  .stage:nth-child(2) .bar i,.stage:nth-child(4) .bar i{background:var(--cyan)}
+  .stage:nth-child(5) .bar i{background:var(--amber)}
+  .tag{
+    justify-self:end;
+    display:inline-flex;align-items:center;
+    min-height:28px;padding:0 9px;border-radius:999px;
+    font-family:var(--mono);font-size:12px;
+    border:1px solid rgba(0,217,146,.3);
+    color:var(--green);
+    background:var(--green-soft);
+  }
+  .tag.check{border-color:rgba(255,181,69,.34);background:var(--amber-soft);color:var(--amber)}
+  .tag.wait{border-color:var(--line-strong);background:var(--surface-2);color:var(--muted)}
+
+  .graph-wrap{
+    min-height:420px;
+    display:grid;
+    place-items:center;
+    background:
+      linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.026) 1px, transparent 1px);
+    background-size:36px 36px;
+  }
+  svg{width:100%;height:auto;max-height:420px}
+  .edge{stroke:rgba(0,229,255,.42);stroke-width:1.2}
+  .edge.green{stroke:rgba(0,217,146,.48)}
+  .node{fill:#11181b;stroke:var(--cyan-line);stroke-width:1.2}
+  .node.green{stroke:rgba(0,217,146,.76);fill:#102019}
+  .node.warn{stroke:rgba(255,181,69,.72);fill:#22190d}
+  .node.core{fill:#061416;stroke:var(--cyan);stroke-width:1.8}
+  .node-label{fill:var(--ink);font-family:var(--sans);font-size:13px;font-weight:650}
+  .node-meta{fill:var(--muted);font-family:var(--mono);font-size:11px}
+
+  .trace{display:grid;gap:10px}
+  .trace-row{
+    display:grid;
+    grid-template-columns:82px minmax(0,1fr) 120px;
+    gap:12px;
+    align-items:start;
+    padding:13px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .trace-row:first-child{padding-top:0}
+  .trace-row:last-child{border-bottom:0;padding-bottom:0}
+  .time{font-family:var(--mono);font-size:12px;color:var(--cyan)}
+  .trace-row b{display:block;font-size:14px;font-weight:650}
+  .trace-row p{color:var(--muted);font-size:13px;margin-top:4px}
+  .trace-type{
+    justify-self:end;
+    display:inline-flex;align-items:center;
+    min-height:26px;padding:0 8px;border-radius:999px;
+    border:1px solid var(--line-strong);
+    color:var(--ink-soft);
+    font-family:var(--mono);font-size:11px;
+  }
+
+  .columns{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-top:18px;
+  }
+  .approval{display:grid;gap:10px}
+  .approval-row{
+    display:grid;
+    grid-template-columns:32px minmax(0,1fr) auto;
+    gap:12px;
+    align-items:center;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .approval-row:last-child{border-bottom:0}
+  .num{
+    width:28px;height:28px;border-radius:50%;
+    display:grid;place-items:center;
+    border:1px solid var(--line-strong);
+    color:var(--cyan);
+    font-family:var(--mono);
+    font-size:12px;
+  }
+  .approval-row b{font-size:14px}
+  .approval-row span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+  .privacy{
+    display:grid;
+    gap:10px;
+  }
+  .guard{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:rgba(23,26,29,.7);
+    padding:14px;
+  }
+  .guard b{font-size:14px}
+  .guard p{margin-top:6px;color:var(--muted);font-size:13px}
+  .guard.danger{border-color:rgba(255,90,102,.34);background:var(--red-soft)}
+  .guard.good{border-color:rgba(0,217,146,.28);background:var(--green-soft)}
+
+  .loop{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+  }
+  .loop-step{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px;
+    min-height:114px;
+    background:rgba(23,26,29,.7);
+  }
+  .loop-step em{font-style:normal;color:var(--green);font-family:var(--mono);font-size:12px}
+  .loop-step b{display:block;margin-top:10px;font-size:14px}
+  .loop-step p{margin-top:7px;color:var(--muted);font-size:12px}
+
+  @media (max-width:1020px){
+    .hero,.grid,.columns{grid-template-columns:1fr}
+    .metrics{grid-template-columns:1fr 1fr}
+    .operator{max-width:520px}
+  }
+  @media (max-width:680px){
+    .topbar{padding:0 16px}
+    .topbar nav .status,.topbar nav .navlink:not(.primary){display:none}
+    main{padding:24px 16px 56px}
+    h1{font-size:34px}
+    .metrics,.loop{grid-template-columns:1fr}
+    .stage,.trace-row{grid-template-columns:1fr}
+    .tag,.trace-type{justify-self:start}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="jarvis.html">
+      <span class="mark" aria-hidden="true"></span>
+      <span>직무 메모리<small>Admin engine console</small></span>
+    </a>
+    <nav>
+      <span class="status">NO LLM / LOCAL RULES</span>
+      <a class="navlink" href="index.html">발표 본편</a>
+      <a class="navlink primary" href="jarvis.html">Hello JARVIS</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="shell">
+      <section class="hero">
+        <div>
+          <div class="kicker">ADMIN VIEW · WHAT EMPLOYEES NEVER HAVE TO SEE</div>
+          <h1>직원이 질문하면, 뒤에서는 <span>문서가 지식으로 바뀝니다.</span></h1>
+          <p class="lead">직원 화면은 “물어보고 바로 일하기”만 보여줍니다. 관리자 콘솔은 그 사용 흐름이 어떻게 <strong>인제스트, 파싱, 온톨로지 관계, 검증 상태</strong>로 축적되는지 보여주는 심사위원용 증명 화면입니다.</p>
+        </div>
+        <aside class="operator">
+          <div class="operator-row">
+            <div>
+              <b>외부 AI 호출 차단</b>
+              <span>deterministic · grounded · audit-ready</span>
+            </div>
+            <span class="toggle" aria-hidden="true"></span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="metrics" aria-label="engine metrics">
+        <article class="metric cyan"><label>INGESTED DOCUMENTS</label><strong>16</strong><span>기안문, 회의록, 반려 이력 샘플</span></article>
+        <article class="metric good"><label>RELATION EDGES</label><strong>49</strong><span>업무·문서·부서·리스크 연결</span></article>
+        <article class="metric"><label>EMPLOYEE QUESTIONS</label><strong>4</strong><span>질문은 사용 행동, 라벨링 아님</span></article>
+        <article class="metric warn"><label>CHECK REQUIRED</label><strong>3</strong><span>근거 부족·작성자 확인 대기</span></article>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>문서 인제스트 파이프라인</h2>
+            <span>5-STAGE ONTOLOGY BUILD</span>
+          </div>
+          <div class="panel-body">
+            <div class="pipeline">
+              <div class="stage">
+                <div><b>01. 수집</b><p>전자결재·회의록·반려 이력 샘플 적재</p></div>
+                <div class="bar" aria-hidden="true"><i style="width:100%"></i></div>
+                <span class="tag">DONE</span>
+              </div>
+              <div class="stage">
+                <div><b>02. 파싱</b><p>문서ID, 기안일자, 제목, 담당자, 섹션 추출</p></div>
+                <div class="bar" aria-hidden="true"><i style="width:92%"></i></div>
+                <span class="tag">DONE</span>
+              </div>
+              <div class="stage">
+                <div><b>03. 분류</b><p>요금정산·민원·전환·계획보고 업무 묶음</p></div>
+                <div class="bar" aria-hidden="true"><i style="width:86%"></i></div>
+                <span class="tag">DONE</span>
+              </div>
+              <div class="stage">
+                <div><b>04. 관계 추출</b><p>근거문서, 협조처, 반복시점, 반려 사유 연결</p></div>
+                <div class="bar" aria-hidden="true"><i style="width:78%"></i></div>
+                <span class="tag check">VERIFY</span>
+              </div>
+              <div class="stage">
+                <div><b>05. 검증</b><p>후보 → 작성자 확인 → 동료 확인 → 오너 승인</p></div>
+                <div class="bar" aria-hidden="true"><i style="width:61%"></i></div>
+                <span class="tag wait">QUEUE</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>온톨로지 그래프</h2>
+            <span>JOB MEMORY MAP</span>
+          </div>
+          <div class="graph-wrap">
+            <svg viewBox="0 0 480 390" role="img" aria-label="업무와 문서 관계 그래프">
+              <line class="edge green" x1="240" y1="190" x2="84" y2="82"></line>
+              <line class="edge" x1="240" y1="190" x2="400" y2="82"></line>
+              <line class="edge green" x1="240" y1="190" x2="90" y2="300"></line>
+              <line class="edge" x1="240" y1="190" x2="390" y2="302"></line>
+              <line class="edge" x1="84" y1="82" x2="400" y2="82"></line>
+              <line class="edge green" x1="90" y1="300" x2="390" y2="302"></line>
+              <circle class="node core" cx="240" cy="190" r="58"></circle>
+              <text class="node-label" x="240" y="180" text-anchor="middle">요금정산</text>
+              <text class="node-meta" x="240" y="202" text-anchor="middle">JOB-CODE 07</text>
+              <circle class="node green" cx="84" cy="82" r="50"></circle>
+              <text class="node-label" x="84" y="75" text-anchor="middle">기안문</text>
+              <text class="node-meta" x="84" y="96" text-anchor="middle">APPR-2025</text>
+              <circle class="node" cx="400" cy="82" r="50"></circle>
+              <text class="node-label" x="400" y="75" text-anchor="middle">협조처</text>
+              <text class="node-meta" x="400" y="96" text-anchor="middle">IT운영팀</text>
+              <circle class="node" cx="90" cy="300" r="50"></circle>
+              <text class="node-label" x="90" y="293" text-anchor="middle">반복시점</text>
+              <text class="node-meta" x="90" y="314" text-anchor="middle">7월 D-4</text>
+              <circle class="node warn" cx="390" cy="302" r="50"></circle>
+              <text class="node-label" x="390" y="295" text-anchor="middle">반려사유</text>
+              <text class="node-meta" x="390" y="316" text-anchor="middle">근거표 누락</text>
+            </svg>
+          </div>
+        </article>
+      </section>
+
+      <section class="columns">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>사용 행동 → 구조화 이벤트</h2>
+            <span>PASSIVE AX LOOP</span>
+          </div>
+          <div class="panel-body">
+            <div class="trace">
+              <div class="trace-row">
+                <span class="time">09:12:31</span>
+                <div><b>직원이 “전환 때 뭘 먼저 확인?” 질문</b><p>검색 질의가 요금정산·시스템전환 업무 후보로 매핑됨</p></div>
+                <span class="trace-type">ASK_EVENT</span>
+              </div>
+              <div class="trace-row">
+                <span class="time">09:12:32</span>
+                <div><b>근거문서 4건 반환</b><p>APPR-2025-0109, APPR-2024-0111 등 관계 신뢰도 갱신</p></div>
+                <span class="trace-type">GROUNDING</span>
+              </div>
+              <div class="trace-row">
+                <span class="time">09:13:08</span>
+                <div><b>초안 스튜디오로 이동</b><p>작년 양식 구조가 복제되고 올해 변수 슬롯이 확인 대기로 남음</p></div>
+                <span class="trace-type">DRAFT_SLOT</span>
+              </div>
+              <div class="trace-row">
+                <span class="time">09:14:22</span>
+                <div><b>사전점검 실행</b><p>반려 이력 “산출근거 표 누락”과 현재 초안 섹션이 연결됨</p></div>
+                <span class="trace-type">RISK_EDGE</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>검증 상태</h2>
+            <span>NO HALLUCINATION POLICY</span>
+          </div>
+          <div class="panel-body">
+            <div class="approval">
+              <div class="approval-row">
+                <span class="num">1</span>
+                <div><b>후보 관계</b><span>규칙 기반 추출, 아직 답변 핵심 근거로 쓰지 않음</span></div>
+                <span class="tag wait">CANDIDATE</span>
+              </div>
+              <div class="approval-row">
+                <span class="num">2</span>
+                <div><b>작성자 확인</b><span>담당자가 “이 연결은 맞다” 확인</span></div>
+                <span class="tag check">CHECK</span>
+              </div>
+              <div class="approval-row">
+                <span class="num">3</span>
+                <div><b>동료 확인</b><span>같은 직무 담당자 1명 이상 교차 확인</span></div>
+                <span class="tag check">PEER</span>
+              </div>
+              <div class="approval-row">
+                <span class="num">4</span>
+                <div><b>오너 승인</b><span>업무 오너 승인 후 답변·초안·점검 근거로 사용</span></div>
+                <span class="tag">APPROVED</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="columns">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>민감정보 가드</h2>
+            <span>PUBLIC-SECTOR SAFE MODE</span>
+          </div>
+          <div class="panel-body privacy">
+            <div class="guard danger">
+              <b>차단: 사람 평가성 표현</b>
+              <p>“김 과장이 꼼꼼하지 않음” 같은 인물 평가는 업무 속성으로 저장하지 않습니다.</p>
+            </div>
+            <div class="guard good">
+              <b>치환: 업무 표현</b>
+              <p>“정산시스템 전환은 IT운영팀 배포 일정 확인이 선행됨”처럼 업무 관계만 남깁니다.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>채택 루프</h2>
+            <span>EMPLOYEE-FRIENDLY, ADMIN-VISIBLE</span>
+          </div>
+          <div class="panel-body">
+            <div class="loop">
+              <div class="loop-step"><em>01</em><b>물어본다</b><p>직원은 검색창에 질문만 입력</p></div>
+              <div class="loop-step"><em>02</em><b>바로 쓴다</b><p>근거, 초안, 점검으로 업무 감소</p></div>
+              <div class="loop-step"><em>03</em><b>쌓인다</b><p>문서·슬롯·관계가 자동 구조화</p></div>
+              <div class="loop-step"><em>04</em><b>이어진다</b><p>다음 담당자의 브리핑과 답변 품질 개선</p></div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

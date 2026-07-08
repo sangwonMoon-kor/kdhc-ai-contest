@@ -17,6 +17,8 @@
 - ✅ **기획서 v2.0 완성** — `docs/직무메모리_AI업무승계비서_기획서_v2.docx`
 - ✅ **데모 사이트 완성** — `demo/index.html` (서버 불필요, 더블클릭으로 오프라인 구동)
 - ✅ **Hello JARVIS 검색 목업 추가** — `demo/jarvis.html`. 직원 대표 진입점을 "물어보면 근거와 다음 액션까지 준비하는 사내 AI"로 재정렬
+- ✅ **관리자 콘솔 목업 추가** — `demo/admin.html`. 직원 화면에서 숨긴 인제스트·온톨로지·검증 상태·구조화 이벤트를 심사위원용으로 시각화
+- ✅ **JARVIS 디자인 시스템 정렬** — `docs/DESIGN.md`. `awesome-design-md`의 xAI/SpaceX/VoltAgent 문법을 차용해 cinematic dark 검색 화면 + technical admin console로 재정의
 - ✅ **S0 영상 오프닝 교체** — `opening.mp4`로 첫 출근 몰입을 만들고, 첫 CTA를 `Hello JARVIS?` 검색 진입으로 연결 (아래 상세)
 - ✅ **S5 "내 업무 매뉴얼" 화면 추가** — 밀착형 업무 매뉴얼 · 개인별 업무 자동 분류. 화면 6개 → 7개, 비전은 S6으로 밀림 (아래 상세)
 - ⬜ 기획서 v2에 "개인별 업무 분류(기반층)" + "밀착형 업무 매뉴얼" 반영 — 데모 문구가 발표자 피드백으로 확정된 뒤 진행
@@ -34,10 +36,13 @@
 3. `demo/jarvis.html`에서 업무 질문 입력
 4. 답변, 근거 문서, 검증 상태, 다음 액션 확인
 5. 결과 액션으로 S1 브리핑북, S2 예보, S3 초안, S4 사전점검 진입
+6. 발표 클라이맥스에서 `demo/admin.html`로 전환해 "편해서 쓴 행동이 어떻게 AX-ready 데이터로 쌓이는지" 공개
 
 **구현 위치**:
 - 오프닝 영상: `demo/assets/opening.mp4`
 - 검색형 hero 목업: `demo/jarvis.html`
+- 관리자 콘솔 목업: `demo/admin.html`
+- 디자인 기준: `docs/DESIGN.md`
 - 본편 CTA: `demo/index.html`의 S0 hero 영역
 - 검증: `node demo/tests/verify-s0-cutscene.js`
 
@@ -46,6 +51,7 @@
 - `Hello JARVIS?` CTA가 검색 목업으로 연결
 - 검색 목업의 예시 질문이 팀원 엔진 기능(QA·초안·점검·예보)을 반영
 - 결과 액션이 본편 데모 `index.html#s1`~`#s4`로 연결
+- 관리자 콘솔이 팀원 엔진의 인제스트·관계 그래프·검증 상태를 직원용 UX와 분리해 보여줌
 
 **주의**: `demo/index.html` 단독이 아니라 `demo/assets/opening.mp4`가 함께 있어야 오프닝이 정상 재생된다. 발표장 PC에는 `demo` 폴더째 복사할 것.
 
@@ -102,6 +108,7 @@
 ```
 demo/index.html 더블클릭 → 브라우저에서 바로 실행 (서버/네트워크 불필요)
 demo/jarvis.html 더블클릭 → Hello JARVIS 검색 목업 실행
+demo/admin.html 더블클릭 → 숨은 엔진/AX 전환 관리자 콘솔 실행
 ```
 
 - 화면 이동: `←` `→` 방향키, 또는 숫자키 `0`~`6`으로 직행

@@ -1,400 +1,497 @@
 <!DOCTYPE html>
-<html lang="ko" data-theme="light">
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hello JARVIS? · 직무 메모리</title>
-<!--
-  Hello JARVIS? — 직무 메모리 검색 목업 (재조립본)
-  기준: docs/DESIGN.md (IBM Carbon 각색 + 웜 액센트)
-  플랫 0-radius · 화이트/차콜 · 얇은 헤어라인 타일 · 그림자 없음 · 라이트 웨이트 대형 디스플레이 · 8px 그리드 · 시맨틱 상태색
-  원본 아티팩트가 리포에 커밋되지 않아(다른 계정 소유) DESIGN.md 기준으로 재조립함.
--->
 <style>
-  /* ============ tokens (docs/DESIGN.md) ============ */
   :root{
-    --canvas:#ffffff; --surface-1:#f5f3f0; --surface-2:#e8e4dd;
-    --ink:#17181a; --ink-muted:#565961; --ink-subtle:#8a8d94;
-    --hairline:#e3dfd7; --hairline-strong:#c9c3b8;
-    --accent:#e8590c; --accent-deep:#b8470a; --accent-soft:#fbeee4; --accent-line:#f2c8a9;
-    --ok:#198038; --ok-soft:#e6f3ea; --warn:#8a6d00; --warn-soft:#f7f0dc; --danger:#da1e28; --danger-soft:#fbeaea;
-    --sans:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-  }
-  html[data-theme="dark"]{
-    --canvas:#161719; --surface-1:#1e2023; --surface-2:#262a2e;
-    --ink:#f2f1ee; --ink-muted:#a0a3ab; --ink-subtle:#71747c;
-    --hairline:#2c2f34; --hairline-strong:#3c4046;
-    --accent:#f2792f; --accent-deep:#e8590c; --accent-soft:#2a2119; --accent-line:#5a3d24;
-    --ok:#42be65; --ok-soft:#182a1e; --warn:#d2a106; --warn-soft:#2a2410; --danger:#fa4d56; --danger-soft:#2d1719;
+    --canvas:#070808;
+    --surface:#101214;
+    --surface-2:#171a1d;
+    --surface-3:#1d2227;
+    --ink:#f4f7f8;
+    --ink-soft:#c7d0d5;
+    --muted:#7f8b92;
+    --line:#263038;
+    --line-strong:#3b4a54;
+    --cyan:#00e5ff;
+    --cyan-soft:#102a31;
+    --cyan-line:#155563;
+    --green:#00d992;
+    --green-soft:#10291f;
+    --amber:#ff7a17;
+    --amber-soft:#2b1c0f;
+    --danger:#ff5a66;
+    --danger-soft:#30161b;
+    --radius:8px;
+    --sans:Inter,"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    --mono:"SFMono-Regular","Cascadia Mono","JetBrains Mono",Consolas,monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
-  body{font-family:var(--sans);background:var(--canvas);color:var(--ink);font-size:15.5px;line-height:1.55;
-    -webkit-font-smoothing:antialiased;transition:background .25s, color .25s}
-  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
-  ::selection{background:var(--accent-soft);color:var(--accent-deep)}
+  html,body{min-height:100%}
+  body{
+    min-height:100vh;
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.55;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:72px 72px;
+    mask-image:linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.25) 58%, rgba(0,0,0,.9));
+  }
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 20%,transparent 80%,rgba(0,0,0,.5));
+  }
+  a{color:inherit;text-decoration:none}
+  button,input{font:inherit}
+  button{border:0;background:none;color:inherit;cursor:pointer}
+  .app{position:relative;z-index:1;min-height:100vh;display:grid;grid-template-rows:64px 1fr}
+  .topbar{
+    display:flex;align-items:center;gap:18px;
+    height:64px;padding:0 28px;
+    border-bottom:1px solid var(--line);
+    background:rgba(7,8,8,.82);
+    backdrop-filter:blur(18px);
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-weight:600;color:var(--ink)}
+  .mark{
+    width:30px;height:30px;border:1px solid var(--cyan-line);border-radius:50%;
+    display:grid;place-items:center;color:var(--cyan);
+    box-shadow:0 0 28px rgba(0,229,255,.18) inset;
+  }
+  .mark::before{content:"";width:10px;height:10px;border:2px solid currentColor;border-radius:50%}
+  .brand small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+  .topbar nav{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .navlink{
+    min-height:36px;display:inline-flex;align-items:center;
+    padding:0 14px;border:1px solid transparent;border-radius:999px;
+    color:var(--ink-soft);font-size:13px;
+  }
+  .navlink:hover{border-color:var(--line-strong);background:var(--surface)}
+  .navlink.admin{color:var(--green);border-color:rgba(0,217,146,.28)}
+  .status-dot{
+    display:inline-flex;align-items:center;gap:7px;
+    color:var(--muted);font-family:var(--mono);font-size:12px;
+  }
+  .status-dot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(0,217,146,.8)}
 
-  /* ============ eyebrow / label ============ */
-  .label{font-size:12.5px;font-weight:600;letter-spacing:.08em;color:var(--ink-subtle)}
-  .label .lat{text-transform:uppercase}
-
-  /* ============ top bar ============ */
-  .bar{display:flex;align-items:center;gap:14px;height:52px;padding:0 24px;border-bottom:1px solid var(--hairline)}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.01em}
-  .brand .mark{width:24px;height:24px;background:var(--accent);display:flex;align-items:center;justify-content:center}
-  .brand .mark i{width:10px;height:10px;border:2px solid #fff;display:block}
-  .brand small{font-weight:400;color:var(--ink-muted);font-size:12.5px}
-  .bar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
-  .proto{font-size:12px;color:var(--ink-subtle);border:1px solid var(--hairline);padding:4px 10px}
-  .toggle{width:34px;height:34px;border:1px solid var(--hairline-strong);display:flex;align-items:center;justify-content:center;
-    font-size:15px;transition:border-color .15s, background .15s}
-  .toggle:hover{border-color:var(--accent);background:var(--accent-soft)}
-
-  /* ============ views ============ */
   .view{display:none}
-  .view.active{display:block;animation:fade .35s cubic-bezier(.16,1,.3,1)}
-  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  @media (prefers-reduced-motion:reduce){.view.active{animation:none}*{transition-duration:.001s!important;animation-duration:.001s!important}}
+  .view.active{display:block;animation:fadeIn .28s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.view.active{animation:none}*,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}}
 
-  /* ============ ENTRY ============ */
-  .entry-inner{max-width:720px;margin:0 auto;padding:96px 24px 64px;text-align:center}
-  .entry .mark-lg{width:56px;height:56px;background:var(--accent);margin:0 auto 32px;display:flex;align-items:center;justify-content:center}
-  .entry .mark-lg i{width:22px;height:22px;border:3px solid #fff;display:block}
-  .display{font-size:clamp(38px,5.4vw,58px);font-weight:300;letter-spacing:-.03em;line-height:1.05}
-  .display .accent{color:var(--accent)}
-  .lead{margin-top:20px;font-size:17px;font-weight:400;color:var(--ink-muted);line-height:1.5}
+  .entry{
+    min-height:calc(100vh - 64px);
+    display:grid;place-items:center;
+    padding:40px 22px 56px;
+  }
+  .entry-panel{width:min(820px,100%);text-align:center}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:10px;
+    color:var(--cyan);font-family:var(--mono);font-size:12px;
+    margin-bottom:24px;
+  }
+  .eyebrow::before,.eyebrow::after{content:"";width:48px;height:1px;background:var(--cyan-line)}
+  h1{
+    font-size:64px;
+    font-weight:400;
+    line-height:1.02;
+    letter-spacing:0;
+  }
+  h1 .name{color:var(--cyan);text-shadow:0 0 26px rgba(0,229,255,.32)}
+  .lead{
+    max-width:650px;margin:22px auto 0;
+    color:var(--ink-soft);font-size:18px;line-height:1.65;
+  }
+  .lead strong{color:var(--ink);font-weight:600}
+  .search-shell{
+    margin:42px auto 0;
+    width:min(760px,100%);
+    border:1px solid var(--line-strong);
+    border-radius:999px;
+    background:rgba(16,18,20,.92);
+    box-shadow:0 0 0 1px rgba(0,229,255,.04), 0 0 44px rgba(0,229,255,.08);
+    display:flex;align-items:center;gap:10px;
+    padding:8px;
+  }
+  .search-icon{
+    width:44px;height:44px;border-radius:50%;
+    display:grid;place-items:center;
+    color:var(--cyan);
+    border:1px solid var(--line);
+    font-family:var(--mono);
+  }
+  .search-shell input{
+    min-width:0;flex:1;height:44px;background:transparent;border:0;outline:0;
+    color:var(--ink);font-size:16px;
+  }
+  .search-shell input::placeholder{color:var(--muted)}
+  .go{
+    height:44px;border-radius:999px;padding:0 20px;
+    background:var(--cyan);color:#061012;font-weight:700;
+    transition:background .18s, transform .18s;
+  }
+  .go:hover{background:#8cf4ff;transform:translateY(-1px)}
+  .system-strip{
+    margin:18px auto 0;width:min(680px,100%);
+    display:flex;justify-content:center;flex-wrap:wrap;gap:8px;
+  }
+  .pill{
+    display:inline-flex;align-items:center;gap:7px;
+    min-height:30px;padding:0 12px;border-radius:999px;
+    border:1px solid var(--line);background:rgba(16,18,20,.72);
+    color:var(--muted);font-family:var(--mono);font-size:12px;
+  }
+  .pill.ok{color:var(--green);border-color:rgba(0,217,146,.26)}
+  .examples{margin:34px auto 0;width:min(760px,100%);text-align:left}
+  .examples-title{color:var(--muted);font-family:var(--mono);font-size:12px;margin:0 0 12px 8px}
+  .example-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tile{
+    text-align:left;border:1px solid var(--line);border-radius:var(--radius);
+    background:rgba(16,18,20,.78);padding:16px 18px;
+    min-height:86px;transition:border-color .18s, background .18s, transform .18s;
+  }
+  .tile:hover{border-color:var(--cyan-line);background:rgba(18,31,35,.88);transform:translateY(-1px)}
+  .tile b{display:block;font-size:14px;color:var(--ink);font-weight:500}
+  .tile span{display:block;margin-top:6px;color:var(--muted);font-size:12px}
 
-  /* Carbon field */
-  .field{margin:40px auto 0;max-width:640px;display:flex;align-items:stretch;background:var(--surface-1);
-    border:1px solid var(--hairline);border-bottom:2px solid var(--hairline-strong);transition:border-color .15s}
-  .field:focus-within{border-color:var(--accent);border-bottom-color:var(--accent)}
-  .field .ico{display:flex;align-items:center;padding:0 4px 0 16px;color:var(--ink-subtle);font-size:19px}
-  .field input{flex:1;background:none;border:none;outline:none;color:var(--ink);font:inherit;font-size:16px;padding:15px 12px}
-  .field input::placeholder{color:var(--ink-subtle)}
-  .field .go{background:var(--accent);color:#fff;font-weight:600;font-size:15px;padding:0 22px;transition:background .15s}
-  .field .go:hover{background:var(--accent-deep)}
-
-  /* examples */
-  .examples{margin-top:40px;text-align:left}
-  .ex-label{margin-bottom:12px}
-  .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--hairline)}
-  .tile{text-align:left;padding:16px 18px;font-size:14.5px;color:var(--ink);line-height:1.45;background:var(--canvas);
-    border-right:1px solid var(--hairline);border-bottom:1px solid var(--hairline);transition:background .15s, box-shadow .15s;position:relative}
-  .ex-grid .tile:nth-child(2n){border-right:none}
-  .ex-grid .tile:nth-last-child(-n+2){border-bottom:none}
-  .tile:hover{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--accent)}
-  .tile .q{font-weight:500}
-  .tile .h{display:block;margin-top:5px;font-size:12.5px;color:var(--ink-subtle);letter-spacing:.02em}
-
-  /* ============ RESULTS ============ */
-  .results-inner{max-width:840px;margin:0 auto;padding:32px 24px 80px}
-  .field.sm{margin:0 0 32px;max-width:none}
-  .field.sm input{font-size:15px;padding:12px}
-  .field .back{display:flex;align-items:center;padding:0 14px;color:var(--ink-muted);font-size:18px;border-right:1px solid var(--hairline);transition:color .15s,background .15s}
-  .field .back:hover{color:var(--accent);background:var(--accent-soft)}
-
-  .block{margin-bottom:36px}
-  .block > .label{margin-bottom:14px;display:flex;align-items:center;gap:10px}
-  .block > .label .sep{width:3px;height:3px;background:var(--ink-subtle)}
-  .verified{color:var(--ok);font-weight:600}
-
-  .answer-q{font-size:clamp(22px,2.6vw,28px);font-weight:500;letter-spacing:-.02em;line-height:1.3;margin-bottom:18px}
-  .answer-body{font-size:16px;line-height:1.75;color:var(--ink)}
+  .results{padding:28px 22px 72px}
+  .results-inner{width:min(1040px,100%);margin:0 auto}
+  .results-search{margin-bottom:28px}
+  .back{
+    height:44px;width:44px;border-radius:50%;
+    display:grid;place-items:center;border:1px solid var(--line);
+    color:var(--ink-soft);
+  }
+  .back:hover{border-color:var(--cyan-line);color:var(--cyan)}
+  .answer-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:start}
+  .panel{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:rgba(16,18,20,.9);
+  }
+  .panel.pad{padding:24px}
+  .section-label{
+    display:flex;align-items:center;gap:10px;
+    color:var(--muted);font-family:var(--mono);font-size:12px;margin-bottom:14px;
+  }
+  .section-label::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cyan)}
+  .question{font-size:28px;line-height:1.32;font-weight:500;margin-bottom:18px}
+  .answer-body{color:var(--ink-soft);font-size:16px;line-height:1.78}
   .answer-body p+p{margin-top:14px}
-  .em{background:none;color:var(--ink);font-weight:600;border-bottom:2px solid var(--accent);padding-bottom:1px}
-  .cite{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);border:1px solid var(--accent-line);
-    border-radius:2px;font-size:12.5px;font-weight:500;color:var(--accent-deep);padding:1px 8px;white-space:nowrap;vertical-align:1px;margin:0 1px}
-  .cite b{font-weight:700}
-
-  /* source list — square numbers, hairline grid, no shadow */
-  .src-list{list-style:none;border:1px solid var(--hairline)}
-  .src{display:flex;align-items:flex-start;gap:16px;padding:16px 18px;transition:background .15s}
-  .src+.src{border-top:1px solid var(--hairline)}
-  .src:hover{background:var(--surface-1)}
-  .src .num{width:28px;height:28px;flex-shrink:0;background:var(--surface-2);color:var(--ink);font-size:13px;font-weight:600;
-    display:flex;align-items:center;justify-content:center}
-  .src-main{flex:1;min-width:0}
-  .src-title{font-size:15px;font-weight:500;line-height:1.4}
-  .src-note{font-size:13px;color:var(--ink-subtle);margin-top:3px;letter-spacing:.01em}
-  .src-meta{display:flex;align-items:center;gap:10px;flex-shrink:0}
-  .conf{font-size:13px;font-weight:700;color:var(--ink-muted);font-variant-numeric:tabular-nums}
-  .badge{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:0;white-space:nowrap;letter-spacing:.02em}
-  .badge.ok{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
-  .badge.warn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
-  .badge.none{background:var(--surface-1);color:var(--ink-subtle);border:1px solid var(--hairline-strong)}
-
-  /* actions — square buttons */
-  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
-  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;padding:13px 20px;transition:background .15s, border-color .15s, color .15s;text-decoration:none}
-  .btn .arr{transition:transform .18s}
-  .btn:hover .arr{transform:translateX(3px)}
-  .btn-primary{background:var(--accent);color:#fff}
-  .btn-primary:hover{background:var(--accent-deep)}
-  .btn-ghost{background:var(--canvas);border:1px solid var(--hairline-strong);color:var(--ink)}
-  .btn-ghost:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-deep)}
-
-  .disclaimer{font-size:13px;color:var(--ink-muted);line-height:1.6;border-left:2px solid var(--hairline-strong);padding:2px 0 2px 14px}
-  .disclaimer b{color:var(--ink);font-weight:600}
-
-  /* loading */
-  .thinking{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:500;color:var(--accent-deep);padding:8px 0}
-  .thinking .spin{width:14px;height:14px;border:2px solid var(--accent-line);border-top-color:var(--accent);border-radius:50%;animation:rot .7s linear infinite}
+  .em{color:var(--ink);font-weight:600;background:transparent;border-bottom:1px solid var(--cyan)}
+  .cite{
+    display:inline-flex;align-items:center;gap:6px;vertical-align:1px;
+    margin:0 2px;padding:2px 8px;border-radius:999px;
+    background:var(--green-soft);border:1px solid rgba(0,217,146,.28);
+    color:var(--green);font-family:var(--mono);font-size:12px;
+  }
+  .source-list{list-style:none;margin-top:14px;border-top:1px solid var(--line)}
+  .source{
+    display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:14px;
+    padding:15px 0;border-bottom:1px solid var(--line);
+  }
+  .source .num{
+    width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+    border:1px solid var(--line-strong);color:var(--cyan);font-family:var(--mono);font-size:12px;
+  }
+  .source b{display:block;color:var(--ink);font-size:14px;font-weight:500}
+  .source span{display:block;margin-top:4px;color:var(--muted);font-size:12px}
+  .source-meta{display:flex;align-items:flex-start;gap:8px}
+  .conf{font-family:var(--mono);font-size:12px;color:var(--ink-soft);padding-top:3px}
+  .badge{
+    display:inline-flex;align-items:center;min-height:26px;padding:0 9px;
+    border-radius:999px;font-size:12px;font-weight:600;
+  }
+  .badge.ok{background:var(--green-soft);color:var(--green);border:1px solid rgba(0,217,146,.3)}
+  .badge.warn{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(255,122,23,.32)}
+  .badge.none{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+  .side{position:sticky;top:82px;display:grid;gap:12px}
+  .action-card{
+    display:flex;gap:12px;align-items:center;
+    min-height:72px;padding:14px;border:1px solid var(--line);
+    border-radius:var(--radius);background:rgba(16,18,20,.9);
+    transition:border-color .18s, transform .18s, background .18s;
+  }
+  .action-card:hover{border-color:var(--cyan-line);background:rgba(18,31,35,.92);transform:translateY(-1px)}
+  .action-ico{
+    width:40px;height:40px;border-radius:8px;
+    display:grid;place-items:center;background:var(--cyan-soft);color:var(--cyan);
+    font-family:var(--mono);font-weight:700;
+  }
+  .action-card b{display:block;font-size:14px;font-weight:600}
+  .action-card span{display:block;margin-top:3px;color:var(--muted);font-size:12px}
+  .trust{
+    padding:15px;border:1px dashed var(--line-strong);border-radius:var(--radius);
+    color:var(--muted);font-size:12px;line-height:1.65;
+  }
+  .trust b{color:var(--ink-soft);font-weight:600}
+  .thinking{display:flex;align-items:center;gap:11px;color:var(--cyan);font-family:var(--mono);font-size:13px}
+  .spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--cyan-line);border-top-color:var(--cyan);animation:rot .8s linear infinite}
   @keyframes rot{to{transform:rotate(360deg)}}
-  .skel{height:14px;background:var(--surface-1);margin:11px 0}
-  .skel.w80{width:80%}.skel.w60{width:60%}
+  .skel{height:14px;border-radius:999px;background:var(--surface-2);margin:12px 0}
+  .skel.w70{width:70%}.skel.w46{width:46%}
 
-  @media (max-width:600px){
-    .bar{gap:8px;padding:0 14px}
-    .brand{white-space:nowrap}
-    .brand small{display:none}
-    .proto{display:none}
-    .ex-grid{grid-template-columns:1fr}
-    .ex-grid .tile{border-right:none!important}
-    .ex-grid .tile:not(:last-child){border-bottom:1px solid var(--hairline)!important}
-    .entry-inner{padding:56px 18px 48px}
-    .src-meta{flex-direction:column;align-items:flex-end;gap:4px}
+  @media (max-width:800px){
+    .topbar{padding:0 16px}
+    .topbar nav .navlink:not(.admin),.status-dot{display:none}
+    h1{font-size:44px}
+    .lead{font-size:16px}
+    .search-shell{border-radius:18px;align-items:stretch}
+    .search-icon{display:none}
+    .go{padding:0 16px}
+    .example-grid{grid-template-columns:1fr}
+    .answer-grid{grid-template-columns:1fr}
+    .side{position:static}
+    .source{grid-template-columns:30px minmax(0,1fr)}
+    .source-meta{grid-column:2;align-items:center}
   }
 </style>
 </head>
 <body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="mark" aria-hidden="true"></span>
+      <span>직무 메모리<small>Hello JARVIS console</small></span>
+    </a>
+    <nav>
+      <span class="status-dot">LOCAL / GROUNDED</span>
+      <a class="navlink" href="index.html">발표 본편</a>
+      <a class="navlink admin" href="admin.html">관리자 콘솔</a>
+    </nav>
+  </header>
 
-<header class="bar">
-  <div class="brand"><span class="mark"><i></i></span>직무 메모리 <small>· 업무 승계 비서</small></div>
-  <div class="right">
-    <span class="proto">시연용 목업 · 샘플 데이터</span>
-    <button class="toggle" id="themeBtn" onclick="toggleTheme()" aria-label="테마 전환" title="라이트/다크">◐</button>
-  </div>
-</header>
+  <main class="view entry active" id="entry">
+    <section class="entry-panel">
+      <div class="eyebrow">INTERNAL MEMORY ONLINE</div>
+      <h1>Hello, <span class="name">JARVIS?</span></h1>
+      <p class="lead">사내 결재문서, 규정, 회의록, 반려 이력을 근거로 답합니다. 직원은 <strong>묻고, 확인하고, 바로 업무를 시작</strong>하면 됩니다.</p>
+      <form class="search-shell" onsubmit="return ask()">
+        <span class="search-icon">⌕</span>
+        <input id="q" type="text" autocomplete="off" placeholder="예: 정산시스템 전환은 뭘 먼저 확인해야 해?">
+        <button class="go" type="submit">묻기</button>
+      </form>
+      <div class="system-strip" aria-label="system state">
+        <span class="pill ok">외부 AI 0</span>
+        <span class="pill">사내 문서 근거</span>
+        <span class="pill">모르면 모른다고 답함</span>
+      </div>
+      <div class="examples">
+        <div class="examples-title">SUGGESTED QUERIES</div>
+        <div class="example-grid" id="exGrid"></div>
+      </div>
+    </section>
+  </main>
 
-<!-- ================= ENTRY ================= -->
-<main class="view entry active" id="entry">
-  <div class="entry-inner">
-    <div class="mark-lg"><i></i></div>
-    <h1 class="display">Hello, <span class="accent">JARVIS?</span></h1>
-    <p class="lead">사내 결재문서 · 규정 · 회의록 · 반려 이력을 근거로 답하는<br><b>우리 회사 전용 업무 비서</b>입니다.</p>
-
-    <form class="field" onsubmit="return ask()">
-      <span class="ico" aria-hidden="true">⌕</span>
-      <input id="q" type="text" autocomplete="off" placeholder="예: 정산시스템 전환은 뭘 먼저 확인해야 해?">
-      <button class="go" type="submit">묻기</button>
-    </form>
-
-    <div class="examples">
-      <div class="ex-label label">예시 질문</div>
-      <div class="ex-grid" id="exGrid"></div>
+  <main class="view results" id="results">
+    <div class="results-inner">
+      <form class="search-shell results-search" onsubmit="return ask()">
+        <button class="back" type="button" onclick="home()" aria-label="처음으로">←</button>
+        <input id="q2" type="text" autocomplete="off">
+        <button class="go" type="submit">다시 묻기</button>
+      </form>
+      <div id="stream"></div>
     </div>
-  </div>
-</main>
-
-<!-- ================= RESULTS ================= -->
-<main class="view results" id="results">
-  <div class="results-inner">
-    <form class="field sm" onsubmit="return ask()">
-      <button class="back" type="button" onclick="home()" aria-label="처음으로">←</button>
-      <span class="ico" aria-hidden="true">⌕</span>
-      <input id="q2" type="text" autocomplete="off">
-      <button class="go" type="submit">묻기</button>
-    </form>
-
-    <div id="stream"></div>
-  </div>
-</main>
+  </main>
+</div>
 
 <script>
-  /* ---------- 예시 질문 + 답변 (팀원 엔진 QA/초안/점검 흐름을 목업화) ---------- */
   const ANSWERS = {
     prep: {
       q: "정산시스템 전환은 뭘 먼저 확인해야 해?",
-      hint: "업무 맥락 · 의존관계",
-      meta: "근거 4건", verified: true,
-      body: `<p>정산시스템 전환을 시작하기 전에는 <mark class="em">IT운영팀 배포 일정</mark>을 먼저 확인해야 합니다
-        <span class="cite">작성자확인 · <b>87%</b></span>. 이 일정이 지연되면 전환 보고와 병행 운영 점검도 함께 밀릴 수 있습니다.</p>
-        <p>작년 전환 보고 문서에는 병행 운영 중 <mark class="em">정산 오차 검증 절차</mark>를 신설한 이력이 있고,
-        올해 계획 수립 시 전환 일정 반영이 필요하다고 표시되어 있습니다.</p>`,
+      hint: "업무 맥락 · 협조처 · 일정 의존성",
+      meta: "근거 4건",
+      verified: true,
+      body: `<p>정산시스템 전환을 시작하기 전에는 <mark class="em">IT운영팀 배포 일정</mark>을 먼저 확인해야 합니다 <span class="cite">작성자확인 87%</span>. 이 일정이 밀리면 전환 보고와 병행 운영 점검도 함께 지연될 수 있습니다.</p><p>작년 전환 보고에는 병행 운영 중 <mark class="em">정산 오차 검증 절차</mark>를 신설한 이력이 있고, 올해 계획 수립 시 전환 일정 반영이 필요하다고 표시되어 있습니다.</p>`,
       sources: [
         {t:"2025년 정산시스템 전환 2단계 추진 보고", n:"APPR-2025-0109 · 전환 일정 근거", s:"ok", c:87},
         {t:"2024년 정산시스템 전환 1단계 추진 보고", n:"APPR-2024-0111 · 반복 업무 근거", s:"ok", c:84},
         {t:"차세대 정산시스템 오차 검증 회의록", n:"MTG-2025-0708 · 정보화부서 협조", s:"ok", c:78},
-        {t:"정산시스템 병행 운영 구두 협의", n:"근거 문서 없음 · 전임자 확인 필요", s:"none", c:null},
+        {t:"정산시스템 병행 운영 구두 협의", n:"근거 문서 없음 · 전임자 확인 필요", s:"none", c:null}
       ],
       actions: [
-        {kind:"primary", label:"전환 보고 초안 열기", href:"index.html#s3"},
-        {kind:"ghost", label:"관련 브리핑북 보기", href:"index.html#s1"},
-        {kind:"ghost", label:"기안 전 사전점검", href:"index.html#s4"},
-      ],
+        {label:"전환 보고 초안 열기", sub:"작년 구조로 S3 초안 생성", href:"index.html#s3", icon:"D"},
+        {label:"관련 브리핑북 보기", sub:"이 업무의 맥락 확인", href:"index.html#s1", icon:"B"},
+        {label:"기안 전 사전점검", sub:"반려·감사 리스크 확인", href:"index.html#s4", icon:"C"}
+      ]
     },
     mid: {
       q: "요금정산 중간보고, 작년엔 어떻게 기안했지?",
-      hint: "반복 업무 · 근거 3건",
-      meta: "근거 3건", verified: true,
-      body: `<p>작년 기준 요금정산 중간보고는 <mark class="em">7월 10일에 기안</mark>되었고, <mark class="em">3년 연속</mark> 반복된 업무입니다
-        <span class="cite">2025 중간보고 · <b>96%</b></span>. 보고 기준월은 <mark class="em">6월 말 실적</mark>이며, 올해는
-        <mark class="em">차세대 정산시스템 전환 일정</mark>을 신규 변수로 반영해야 합니다
-        <span class="cite">차세대 전환계획 · <b>88%</b></span>.</p>
-        <p>초안은 작년 원문을 골격으로 자동 구성할 수 있습니다. 아래 <b>초안 스튜디오</b>에서 바로 열어 올해 수치만 갱신하세요.</p>`,
+      hint: "반복 업무 · 작년 양식 · 초안",
+      meta: "근거 3건",
+      verified: true,
+      body: `<p>작년 기준 요금정산 중간보고는 <mark class="em">7월 10일에 기안</mark>했고, 3년 연속 반복된 업무입니다 <span class="cite">2025 중간보고 96%</span>. 보고 기준월은 6월 말 실적이며, 올해는 <mark class="em">차세대 정산시스템 전환 일정</mark>을 신규 변수로 반영해야 합니다.</p><p>아래 초안 스튜디오에서 작년 문서 구조를 그대로 열고, 연도·수치·일정만 확인하면 됩니다.</p>`,
       sources: [
         {t:"2025년 7월 요금정산 중간보고 기안", n:"작년 원문 · 기안일 2025-07-10", s:"ok", c:96},
         {t:"정산시스템 차세대 전환 계획", n:"2025-09 · 진행 중 이슈", s:"ok", c:88},
-        {t:"요금정산 연간계획 수립(2025-03)", n:"기준월 표기가 상이 — 확인 권장", s:"warn", c:71},
-        {t:"정산 단가 산정 기준 협의", n:"구두 협의만 확인 · 문서 없음", s:"none", c:null},
+        {t:"요금정산 연간계획 수립", n:"기준월 표기가 상이 · 확인 권장", s:"warn", c:71}
       ],
       actions: [
-        {kind:"primary", label:"작년 양식으로 초안 만들기", href:"index.html#s3"},
-        {kind:"ghost", label:"업무 일기예보 보기", href:"index.html#s2"},
-        {kind:"ghost", label:"사전점검으로 넘기기", href:"index.html#s4"},
-      ],
-    },
-    july: {
-      q: "이 자리에서 7월에 반복되는 업무는?",
-      hint: "업무 일기예보 · 근거 3건",
-      meta: "근거 3건", verified: true,
-      body: `<p>요금정산팀 7월에는 <mark class="em">3건</mark>이 반복됩니다: <mark class="em">중간보고 기안(D-4)</mark>,
-        하절기 설비 안전점검 결과 보고(D-9), 이사회 보고 안건 자료 제출(D-14)
-        <span class="cite">최근 2~3년 기안주기</span>. 모두 최근 몇 년 같은 시기에 기안되어, 다가오는 순서대로 예보로 잡았습니다.</p>`,
-      sources: [
-        {t:"요금정산 중간보고 (내 자리)", n:"작년 7/10 · 3년 연속 · D-4", s:"ok", c:94},
-        {t:"하절기 설비 안전점검 결과 보고", n:"작년 7/16 · 담당 박수연 대리 · D-9", s:"ok", c:82},
-        {t:"이사회 보고 안건 자료 제출", n:"작년 7/21 · 팀 공통 · D-14", s:"ok", c:79},
-      ],
-      actions: [
-        {kind:"primary", label:"D-4 업무 초안 준비", href:"index.html#s3"},
-        {kind:"ghost", label:"달력 대시보드 열기", href:"index.html#s2"},
-        {kind:"ghost", label:"근거 문서 보기", href:"index.html#s1"},
-      ],
+        {label:"작년 양식으로 초안 만들기", sub:"S3 초안 스튜디오", href:"index.html#s3", icon:"D"},
+        {label:"업무 일기예보 보기", sub:"다가오는 반복 업무", href:"index.html#s2", icon:"F"},
+        {label:"사전점검으로 넘기기", sub:"기안 전 리스크 확인", href:"index.html#s4", icon:"C"}
+      ]
     },
     risk: {
       q: "산출근거 표 누락으로 반려된 적 있어?",
-      hint: "사전 점검 · 반려/감사 이력",
-      meta: "근거 5건", verified: true,
-      body: `<p>있습니다. 계획·보고 유형 기안에서 <mark class="em">산출근거 표 누락</mark>은 과거 반려·감사 지적과 연결된 리스크입니다
-        <span class="cite">작성자확인 · <b>97%</b></span>. 같은 표현이나 표 누락 패턴이 보이면 사전점검에서 확인 필요로 표시됩니다.</p>
-        <p>JARVIS는 "문제 없음"을 단정하지 않고, 어떤 문서와 이력이 리스크 판단의 근거인지 먼저 보여줍니다.</p>`,
+      hint: "사전점검 · 반려/감사 이력",
+      meta: "근거 5건",
+      verified: true,
+      body: `<p>있습니다. 계획·보고 유형 기안에서 <mark class="em">산출근거 표 누락</mark>은 과거 반려·감사 지적과 연결된 리스크입니다 <span class="cite">작성자확인 97%</span>. 같은 표현이나 표 누락 패턴이 보이면 사전점검에서 확인 필요로 표시됩니다.</p><p>JARVIS는 문제 없음을 단정하지 않고, 어떤 문서와 이력이 판단 근거인지 먼저 보여줍니다.</p>`,
       sources: [
         {t:"2025년 연간 정산계획 반려 사유", n:"산출근거 표 누락 · 반려 이력", s:"ok", c:97},
         {t:"2024년 감사 지적 사례", n:"근거 자료 미첨부 유형", s:"ok", c:94},
         {t:"계획·보고 작성 체크리스트", n:"표·수치 출처 확인 항목", s:"ok", c:89},
-        {t:"구두 협의 기반 일정", n:"문서 근거 없음 · 보완 필요", s:"none", c:null},
+        {t:"구두 협의 기반 일정", n:"문서 근거 없음 · 보완 필요", s:"none", c:null}
       ],
       actions: [
-        {kind:"primary", label:"이 문구로 사전점검 실행", href:"index.html#s4"},
-        {kind:"ghost", label:"보완 초안 열기", href:"index.html#s3"},
-        {kind:"ghost", label:"관련 브리핑북 보기", href:"index.html#s1"},
-      ],
+        {label:"이 문구로 사전점검 실행", sub:"S4 리스크 하이라이트", href:"index.html#s4", icon:"C"},
+        {label:"보완 초안 열기", sub:"누락 항목 채우기", href:"index.html#s3", icon:"D"},
+        {label:"관련 브리핑북 보기", sub:"근거 문서 맥락", href:"index.html#s1", icon:"B"}
+      ]
     },
-    jeongsan: {
-      q: "정산 기준일, 어떻게 써야 반려 안 나?",
-      hint: "사전 점검 · 반려 이력 대조",
-      meta: "근거 2건", verified: true,
-      body: `<p>정산 기준일을 <mark class="em">특정 날짜(예: 6월 30일)로 고정</mark>하면 준공일 변동 시 재기안 사유가 됩니다.
-        2024년 5월 동일 유형 기안이 <mark class="em">반려된 이력</mark>이 있습니다
-        <span class="cite">반려 이력 2024.05 · <b>90%</b></span>. <mark class="em">"준공검사 완료일 기준"</mark>으로
-        표기하는 것이 공사정산업무지침과 일치합니다
-        <span class="cite">공사정산업무지침 §8 · <b>95%</b></span>.</p>`,
+    july: {
+      q: "이 자리에서 7월에 반복되는 업무는?",
+      hint: "업무 예보 · D-day · 반복 탐지",
+      meta: "근거 3건",
+      verified: true,
+      body: `<p>요금정산 담당 자리의 7월 반복 업무는 <mark class="em">중간보고 기안, 하절기 설비 안전점검 결과 보고, 이사회 보고 안건 제출</mark>입니다. 가장 가까운 업무는 중간보고 기안이며 현재 D-4로 예보됩니다.</p>`,
       sources: [
-        {t:"공사정산업무지침 제8조(정산 기준)", n:"지침 원문", s:"ok", c:95},
-        {t:"2024.05 유사 기안 반려 이력", n:"반려 사유 동일", s:"ok", c:90},
+        {t:"요금정산 중간보고", n:"작년 7/10 · 3년 연속 · D-4", s:"ok", c:94},
+        {t:"하절기 설비 안전점검 결과 보고", n:"작년 7/16 · D-9", s:"ok", c:82},
+        {t:"이사회 보고 안건 자료 제출", n:"작년 7/21 · D-14", s:"ok", c:79}
       ],
       actions: [
-        {kind:"primary", label:"정산 기준일 사전점검", href:"index.html#s4"},
-        {kind:"ghost", label:"초안 스튜디오에서 수정", href:"index.html#s3"},
-        {kind:"ghost", label:"업무 지침 보기", href:"index.html#s1"},
-      ],
-    },
+        {label:"D-4 업무 초안 준비", sub:"중간보고 초안 생성", href:"index.html#s3", icon:"D"},
+        {label:"달력 대시보드 열기", sub:"S2 업무 예보", href:"index.html#s2", icon:"F"},
+        {label:"근거 문서 보기", sub:"브리핑북 연결", href:"index.html#s1", icon:"B"}
+      ]
+    }
   };
+
   const EXAMPLES = ["prep","mid","risk","july"];
   const BADGE = {ok:"검증됨", warn:"주의", none:"근거 없음"};
-
-  /* ---------- render example tiles ---------- */
   const exGrid = document.getElementById("exGrid");
-  exGrid.innerHTML = EXAMPLES.map(k=>{
-    const a = ANSWERS[k];
-    return `<button class="tile" onclick="ask('${k}')"><span class="q">${a.q}</span><span class="h">${a.hint}</span></button>`;
-  }).join("");
-
-  /* ---------- routing ---------- */
-  const vEntry = document.getElementById("entry");
-  const vResults = document.getElementById("results");
   const q = document.getElementById("q");
   const q2 = document.getElementById("q2");
+  const vEntry = document.getElementById("entry");
+  const vResults = document.getElementById("results");
   const stream = document.getElementById("stream");
-  const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  exGrid.innerHTML = EXAMPLES.map((key) => {
+    const item = ANSWERS[key];
+    return `<button class="tile" type="button" onclick="ask('${key}')"><b>${item.q}</b><span>${item.hint}</span></button>`;
+  }).join("");
 
   function show(view){
-    vEntry.classList.toggle("active", view==="entry");
-    vResults.classList.toggle("active", view==="results");
+    vEntry.classList.toggle("active", view === "entry");
+    vResults.classList.toggle("active", view === "results");
   }
-  function home(){ show("entry"); q.value=""; setTimeout(()=>q.focus(),50); }
+
+  function home(){
+    show("entry");
+    q.value = "";
+    setTimeout(() => q.focus(), 40);
+  }
 
   function findKey(text){
-    if(ANSWERS[text]) return text;               // called with a key from a tile
-    const t = (text||"").trim();
-    if(!t) return "mid";
-    // 아주 단순한 키워드 매칭 (목업)
+    if(ANSWERS[text]) return text;
+    const t = (text || "").trim();
+    if(!t) return "prep";
     if(/전환|정산시스템|IT|정보화|먼저|협의|확인/.test(t)) return "prep";
-    if(/7월|반복|예보|이번 ?달/.test(t)) return "july";
-    if(/산출근거|누락|리스크|감사|지적|조심/.test(t)) return "risk";
-    if(/기준일|반려|정산 ?기준/.test(t)) return "jeongsan";
-    return "mid";
+    if(/중간보고|작년|양식|기안/.test(t)) return "mid";
+    if(/산출근거|누락|반려|감사|리스크|조심/.test(t)) return "risk";
+    if(/7월|반복|예보|이번 달|D-/.test(t)) return "july";
+    return "prep";
   }
 
   function ask(preset){
-    let key, typed;
-    if(typeof preset === "string"){ key = preset; typed = ANSWERS[key] ? ANSWERS[key].q : preset; }
-    else { typed = (vResults.classList.contains("active") ? q2.value : q.value); key = findKey(typed); if(!typed) typed = ANSWERS[key].q; }
-    q.value = typed; q2.value = typed;
+    let key;
+    let typed;
+    if(typeof preset === "string"){
+      key = findKey(preset);
+      typed = ANSWERS[key].q;
+    }else{
+      typed = (vResults.classList.contains("active") ? q2.value : q.value).trim();
+      key = findKey(typed);
+      if(!typed) typed = ANSWERS[key].q;
+    }
+    q.value = typed;
+    q2.value = typed;
     show("results");
     window.scrollTo(0,0);
     render(key, typed);
-    return false; // prevent form submit
+    return false;
   }
 
   function render(key, typed){
-    const a = ANSWERS[key] || ANSWERS.mid;
-    // 1) 로딩
+    const answer = ANSWERS[key] || ANSWERS.prep;
     stream.innerHTML = `
-      <div class="thinking"><span class="spin"></span>사내 결재문서·규정·회의록에서 근거를 찾는 중…</div>
-      <div class="skel"></div><div class="skel w80"></div><div class="skel w60"></div>`;
-    const reveal = ()=>{
-      const srcRows = a.sources.map((s,i)=>`
-        <li class="src">
-          <span class="num">${i+1}</span>
-          <div class="src-main"><div class="src-title">${s.t}</div><div class="src-note">${s.n}</div></div>
-          <div class="src-meta">
-            ${s.c!=null?`<span class="conf">${s.c}%</span>`:""}
+      <section class="panel pad">
+        <div class="thinking"><span class="spin"></span>사내 문서에서 근거를 찾는 중</div>
+        <div class="skel"></div><div class="skel w70"></div><div class="skel w46"></div>
+      </section>`;
+
+    const reveal = () => {
+      const sources = answer.sources.map((s, index) => `
+        <li class="source">
+          <span class="num">${index + 1}</span>
+          <div><b>${s.t}</b><span>${s.n}</span></div>
+          <div class="source-meta">
+            ${s.c == null ? "" : `<span class="conf">${s.c}%</span>`}
             <span class="badge ${s.s}">${BADGE[s.s]}</span>
           </div>
         </li>`).join("");
-      const actionRows = (a.actions || []).map(x =>
-        `<a class="btn ${x.kind==="primary"?"btn-primary":"btn-ghost"}" href="${x.href}">${x.label}${x.kind==="primary"?` <span class="arr">→</span>`:""}</a>`
-      ).join("");
+
+      const actions = answer.actions.map((a) => `
+        <a class="action-card" href="${a.href}">
+          <span class="action-ico">${a.icon}</span>
+          <span><b>${a.label}</b><span>${a.sub}</span></span>
+        </a>`).join("");
+
       stream.innerHTML = `
-        <div class="block">
-          <div class="label">답변 <span class="sep"></span> ${a.meta} <span class="sep"></span>
-            <span class="${a.verified?'verified':''}">${a.verified?'검증됨':'검증 필요'}</span></div>
-          <div class="answer-q">${typed}</div>
-          <div class="answer-body">${a.body}</div>
-        </div>
-        <div class="block">
-          <div class="label">근거 문서</div>
-          <ol class="src-list">${srcRows}</ol>
-        </div>
-        <div class="actions">
-          ${actionRows}
-        </div>
-        <p class="disclaimer">JARVIS는 <b>"문제 없음"을 판정하지 않습니다</b> — 근거와 검증 상태를 보여줄 뿐, 최종 판단은 담당자에게 있습니다.
-          근거가 없는 항목은 <b>근거 없음</b>으로 그대로 노출합니다.</p>`;
+        <div class="answer-grid">
+          <section class="panel pad">
+            <div class="section-label">ANSWER · ${answer.meta} · ${answer.verified ? "VERIFIED" : "CHECK REQUIRED"}</div>
+            <h2 class="question">${typed}</h2>
+            <div class="answer-body">${answer.body}</div>
+            <ol class="source-list">${sources}</ol>
+          </section>
+          <aside class="side">
+            ${actions}
+            <div class="trust"><b>최종 판단은 담당자에게 있습니다.</b><br>JARVIS는 근거와 검증 상태를 보여줍니다. 문서 근거가 없으면 숨기지 않고 근거 없음으로 남깁니다.</div>
+            <a class="action-card" href="admin.html">
+              <span class="action-ico">A</span>
+              <span><b>관리자 콘솔</b><span>인제스트·온톨로지·검증 흐름 보기</span></span>
+            </a>
+          </aside>
+        </div>`;
     };
-    reduce ? reveal() : setTimeout(reveal, 620);
+
+    reduce ? reveal() : setTimeout(reveal, 520);
   }
 
-  /* ---------- theme ---------- */
-  function applyTheme(t){ document.documentElement.setAttribute("data-theme", t);
-    document.getElementById("themeBtn").textContent = t==="dark" ? "☀" : "◐"; }
-  function toggleTheme(){ applyTheme(document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark"); }
-  applyTheme(matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
-
-  /* ---------- keys ---------- */
-  addEventListener("keydown", e=>{ if(e.key==="Escape" && vResults.classList.contains("active")) home(); });
+  addEventListener("keydown", (event) => {
+    if(event.key === "Escape" && vResults.classList.contains("active")) home();
+  });
   q.focus();
 </script>
 </body>
