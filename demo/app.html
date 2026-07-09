@@ -416,6 +416,17 @@
   .disclaimer{font-size:13px;line-height:1.55;color:var(--ink-faint);max-width:660px;margin-top:26px}
   .disclaimer b{color:var(--ink-muted);font-weight:600}
 
+  /* ============ OPENING — 첫 진입 오프닝 영상 ============ */
+  .opening{position:fixed;inset:0;z-index:100;background:#000;display:flex;align-items:center;justify-content:center;
+    opacity:1;transition:opacity .9s cubic-bezier(.22,1,.36,1)}
+  .opening.out{opacity:0;pointer-events:none}
+  .opening video{width:100%;height:100%;object-fit:cover}
+  .open-ui{position:absolute;right:22px;bottom:22px;display:flex;gap:10px}
+  .open-btn{padding:9px 18px;border-radius:9999px;font-size:14px;font-weight:500;color:#fff;
+    background:rgba(255,255,255,.14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,.22);transition:background .2s}
+  .open-btn:hover{background:rgba(255,255,255,.26)}
+
   @media (max-width:640px){
     .bar{padding:0 16px}
     .brand small,.proto{display:none}
@@ -430,6 +441,15 @@
 </style>
 </head>
 <body class="at-entry">
+
+<!-- ================= OPENING — 오프닝 영상 (끝나면 홈으로 전환) ================= -->
+<div class="opening" id="opening">
+  <video id="openVid" src="assets/app-opening.mp4" muted autoplay playsinline preload="auto"></video>
+  <div class="open-ui">
+    <button class="open-btn" id="openSnd" type="button" aria-label="소리 켜기">🔇 소리</button>
+    <button class="open-btn" id="openSkip" type="button">건너뛰기 →</button>
+  </div>
+</div>
 
 <header class="bar">
   <div class="brand" onclick="home()"><span class="mark"><i></i></span>직무 메모리 <small>· 업무 승계 비서</small></div>
@@ -906,7 +926,9 @@
   }
 
   /* ================= 홈 인트로 — 타자 → 캐치프레이즈 순차 등장 ================= */
-  (function heroIntro(){
+  let heroStarted = false;
+  function heroIntro(){
+    if(heroStarted) return; heroStarted = true;
     const t1 = $("tw1"), t2 = $("tw2"), caret = $("twCaret");
     const seqEls = [$("subLine"), $("leadLine"), $("searchWrap"), $("entryBelow")];
     function showAll(){
@@ -932,6 +954,33 @@
         });
       }, 340));
     }, 650);
+  }
+
+  /* ================= 오프닝 영상 — 끝나면 페이드아웃 후 홈 인트로 시작 ================= */
+  (function opening(){
+    const ov = $("opening"), vid = $("openVid");
+    let ended = false;
+    function end(){
+      if(ended) return; ended = true;
+      ov.classList.add("out");
+      heroIntro();                                   // 페이드아웃과 동시에 홈 타자 인트로
+      setTimeout(() => { try{ vid.pause(); }catch(e){} ov.remove(); }, 950);
+    }
+    // 딥링크 직행·모션 최소화면 영상 생략 (새로고침 시엔 항상 재생 — 생략은 건너뛰기 버튼)
+    if(location.hash || window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+      ov.remove(); heroIntro(); return;
+    }
+    vid.addEventListener("ended", end);
+    vid.addEventListener("error", end);
+    $("openSkip").addEventListener("click", end);
+    $("openSnd").addEventListener("click", () => {
+      vid.muted = !vid.muted;
+      $("openSnd").textContent = vid.muted ? "🔇 소리" : "🔊 소리 켜짐";
+    });
+    // 자동재생 차단 또는 로딩 지연(6초) 시 영상 없이 진행
+    const guard = setTimeout(() => { if(vid.paused || !vid.currentTime) end(); }, 6000);
+    vid.addEventListener("playing", () => clearTimeout(guard), { once:true });
+    vid.play && vid.play().catch(() => end());
   })();
 
   function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
