@@ -22,14 +22,41 @@ function assert(condition, message) {
   const introPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   introPage.setDefaultTimeout(7000);
   await introPage.goto(baseUrl);
-  await introPage.click('#openSkip');
+  const openingA11y = await introPage.evaluate(() => {
+    const appNodes = [document.querySelector('.topbar'), ...document.querySelectorAll('main')];
+    const staged = ['heroSearch', 'openMyWork', 'homeExamples'].map((id) => document.getElementById(id));
+    return {
+      activeId: document.activeElement && document.activeElement.id,
+      inputHasFocus: document.activeElement === document.getElementById('homeInput'),
+      appIsHiddenAndInert: appNodes.every((node) => node.inert && node.getAttribute('aria-hidden') === 'true'),
+      stagedIsHiddenAndInert: staged.every((node) => node.inert && node.getAttribute('aria-hidden') === 'true'),
+    };
+  });
+  assert(openingA11y.activeId === 'openSkip', 'opening skip does not receive initial focus');
+  assert(!openingA11y.inputHasFocus, 'opening moved focus into the hidden home input');
+  assert(openingA11y.appIsHiddenAndInert, 'opening did not hide and inert the application shell');
+  assert(openingA11y.stagedIsHiddenAndInert, 'unrevealed home actions remain in the accessibility tree');
+  await introPage.keyboard.press('Enter');
   await introPage.waitForTimeout(120);
   const earlyIntro = await introPage.evaluate(() => ({
     title: document.getElementById('heroTitle').textContent.replace(/\s+/g, ' ').trim(),
     promiseVisible: document.getElementById('heroPromise').classList.contains('in'),
   }));
   assert(earlyIntro.title !== 'Hello, JARVIS?' && !earlyIntro.promiseVisible, 'opening skip bypassed the original typing intro');
+  await introPage.waitForSelector('#opening', { state: 'detached' });
+  const releasedApp = await introPage.evaluate(() => [document.querySelector('.topbar'), ...document.querySelectorAll('main')]
+    .every((node) => !node.inert && !node.hasAttribute('aria-hidden')));
+  assert(releasedApp, 'application shell stayed inert after the opening overlay was removed');
   await introPage.waitForFunction(() => document.getElementById('heroSearch').classList.contains('in'));
+  const revealedSearch = await introPage.evaluate(() => {
+    const search = document.getElementById('heroSearch');
+    return !search.inert && !search.hasAttribute('aria-hidden') && document.activeElement === document.getElementById('homeInput');
+  });
+  assert(revealedSearch, 'home input was not focused only after the search became available');
+  await introPage.waitForFunction(() => ['openMyWork', 'homeExamples'].every((id) => document.getElementById(id).classList.contains('in')));
+  const revealedActions = await introPage.evaluate(() => ['heroSearch', 'openMyWork', 'homeExamples']
+    .every((id) => { const node = document.getElementById(id); return !node.inert && !node.hasAttribute('aria-hidden'); }));
+  assert(revealedActions, 'revealed home actions stayed excluded from keyboard or assistive technology');
   await introPage.close();
 
   await page.goto(`${baseUrl}#home`);
@@ -181,12 +208,158 @@ function assert(condition, message) {
   assert(homeObjectContract.fallbackId === 'pump-2026', 'home did not fall back from an invalid last visited work');
   assert(homeObjectContract.urgentWorkId === 'pump-2026', 'urgent home object is not bound to app state');
 
+  const recentNotes = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+  recentNotes.setDefaultTimeout(7000);
+  await recentNotes.goto(`${baseUrl}#home`);
+  await recentNotes.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await recentNotes.reload();
+  const noteFixtures = [
+    ['pump-2026', '펌프 생성 순서 메모'],
+    ['audit-2026', '감사 생성 순서 메모'],
+    ['budget-2026', '예산 생성 순서 메모'],
+  ];
+  for (const [workId, noteText] of noteFixtures) {
+    await recentNotes.goto(`${baseUrl}#workbench/${workId}`);
+    await recentNotes.waitForSelector('#view-workbench.active');
+    await recentNotes.fill('#contextInput', noteText);
+    await recentNotes.locator('#contextForm').evaluate((form) => form.requestSubmit());
+    await recentNotes.waitForFunction((text) => document.getElementById('activityList').textContent.includes(text), noteText);
+  }
+  await recentNotes.goto(`${baseUrl}#home`);
+  await recentNotes.reload();
+  await recentNotes.waitForSelector('#view-home.active');
+  const recentNoteContract = await recentNotes.evaluate(() => {
+    const rows = [...document.querySelectorAll('[data-home-memo-index]')];
+    const created = appState.works.flatMap((work) => work.notes
+      .filter((note) => note.text.includes('생성 순서 메모'))
+      .map((note) => ({ workId: work.id, text: note.text, sequence: note.sequence })));
+    return {
+      rowTexts: rows.map((row) => row.textContent.replace(/\s+/g, ' ').trim()),
+      rowWorkIds: rows.map((row) => row.dataset.homeWorkId),
+      created,
+    };
+  });
+  assert(recentNoteContract.created.length === 3 && recentNoteContract.created.every((note) => Number.isSafeInteger(note.sequence)), 'new progress notes do not persist a monotonic sequence');
+  assert(recentNoteContract.created[0].sequence < recentNoteContract.created[1].sequence && recentNoteContract.created[1].sequence < recentNoteContract.created[2].sequence, 'progress note sequence is not monotonic across works');
+  assert(recentNoteContract.rowTexts[0].includes('예산 생성 순서 메모') && recentNoteContract.rowTexts[1].includes('감사 생성 순서 메모'), 'home recent notes are not ordered by actual creation sequence');
+  assert(recentNoteContract.rowWorkIds[0] === 'budget-2026' && recentNoteContract.rowWorkIds[1] === 'audit-2026', 'home recent note rows point at the wrong works');
+  await recentNotes.click('[data-home-memo-index="0"]');
+  await recentNotes.waitForSelector('#view-workbench.active');
+  assert(recentNotes.url().endsWith('#workbench/budget-2026'), 'newest home note did not open its own workbench');
+  await recentNotes.goto(`${baseUrl}#home`);
+  await recentNotes.click('[data-home-memo-index="1"]');
+  await recentNotes.waitForSelector('#view-workbench.active');
+  assert(recentNotes.url().endsWith('#workbench/audit-2026'), 'second newest home note did not open its own workbench');
+  await recentNotes.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await recentNotes.close();
+
+  const zeroWork = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+  zeroWork.setDefaultTimeout(5000);
+  await zeroWork.goto(`${baseUrl}#home`);
+  await zeroWork.evaluate(() => localStorage.setItem('jm-workbench-v1', JSON.stringify({
+    version: 1,
+    works: [],
+    selectedWorkId: null,
+    lastVisitedWorkId: null,
+    workMode: 'list',
+  })));
+  await zeroWork.reload();
+  await zeroWork.waitForSelector('#view-home.active');
+  const zeroWorkEvidence = await zeroWork.evaluate(() => {
+    const button = document.getElementById('homeEvidenceObject');
+    return {
+      disabled: button.disabled,
+      label: button.getAttribute('aria-label'),
+      title: document.getElementById('homeEvidenceTitle').textContent,
+    };
+  });
+  assert(!zeroWorkEvidence.disabled, 'zero-work evidence fallback is disabled');
+  assert(zeroWorkEvidence.label && zeroWorkEvidence.label.includes('내 업무 보기'), 'zero-work evidence fallback has no My Work accessible name');
+  assert(zeroWorkEvidence.title.includes('연결된 업무 없음'), 'zero-work evidence object lost its empty-state copy');
+  const memoSemantics = await zeroWork.evaluate(() => {
+    const memo = document.getElementById('homeMemoObject');
+    const fallback = document.getElementById('homeMemoFallback');
+    return {
+      hasTabIndex: memo.hasAttribute('tabindex'),
+      hasClickHandler: memo.hasAttribute('onclick'),
+      hasKeyHandler: memo.hasAttribute('onkeydown'),
+      rowTags: [...memo.querySelectorAll('[data-home-memo-index]')].map((row) => row.tagName),
+      fallbackIsVisibleButton: Boolean(fallback && fallback.tagName === 'BUTTON' && !fallback.hidden),
+      nestedButtonCount: memo.querySelectorAll('button button').length,
+    };
+  });
+  assert(!memoSemantics.hasTabIndex && !memoSemantics.hasClickHandler && !memoSemantics.hasKeyHandler, 'recent-note section itself is still interactive');
+  assert(memoSemantics.rowTags.length === 2 && memoSemantics.rowTags.every((tag) => tag === 'BUTTON'), 'recent-note rows are not the only record actions');
+  assert(memoSemantics.fallbackIsVisibleButton, 'empty recent-note card has no real My Work fallback button');
+  assert(memoSemantics.nestedButtonCount === 0, 'recent-note card contains nested buttons');
+  await zeroWork.click('#homeMemoFallback', { force: true });
+  await zeroWork.waitForSelector('#view-work.active');
+  assert(zeroWork.url().endsWith('#work/list'), 'empty recent-note fallback did not open My Work');
+  await zeroWork.goto(`${baseUrl}#home`);
+  await zeroWork.waitForSelector('#view-home.active');
+  await zeroWork.click('#homeEvidenceObject', { force: true });
+  await zeroWork.waitForSelector('#view-work.active');
+  assert(zeroWork.url().endsWith('#work/list'), 'zero-work evidence fallback did not open My Work');
+  await zeroWork.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await zeroWork.reload();
+  assert(await zeroWork.locator('[data-work-id="pump-2026"]').count() === 1, 'zero-work fixture was not restored to the seed');
+  await zeroWork.close();
+
+  const repeatFilter = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+  repeatFilter.setDefaultTimeout(7000);
+  await repeatFilter.goto(`${baseUrl}#home`);
+  await repeatFilter.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await repeatFilter.reload();
+  await repeatFilter.fill('#homeInput', '팀장님이 신규 설비 홍보행사 준비하라고 했어');
+  await repeatFilter.locator('#homeForm').evaluate((form) => form.requestSubmit());
+  await repeatFilter.waitForSelector('#view-clarify.active');
+  await repeatFilter.click('.clarify-create');
+  await repeatFilter.waitForSelector('#view-workbench.active');
+  const repeatFixtureNewId = await repeatFilter.evaluate(() => getSelectedWork().id);
+  await repeatFilter.goto(`${baseUrl}#home`);
+  await repeatFilter.waitForSelector('#view-home.active');
+  await repeatFilter.click('#homeForecastObject', { force: true });
+  await repeatFilter.waitForSelector('#view-work.active');
+  assert(repeatFilter.url().endsWith('#work/list'), 'repeat forecast did not open the work list route');
+  assert(await repeatFilter.isVisible('#workFilterBar'), 'repeat forecast has no visible active-filter UI');
+  assert((await repeatFilter.textContent('#workFilterBar')).includes('반복 업무만') && (await repeatFilter.textContent('#workFilterBar')).includes('전체 업무 보기'), 'repeat filter cannot be understood or cleared from visible copy');
+  assert(await repeatFilter.locator(`[data-work-id="${repeatFixtureNewId}"]`).count() === 0, 'repeat forecast left a new non-repeat work in the list');
+  const repeatListIds = await repeatFilter.locator('#workList [data-work-id]').evaluateAll((rows) => rows.map((row) => row.dataset.workId));
+  assert(repeatListIds.includes('pump-2026'), `repeat forecast removed a repeat work (${repeatListIds.join(', ')})`);
+  await repeatFilter.click('#workModeCalendar');
+  assert(await repeatFilter.isVisible('#workFilterBar') && await repeatFilter.evaluate(() => appState.workFilter === 'repeat'), 'calendar mode did not preserve the repeat filter');
+  await repeatFilter.click('#listModeBtn');
+  assert(await repeatFilter.locator(`[data-work-id="${repeatFixtureNewId}"]`).count() === 0, 'list mode switch cleared the repeat filter');
+  await repeatFilter.click('#clearWorkFilter');
+  assert(await repeatFilter.isHidden('#workFilterBar'), 'clear-filter action left the repeat filter visible');
+  assert(await repeatFilter.locator(`[data-work-id="${repeatFixtureNewId}"]`).count() === 1, 'clear-filter action did not restore new work');
+  await repeatFilter.goto(`${baseUrl}#home`);
+  await repeatFilter.click('#homeForecastObject', { force: true });
+  await repeatFilter.waitForSelector('#view-work.active');
+  await repeatFilter.click('#navWork');
+  assert(await repeatFilter.isHidden('#workFilterBar') && await repeatFilter.locator(`[data-work-id="${repeatFixtureNewId}"]`).count() === 1, 'general My Work navigation did not reset the repeat filter');
+  await repeatFilter.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await repeatFilter.close();
+
   await page.click('#openMyWork');
   await page.waitForSelector('#view-work.active');
   assert(page.url().endsWith('#work/list'), 'My Work entry did not open list mode');
   assert(await page.locator('[data-work-id="pump-2026"]').count() === 1, 'work list does not render work items');
+  const listModeAria = await page.evaluate(() => ({
+    listPressed: document.getElementById('listModeBtn').getAttribute('aria-pressed'),
+    listControls: document.getElementById('listModeBtn').getAttribute('aria-controls'),
+    calendarPressed: document.getElementById('workModeCalendar').getAttribute('aria-pressed'),
+    calendarControls: document.getElementById('workModeCalendar').getAttribute('aria-controls'),
+  }));
+  assert(listModeAria.listPressed === 'true' && listModeAria.calendarPressed === 'false', 'list mode pressed state is not exposed to assistive technology');
+  assert(listModeAria.listControls === 'workList' && listModeAria.calendarControls === 'workCalendar', 'work mode buttons do not identify their controlled panels');
   const workShellWidth = await page.locator('#view-work > .shell').evaluate((node) => node.getBoundingClientRect().width);
   assert(workShellWidth <= 900, `My Work widened beyond the original product width (${workShellWidth}px)`);
+  const findButtonLayout = await page.locator('#workSearchForm button[type="submit"]').evaluate((button) => ({
+    flexShrink: getComputedStyle(button).flexShrink,
+    whiteSpace: getComputedStyle(button).whiteSpace,
+  }));
+  assert(findButtonLayout.flexShrink === '0' && findButtonLayout.whiteSpace === 'nowrap', 'My Work find button can shrink or wrap onto two lines');
   await page.click('[data-work-id="pump-2026"]');
   await page.waitForSelector('#view-workbench.active');
   assert(page.url().endsWith('#workbench/pump-2026'), 'work list item did not open its workbench route');
@@ -195,6 +368,7 @@ function assert(condition, message) {
   await page.click('#workModeCalendar');
   assert(page.url().endsWith('#work/calendar'), 'calendar mode is not deep linked');
   assert(await page.isHidden('#workList'), 'calendar mode left the work list visible');
+  assert(await page.getAttribute('#listModeBtn', 'aria-pressed') === 'false' && await page.getAttribute('#workModeCalendar', 'aria-pressed') === 'true', 'calendar mode pressed state did not follow the visible panel');
   assert(await page.locator('[data-calendar-work="pump-2026"]').count() === 1, 'calendar does not render work items');
   await page.click('[data-calendar-work="pump-2026"]');
   await page.waitForSelector('#view-workbench.active');
