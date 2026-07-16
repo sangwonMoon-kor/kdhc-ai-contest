@@ -120,6 +120,14 @@ function assert(condition, message) {
   await page.reload();
   await page.waitForSelector('#view-work.active');
 
+  for (const emptyIdHash of ['#workbench', '#workbench/', '#draft', '#draft/']) {
+    await page.goto(`${baseUrl}#work/list`);
+    await page.waitForSelector('#view-work.active');
+    await page.goto(`${baseUrl}${emptyIdHash}`);
+    await page.waitForSelector('#view-notfound.active');
+    assert(new URL(page.url()).hash === emptyIdHash, `${emptyIdHash} did not preserve the requested hash`);
+  }
+
   if (process.env.WORKBENCH_E2E_SCOPE === 'task2') {
     assert(consoleErrors.length === 0, `browser console errors: ${consoleErrors.join(' | ')}`);
     await browser.close();
@@ -312,7 +320,7 @@ function assert(condition, message) {
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   mobile.setDefaultTimeout(5000);
-  await mobile.goto(appUrl.replace('#home', '#workbench'));
+  await mobile.goto(appUrl.replace('#home', '#workbench/pump-2026'));
   await mobile.waitForSelector('#view-workbench.active');
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert(overflow <= 1, `mobile layout overflows horizontally by ${overflow}px`);

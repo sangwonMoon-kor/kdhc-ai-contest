@@ -735,7 +735,7 @@
   }
 
   function openWorkbench(id,feedback,canUndo,canRelink){
-    const targetId=id||selectedWorkId||'';
+    const targetId=id===undefined?selectedWorkId:id;
     const work=selectWork(targetId);
     if(!work){
       const invalidHash=`#workbench/${encodeURIComponent(targetId)}`;
@@ -833,7 +833,7 @@
   }
 
   function openDraft(id){
-    const targetId=id||selectedWorkId||'';
+    const targetId=id===undefined?selectedWorkId:id;
     const work=selectWork(targetId);
     if(!work){
       const invalidHash=`#draft/${encodeURIComponent(targetId)}`;
