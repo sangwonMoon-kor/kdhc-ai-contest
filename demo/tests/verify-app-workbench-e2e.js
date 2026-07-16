@@ -754,12 +754,23 @@ function assert(condition, message) {
   await auditDraft.click('#draftStart');
   await auditDraft.waitForSelector('#view-draft.active');
   assert((await auditDraft.textContent('#draftBackground')).includes('감사'), 'audit work opened pump-specific draft content');
+  assert((await auditDraft.textContent('#draftEvidence')).includes('감사'), 'audit draft evidence lost the selected work context');
   assert(auditDraft.url().endsWith('#draft/audit-2026'), 'draft URL lost the selected work id');
+  assert(await auditDraft.locator('.draft-shell').evaluate((node) => node.getBoundingClientRect().width <= 900), 'draft escaped the approved centered reading width');
+  const draftTableText = await auditDraft.textContent('#draftTable');
+  assert(draftTableText.includes('작년 자료 참고') && draftTableText.includes('올해 확인 필요'), 'draft values do not distinguish prior evidence from values requiring confirmation');
+  assert(await auditDraft.getAttribute('#draftNotice', 'role') === 'status' && await auditDraft.getAttribute('#draftNotice', 'aria-live') === 'polite', 'draft save and check notice is not announced');
   await auditDraft.fill('#draftIntent', '운영부 미회신 항목을 반영');
+  assert((await auditDraft.textContent('#draftState')).includes('저장 필요'), 'editing the draft did not mark it as unsaved');
   await auditDraft.click('#draftSave');
-  await auditDraft.click('#draftBack');
-  await auditDraft.click('#draftStart');
-  assert(await auditDraft.inputValue('#draftIntent') === '운영부 미회신 항목을 반영', 'draft edits were lost after returning to the workbench');
+  assert((await auditDraft.textContent('#draftState')).includes('임시 저장됨'), 'saving the draft did not update its visible state');
+  await auditDraft.reload();
+  await auditDraft.waitForSelector('#view-draft.active');
+  assert(await auditDraft.inputValue('#draftIntent') === '운영부 미회신 항목을 반영', 'draft edits did not persist across reload');
+  await auditDraft.goBack();
+  await auditDraft.waitForSelector('#view-workbench.active');
+  assert(auditDraft.url().endsWith('#workbench/audit-2026'), 'draft reload and Back lost the selected audit workbench');
+  await auditDraft.close();
 
   const historyFlow = await browser.newPage({ viewport: { width: 1100, height: 900 } });
   historyFlow.setDefaultTimeout(5000);
@@ -769,6 +780,102 @@ function assert(condition, message) {
   await historyFlow.goBack();
   await historyFlow.waitForSelector('#view-workbench.active');
   assert(historyFlow.url().endsWith('#workbench/pump-2026'), 'browser Back did not restore the selected workbench from draft');
+  await historyFlow.close();
+
+  const homeDraftHistory = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  homeDraftHistory.setDefaultTimeout(5000);
+  await homeDraftHistory.goto(appUrl);
+  await homeDraftHistory.fill('#homeInput', '펌프 추진 보고 기안 작성해줘');
+  await homeDraftHistory.locator('#homeForm').evaluate((form) => form.requestSubmit());
+  await homeDraftHistory.waitForSelector('#view-draft.active');
+  await homeDraftHistory.goBack();
+  await homeDraftHistory.waitForSelector('#view-workbench.active');
+  assert(homeDraftHistory.url().endsWith('#workbench/pump-2026'), 'Home draft history skipped the selected workbench');
+  await homeDraftHistory.goBack();
+  await homeDraftHistory.waitForSelector('#view-home.active');
+  assert(new URL(homeDraftHistory.url()).hash === '#home', 'Home draft history did not return Home on the second Back');
+  await homeDraftHistory.close();
+
+  const calendarDraftHistory = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  calendarDraftHistory.setDefaultTimeout(5000);
+  await calendarDraftHistory.goto(appUrl.replace('#home', '#work/calendar'));
+  await calendarDraftHistory.click('[data-calendar-work="audit-2026"]');
+  await calendarDraftHistory.click('#draftStart');
+  await calendarDraftHistory.waitForSelector('#view-draft.active');
+  await calendarDraftHistory.goBack();
+  await calendarDraftHistory.waitForSelector('#view-workbench.active');
+  await calendarDraftHistory.goBack();
+  await calendarDraftHistory.waitForSelector('#view-work.active');
+  assert(calendarDraftHistory.url().endsWith('#work/calendar'), 'draft flow lost the originating calendar view');
+  await calendarDraftHistory.close();
+
+  const directDraft = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  directDraft.setDefaultTimeout(5000);
+  await directDraft.goto(appUrl.replace('#home', '#draft/audit-2026'));
+  await directDraft.waitForSelector('#view-draft.active');
+  const directHistoryBefore = await directDraft.evaluate(() => history.length);
+  await directDraft.waitForTimeout(120);
+  assert(await directDraft.evaluate(() => history.length) === directHistoryBefore, 'direct draft deep link synthesized a workbench history entry');
+  await directDraft.goBack({ waitUntil: 'domcontentloaded' }).catch(() => null);
+  assert(!directDraft.url().endsWith('#workbench/audit-2026'), 'direct draft deep link invented a prior workbench on Back');
+  await directDraft.close();
+
+  for (const emptyDraftHash of ['#draft', '#draft/']) {
+    const invalidDraft = await browser.newPage({ viewport: { width: 900, height: 700 } });
+    await invalidDraft.goto(`${baseUrl}${emptyDraftHash}`);
+    await invalidDraft.waitForSelector('#view-notfound.active');
+    assert(new URL(invalidDraft.url()).hash === emptyDraftHash, `empty draft deep link changed its requested hash: ${emptyDraftHash}`);
+    await invalidDraft.close();
+  }
+
+  const resetPage = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  resetPage.setDefaultTimeout(5000);
+  await resetPage.goto(appUrl);
+  assert(await resetPage.isVisible('#resetSample'), 'Home has no visible sample reset control');
+  const resetFixture = await resetPage.evaluate(() => {
+    const pump = getWork('pump-2026');
+    pump.draftText = '초기화할 임시 기안';
+    pump.notes.unshift({ id: 'reset-note', tag: '메모', time: '방금', text: '초기화 대상 메모' });
+    const added = JSON.parse(JSON.stringify(getWork('budget-2026')));
+    added.id = 'new-reset-check';
+    added.title = added.shortTitle = '초기화 대상 신규 업무';
+    WORK_ITEMS.push(added);
+    appState.lastVisitedWorkId = 'audit-2026';
+    appState.workMode = workMode = 'calendar';
+    appState.workFilter = 'repeat';
+    lastAction = { type: 'answer', workId: 'pump-2026', previous: '' };
+    pendingHomeText = '초기화 대상 입력';
+    pendingHomeResult = { text: pendingHomeText, intent: 'todo', context: 'home', targetId: 'pump-2026' };
+    pendingIntentResult = pendingHomeResult;
+    pendingRelinkAction = lastAction;
+    lastInputConnection = { text: pendingHomeText, result: pendingHomeResult, workId: 'pump-2026', action: lastAction };
+    saveState();
+    return localStorage.getItem('jm-workbench-v1');
+  });
+  resetPage.once('dialog', (dialog) => dialog.dismiss());
+  await resetPage.click('#resetSample');
+  assert(await resetPage.evaluate(() => getWork('pump-2026').draftText) === '초기화할 임시 기안', 'canceling sample reset changed the draft');
+  assert(await resetPage.evaluate(() => localStorage.getItem('jm-workbench-v1')) === resetFixture, 'canceling sample reset changed persisted state');
+  resetPage.once('dialog', (dialog) => dialog.accept());
+  await resetPage.click('#resetSample');
+  await resetPage.waitForSelector('#view-home.active');
+  const resetState = await resetPage.evaluate(() => ({
+    draftText: getWork('pump-2026').draftText,
+    hasNote: getWork('pump-2026').notes.some((note) => note.id === 'reset-note'),
+    workCount: WORK_ITEMS.length,
+    seedCount: WORK_SEED.length,
+    lastVisited: appState.lastVisitedWorkId,
+    mode: appState.workMode,
+    filter: appState.workFilter,
+    transientClear: [lastAction, lastInputConnection, pendingRelinkAction, pendingHomeResult, pendingIntentResult].every((value) => value === null) && pendingHomeText === '',
+    stored: localStorage.getItem('jm-workbench-v1'),
+  }));
+  assert(resetState.draftText === '' && !resetState.hasNote && resetState.workCount === resetState.seedCount, 'sample reset did not restore the immutable seed');
+  assert(resetState.lastVisited === null && resetState.mode === 'list' && resetState.filter === 'all', 'sample reset kept navigation preferences or the last visited work');
+  assert(resetState.transientClear && resetState.stored === null, 'sample reset kept transient actions or persisted sample changes');
+  await resetPage.reload();
+  assert(await resetPage.evaluate(() => getWork('pump-2026').draftText === '' && WORK_ITEMS.length === WORK_SEED.length), 'sample reset did not survive reload');
+  await resetPage.close();
 
   const safeText = await browser.newPage({ viewport: { width: 1100, height: 900 } });
   safeText.setDefaultTimeout(5000);
@@ -921,6 +1028,22 @@ function assert(condition, message) {
   await mobile.goto(appUrl);
   const homeOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert(homeOverflow <= 1, `mobile home overflows horizontally by ${homeOverflow}px`);
+  assert(await mobile.isVisible('#resetSample'), 'mobile Home hides the sample reset control');
+
+  const mobileDraft = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  mobileDraft.setDefaultTimeout(5000);
+  await mobileDraft.goto(appUrl.replace('#home', '#draft/pump-2026'));
+  await mobileDraft.waitForSelector('#view-draft.active');
+  const mobileDraftLayout = await mobileDraft.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    shellWidth: document.querySelector('.draft-shell').getBoundingClientRect().width,
+    viewportWidth: innerWidth,
+    backBottom: document.getElementById('draftBack').getBoundingClientRect().bottom,
+    saveBottom: document.getElementById('draftSave').getBoundingClientRect().bottom,
+  }));
+  assert(mobileDraftLayout.overflow <= 1 && mobileDraftLayout.shellWidth <= mobileDraftLayout.viewportWidth, 'mobile draft overflows horizontally');
+  assert(mobileDraftLayout.backBottom < 260 && mobileDraftLayout.saveBottom < 360, 'mobile draft hides navigation or save actions too far below the first screen');
+  await mobileDraft.close();
 
   assert(consoleErrors.length === 0, `browser console errors: ${consoleErrors.join(' | ')}`);
   await browser.close();

@@ -50,6 +50,16 @@ const checks = [
     html.includes("['localhost','127.0.0.1','::1']") &&
     html.includes("new URL('/api/ask',ENGINE)") &&
     /engineSeq\+\+/.test(html)],
+  ['keeps drafting contextual, persistent, and within the approved reading width', () =>
+    /function renderDraft\(/.test(html) &&
+    /function openDraft\(/.test(html) &&
+    /function saveDraft\(/.test(html) &&
+    /function returnToWorkbench\(/.test(html) &&
+    /function resetSample\(/.test(html) &&
+    !/function saveDraftMock\(/.test(html) &&
+    html.includes('id="resetSample"') &&
+    html.includes('role="status" aria-live="polite"') &&
+    /\.draft-shell\{width:min\((?:8[3-9]0)px,/.test(html)],
   ['renders invalid links safely', () =>
     html.includes('업무를 찾을 수 없습니다') && /function renderNotFound\(/.test(html)],
   ['renders user-provided text safely', () =>
