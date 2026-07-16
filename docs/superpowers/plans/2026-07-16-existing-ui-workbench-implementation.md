@@ -1,6 +1,6 @@
 # Existing UI Workbench Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** `b8452d1:demo/app.html`의 시각 언어를 보존하면서 제품을 `홈 → 내 업무(목록·달력) → 업무 작업대 → 기안 집중 화면`의 업무 건 중심 구조로 완성하고 GitHub Pages에 배포한다.
 
@@ -50,7 +50,7 @@
 - Consumes: `demo/app.html` 문자열과 file URL
 - Produces: 이후 모든 작업이 지켜야 하는 기존 UI·라우팅·상태 계약
 
-- [ ] **Step 1: 정적 계약을 기존 UI 기반으로 교체**
+- [x] **Step 1: 정적 계약을 기존 UI 기반으로 교체**
 
 `verify-app-workbench.js`의 핵심 검사를 다음 계약으로 바꾼다.
 
@@ -84,7 +84,7 @@ const checks = [
 ];
 ```
 
-- [ ] **Step 2: E2E 첫 구간에 기존 홈 보존 계약 추가**
+- [x] **Step 2: E2E 첫 구간에 기존 홈 보존 계약 추가**
 
 ```js
 await page.goto(appUrl.replace('#home', '#home'));
@@ -96,13 +96,13 @@ assert(await page.isVisible('#homeEvidenceObject'), 'original evidence object wa
 assert(await page.isVisible('#openMyWork'), 'home has no explicit My Work entry');
 ```
 
-- [ ] **Step 3: 새 계약이 현재 로컬 v4에서 실패하는지 확인**
+- [x] **Step 3: 새 계약이 현재 로컬 v4에서 실패하는지 확인**
 
 Run: `npm run test:workbench`
 
 Expected: FAIL with at least `keeps the original JARVIS home identity` and route contract failures.
 
-- [ ] **Step 4: 테스트 파일만 커밋**
+- [x] **Step 4: 테스트 파일만 커밋**
 
 ```powershell
 git add -- demo/tests/verify-app-workbench.js demo/tests/verify-app-workbench-e2e.js
@@ -123,7 +123,7 @@ git commit -m "기존 UI 기반 작업대 계약 테스트 추가"
 - Consumes: `WORK_SEED`, URL hash, localStorage key `jm-workbench-v1`
 - Produces: `appState`, `getWork(id)`, `loadState()`, `saveState()`, `resetSample()`, `navigate(route, options)`, `openFromHash()`
 
-- [ ] **Step 1: 지속성·무효 링크 실패 테스트 추가**
+- [x] **Step 1: 지속성·무효 링크 실패 테스트 추가**
 
 ```js
 await page.goto(`${baseUrl}#workbench/pump-2026`);
@@ -144,7 +144,7 @@ await page.goto(`${baseUrl}#work/list`);
 assert(await page.locator('[data-work-id="pump-2026"]').count()===1, 'corrupt storage did not recover the immutable seed');
 ```
 
-- [ ] **Step 2: 불변 샘플과 상태 저장소 구현**
+- [x] **Step 2: 불변 샘플과 상태 저장소 구현**
 
 ```js
 const STORAGE_KEY='jm-workbench-v1';
@@ -176,7 +176,7 @@ function getWork(id){ return appState.works.find((work)=>work.id===id)||null; }
 function getSelectedWork(){ return getWork(appState.selectedWorkId); }
 ```
 
-- [ ] **Step 3: hash 라우터와 전용 무효 상태 구현**
+- [x] **Step 3: hash 라우터와 전용 무효 상태 구현**
 
 ```js
 function routeFromHash(){
@@ -191,7 +191,7 @@ function renderNotFound(id){
 }
 ```
 
-- [ ] **Step 4: 다음 행동·진행률을 Todo에서 계산**
+- [x] **Step 4: 다음 행동·진행률을 Todo에서 계산**
 
 ```js
 function getProgress(work){
@@ -207,13 +207,13 @@ function syncNextAction(work){
 }
 ```
 
-- [ ] **Step 5: 정적·E2E 상태 계약 통과**
+- [x] **Step 5: 정적·E2E 상태 계약 통과**
 
 Run: `npm run test:workbench && npm run test:workbench:e2e`
 
 Expected: state/persistence/not-found assertions PASS; later UI assertions may still fail.
 
-- [ ] **Step 6: 상태·라우터 커밋**
+- [x] **Step 6: 상태·라우터 커밋**
 
 ```powershell
 git add -- demo/app.html demo/tests/verify-app-workbench-e2e.js
@@ -233,7 +233,7 @@ git commit -m "업무 상태 저장과 딥링크 라우터 구현"
 - Consumes: `appState.works`, `navigate()`, `findPriorityWork()`, `lastVisitedWorkId`
 - Produces: `renderHomeObjects()`, `renderWorkList()`, `renderWorkCalendar()`, `openMyWork(mode)`
 
-- [ ] **Step 1: 홈 오브젝트와 내 업무 실패 테스트 추가**
+- [x] **Step 1: 홈 오브젝트와 내 업무 실패 테스트 추가**
 
 ```js
 await page.goto(`${baseUrl}#home`);
@@ -246,7 +246,7 @@ assert(page.url().endsWith('#work/calendar'), 'calendar mode is not deep linked'
 assert(await page.locator('[data-calendar-work="pump-2026"]').count()===1, 'calendar does not render work items');
 ```
 
-- [ ] **Step 2: 기존 홈 시각 구조를 정본대로 복원**
+- [x] **Step 2: 기존 홈 시각 구조를 정본대로 복원**
 
 `git show b8452d1:demo/app.html`을 읽기 전용으로 참고하여 다음 기존 요소와 CSS 문법을 `demo/app.html`에 유지한다.
 
@@ -270,7 +270,7 @@ assert(await page.locator('[data-calendar-work="pump-2026"]').count()===1, 'cale
 </main>
 ```
 
-- [ ] **Step 3: 홈 오브젝트의 결정 규칙 구현**
+- [x] **Step 3: 홈 오브젝트의 결정 규칙 구현**
 
 ```js
 function findPriorityWork(){
@@ -283,7 +283,7 @@ function getHomeSelectedWork(){
 }
 ```
 
-- [ ] **Step 4: 내 업무 목록·달력 구현**
+- [x] **Step 4: 내 업무 목록·달력 구현**
 
 기존 v3의 중앙 폭, 헤더 검색창, 캡슐 탭, 달력 스타일을 유지한다. 목록과 달력 모두 같은 `openWorkbench(id)`를 호출하고, 기한 미정 업무는 목록에만 `기한 확인 필요`로 표시한다.
 
@@ -295,13 +295,13 @@ function openMyWork(mode='list'){
 }
 ```
 
-- [ ] **Step 5: 기존 UI·내 업무 E2E 통과**
+- [x] **Step 5: 기존 UI·내 업무 E2E 통과**
 
 Run: `npm run test:workbench:e2e`
 
 Expected: original home objects visible; list/calendar route assertions PASS.
 
-- [ ] **Step 6: 홈·내 업무 커밋**
+- [x] **Step 6: 홈·내 업무 커밋**
 
 ```powershell
 git add -- demo/app.html demo/tests/verify-app-workbench-e2e.js
@@ -322,7 +322,7 @@ git commit -m "기존 홈 UI에 내 업무 탐색 연결"
 - Consumes: `getWork(id)`, `saveState()`, `syncNextAction(work)`, `navigate()`
 - Produces: `renderWorkbench(work)`, `routeInput(text, context)`, `applyInput(result, work)`, `relinkLastInput()`, `undoLastAction()`, `focusSource(id)`
 
-- [ ] **Step 1: 작업대 핵심 흐름 실패 테스트 추가**
+- [x] **Step 1: 작업대 핵심 흐름 실패 테스트 추가**
 
 ```js
 await page.goto(`${baseUrl}#work/calendar`);
@@ -357,7 +357,7 @@ assert(await page.evaluate(()=>getSelectedWork().due===null),'new work invented 
 assert(await page.isVisible('#undoButton'),'new work creation cannot be undone');
 ```
 
-- [ ] **Step 2: 복합 의도 우선순위를 구현**
+- [x] **Step 2: 복합 의도 우선순위를 구현**
 
 ```js
 function routeInput(text,context='home'){
@@ -374,7 +374,7 @@ function routeInput(text,context='home'){
 }
 ```
 
-- [ ] **Step 3: 기존 UI 문법의 작업대 렌더링**
+- [x] **Step 3: 기존 UI 문법의 작업대 렌더링**
 
 작업대는 기존 중앙 폭을 유지하고 다음 DOM 계약을 제공한다.
 
@@ -394,7 +394,7 @@ function routeInput(text,context='home'){
 </main>
 ```
 
-- [ ] **Step 4: 할 일 후보·반영·삭제와 다음 행동 갱신 구현**
+- [x] **Step 4: 할 일 후보·반영·삭제와 다음 행동 갱신 구현**
 
 ```js
 function confirmTodo(todoId){
@@ -414,15 +414,15 @@ function deleteTodoCandidate(todoId){
 }
 ```
 
-- [ ] **Step 5: 대상 변경과 되돌리기 구현**
+- [x] **Step 5: 대상 변경과 되돌리기 구현**
 
 `lastAction`은 방금 입력이 만든 변경의 업무 ID, 유형, 이전 값 또는 삽입 ID만 저장한다. 대상 변경은 `rollbackAction(lastAction)` 후 새 대상에 동일 결과를 한 번 적용한다. 기존 메모·Todo는 변경하지 않는다.
 
-- [ ] **Step 6: Todo→근거 접근성 구현**
+- [x] **Step 6: Todo→근거 접근성 구현**
 
 근거 카드는 `tabindex="-1"`, 구체적인 `aria-label`, 원문 버튼의 문서명 포함 접근성 이름을 가진다. `focusSource()`는 `.focused` 시각 상태, 실제 focus, `sourceLinkStatus` 안내를 함께 적용한다.
 
-- [ ] **Step 7: 선택적 로컬 엔진과 응답 경쟁 방어 구현**
+- [x] **Step 7: 선택적 로컬 엔진과 응답 경쟁 방어 구현**
 
 ```js
 let engineSeq=0;
@@ -458,13 +458,13 @@ async function askEngine(question,work){
 
 엔진 URL과 질문은 저장 상태에 넣지 않는다. 되돌리기와 새 질문은 `engineSeq`를 증가시켜 이전 응답을 무효화한다.
 
-- [ ] **Step 8: 작업대 E2E 통과**
+- [x] **Step 8: 작업대 E2E 통과**
 
 Run: `npm run test:workbench && npm run test:workbench:e2e`
 
 Expected: classification, note undo, todo candidate, evidence focus assertions PASS.
 
-- [ ] **Step 9: 작업대 커밋**
+- [x] **Step 9: 작업대 커밋**
 
 ```powershell
 git add -- demo/app.html demo/tests/verify-app-workbench.js demo/tests/verify-app-workbench-e2e.js
@@ -484,7 +484,7 @@ git commit -m "기존 UI 문법으로 업무 작업대 구현"
 - Consumes: selected work, hash route, persisted state
 - Produces: `openDraft(id, options)`, `saveDraft()`, `returnToWorkbench()`, `resetSample()`
 
-- [ ] **Step 1: 기안 맥락·history·초기화 실패 테스트 추가**
+- [x] **Step 1: 기안 맥락·history·초기화 실패 테스트 추가**
 
 ```js
 await page.goto(`${baseUrl}#workbench/audit-2026`);
@@ -512,11 +512,11 @@ await page.click('#resetSample');
 assert(!(await page.textContent('#activityList')).includes('새로고침 유지 확인'), 'reset did not restore seed');
 ```
 
-- [ ] **Step 2: 업무별 기안 화면 구현**
+- [x] **Step 2: 업무별 기안 화면 구현**
 
 기존 v3의 문서 서식 CSS와 입력 표현을 재사용한다. 제목·배경·세부 내용·표·근거·주의사항은 선택 업무 데이터에서 렌더링하고 `draftText`를 저장한다.
 
-- [ ] **Step 3: 진입 경로별 history 구현**
+- [x] **Step 3: 진입 경로별 history 구현**
 
 ```js
 function openDraft(id,{fromHome=false}={}){
@@ -532,7 +532,7 @@ function openDraft(id,{fromHome=false}={}){
 
 직접 딥링크 초기화에서는 `pushState`를 호출하지 않는다. 사용자 클릭 이동만 새 history entry를 만든다.
 
-- [ ] **Step 4: 샘플 초기화 구현**
+- [x] **Step 4: 샘플 초기화 구현**
 
 ```js
 function resetSample(){
@@ -544,13 +544,13 @@ function resetSample(){
 }
 ```
 
-- [ ] **Step 5: 기안·history·지속성 E2E 통과**
+- [x] **Step 5: 기안·history·지속성 E2E 통과**
 
 Run: `npm run test:workbench:e2e`
 
 Expected: audit draft context, reload persistence, browser Back, sample reset PASS.
 
-- [ ] **Step 6: 기안·저장 커밋**
+- [x] **Step 6: 기안·저장 커밋**
 
 ```powershell
 git add -- demo/app.html demo/tests/verify-app-workbench-e2e.js
@@ -574,7 +574,7 @@ git commit -m "업무별 기안과 샘플 상태 저장 구현"
 - Consumes: 완성된 전체 앱
 - Produces: 재현 가능한 테스트·스크린샷·문서·배포 가능 커밋
 
-- [ ] **Step 1: 모바일·키보드 E2E 계약 추가**
+- [x] **Step 1: 모바일·키보드 E2E 계약 추가**
 
 ```js
 const mobile=await browser.newPage({viewport:{width:390,height:844}});
@@ -585,11 +585,11 @@ assert((await mobile.locator('#nextActionPanel').evaluate((node)=>node.getBoundi
 assert(await mobile.isVisible('.sample-badge'),'sample disclosure is hidden on mobile');
 ```
 
-- [ ] **Step 2: 반응형 CSS와 키보드 focus 보정**
+- [x] **Step 2: 반응형 CSS와 키보드 focus 보정**
 
 390px에서 한 열, 제목·기한·다음 행동 우선순위를 유지한다. 프로그램으로 이동한 `tabindex="-1"` 제목은 시각 outline을 숨기되 버튼의 `:focus-visible`은 유지한다.
 
-- [ ] **Step 3: 최종 스크린샷 생성**
+- [x] **Step 3: 최종 스크린샷 생성**
 
 Run Playwright with installed Edge at `1440x1200` and `390x844`, route `#workbench/pump-2026`, `fullPage:true`.
 
@@ -600,7 +600,7 @@ demo/screenshots/app-workbench-desktop.png
 demo/screenshots/app-workbench-mobile.png
 ```
 
-- [ ] **Step 4: README와 아이디어 문서 동기화**
+- [x] **Step 4: README와 아이디어 문서 동기화**
 
 README에는 현재 제품 구조와 아래 명령을 기록한다.
 
@@ -612,7 +612,7 @@ npm run test:workbench:e2e
 
 아이디어 문서는 `기존 UI 기반 작업대 목업 구현 완료, 실업무 리플레이 전`으로 상태를 갱신한다.
 
-- [ ] **Step 5: 전체 검증 실행**
+- [x] **Step 5: 전체 검증 실행**
 
 ```powershell
 npm ci --ignore-scripts
@@ -633,11 +633,11 @@ diff check: exit 0
 presentation originals: no diff
 ```
 
-- [ ] **Step 6: 최종 코드 리뷰**
+- [x] **Step 6: 최종 코드 리뷰**
 
 별도 리뷰어가 Critical/Important 관점으로 시각 정본 보존, 분류 우선순위, undo/relink, persistence, invalid link, history, accessibility를 확인한다. 발견된 문제는 회귀 테스트를 먼저 추가한 뒤 수정한다.
 
-- [ ] **Step 7: 구현 완료 커밋**
+- [x] **Step 7: 구현 완료 커밋**
 
 ```powershell
 git add -- demo/app.html demo/tests/verify-app-workbench.js demo/tests/verify-app-workbench-e2e.js demo/screenshots/app-workbench-desktop.png demo/screenshots/app-workbench-mobile.png README.md 'docs/아이디어-만능입력.md' docs/superpowers/plans/2026-07-16-existing-ui-workbench-implementation.md
