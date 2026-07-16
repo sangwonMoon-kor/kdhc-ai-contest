@@ -19,6 +19,19 @@ function assert(condition, message) {
   });
 
   const baseUrl = appUrl.replace(/#.*$/, '');
+  const introPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  introPage.setDefaultTimeout(7000);
+  await introPage.goto(baseUrl);
+  await introPage.click('#openSkip');
+  await introPage.waitForTimeout(120);
+  const earlyIntro = await introPage.evaluate(() => ({
+    title: document.getElementById('heroTitle').textContent.replace(/\s+/g, ' ').trim(),
+    promiseVisible: document.getElementById('heroPromise').classList.contains('in'),
+  }));
+  assert(earlyIntro.title !== 'Hello, JARVIS?' && !earlyIntro.promiseVisible, 'opening skip bypassed the original typing intro');
+  await introPage.waitForFunction(() => document.getElementById('heroSearch').classList.contains('in'));
+  await introPage.close();
+
   await page.goto(`${baseUrl}#home`);
   await page.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
   await page.reload();
@@ -138,10 +151,56 @@ function assert(condition, message) {
   await page.goto(appUrl.replace('#home', '#home'));
   await page.waitForSelector('#view-home.active');
   assert(await page.isVisible('#heroSearch'), 'original centered home search is missing');
+  assert(await page.isVisible('#homeUrgentObject'), 'original urgent sticky object was removed');
   assert(await page.isVisible('#homeForecastObject'), 'original forecast object was removed');
   assert(await page.isVisible('#homeMemoObject'), 'original memo object was removed');
   assert(await page.isVisible('#homeEvidenceObject'), 'original evidence object was removed');
   assert(await page.isVisible('#openMyWork'), 'home has no explicit My Work entry');
+  const heroCopy = await page.textContent('#view-home');
+  assert(heroCopy.includes('Hello,') && heroCopy.includes('JARVIS?'), 'original JARVIS greeting was replaced');
+  assert(heroCopy.includes('일한 만큼, 준비됩니다.'), 'original home promise was replaced');
+
+  const homeObjectContract = await page.evaluate(() => {
+    const priority = findPriorityWork();
+    const previousLastVisited = appState.lastVisitedWorkId;
+    appState.lastVisitedWorkId = 'audit-2026';
+    const lastVisited = getHomeSelectedWork();
+    appState.lastVisitedWorkId = 'missing-work';
+    const fallback = getHomeSelectedWork();
+    appState.lastVisitedWorkId = previousLastVisited;
+    renderHomeObjects();
+    return {
+      priorityId: priority && priority.id,
+      lastVisitedId: lastVisited && lastVisited.id,
+      fallbackId: fallback && fallback.id,
+      urgentWorkId: document.getElementById('homeUrgentObject').dataset.homeWorkId,
+    };
+  });
+  assert(homeObjectContract.priorityId === 'pump-2026', 'home priority work is not the earliest active dated work');
+  assert(homeObjectContract.lastVisitedId === 'audit-2026', 'home did not prefer the last valid visited work');
+  assert(homeObjectContract.fallbackId === 'pump-2026', 'home did not fall back from an invalid last visited work');
+  assert(homeObjectContract.urgentWorkId === 'pump-2026', 'urgent home object is not bound to app state');
+
+  await page.click('#openMyWork');
+  await page.waitForSelector('#view-work.active');
+  assert(page.url().endsWith('#work/list'), 'My Work entry did not open list mode');
+  assert(await page.locator('[data-work-id="pump-2026"]').count() === 1, 'work list does not render work items');
+  const workShellWidth = await page.locator('#view-work > .shell').evaluate((node) => node.getBoundingClientRect().width);
+  assert(workShellWidth <= 900, `My Work widened beyond the original product width (${workShellWidth}px)`);
+  await page.click('[data-work-id="pump-2026"]');
+  await page.waitForSelector('#view-workbench.active');
+  assert(page.url().endsWith('#workbench/pump-2026'), 'work list item did not open its workbench route');
+  await page.click('#navWork');
+  await page.waitForSelector('#view-work.active');
+  await page.click('#workModeCalendar');
+  assert(page.url().endsWith('#work/calendar'), 'calendar mode is not deep linked');
+  assert(await page.isHidden('#workList'), 'calendar mode left the work list visible');
+  assert(await page.locator('[data-calendar-work="pump-2026"]').count() === 1, 'calendar does not render work items');
+  await page.click('[data-calendar-work="pump-2026"]');
+  await page.waitForSelector('#view-workbench.active');
+  assert(page.url().endsWith('#workbench/pump-2026'), 'calendar work item did not open its workbench route');
+  await page.goto(`${baseUrl}#home`);
+  await page.waitForSelector('#view-home.active');
 
   await page.fill('#homeInput', '팀장님이 다음 주까지 순환수 펌프 정비공사 계획 올리래');
   await page.locator('#homeForm').evaluate((form) => form.requestSubmit());
@@ -190,7 +249,7 @@ function assert(condition, message) {
   assert(workRowTextIsSeparated, 'work title, instruction, or due date collapses into neighboring text');
   await page.click('#workModeCalendar');
   assert(await page.isVisible('#workCalendar'), 'calendar mode did not open');
-  await page.click('[data-open-work="pump-2026"]');
+  await page.click('[data-calendar-work="pump-2026"]');
   await page.waitForSelector('#view-workbench.active');
 
   const activityBefore = await page.locator('#activityList .activity-item').count();
