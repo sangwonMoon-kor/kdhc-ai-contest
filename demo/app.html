@@ -96,6 +96,7 @@
   .clarify-card{padding:19px;border:1px solid var(--line);border-radius:16px;background:var(--surface);transition:.18s}.clarify-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:var(--shadow-sm)}
   .clarify-card b{display:block;font-size:15px}.clarify-card small{display:block;color:var(--muted);margin-top:4px}.clarify-create{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px;border-style:dashed}
   .clarify-back{margin-top:25px;color:var(--blue);font-weight:680;font-size:14px}
+  .notfound-actions{display:flex;justify-content:center;gap:9px;margin-top:28px}
 
   /* my work */
   .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin-bottom:28px}.page-head h1{font-size:clamp(36px,5vw,52px);margin-top:12px}.page-head .subcopy{margin-top:9px}
@@ -220,6 +221,18 @@
   </div>
 </main>
 
+<main class="view" id="view-notfound">
+  <div class="clarify-shell">
+    <div class="eyebrow" style="justify-content:center">Invalid work link</div>
+    <h1 id="notFoundTitle" tabindex="-1">업무를 찾을 수 없습니다</h1>
+    <p class="subcopy">요청한 업무 ID <strong id="notFoundId"></strong>가 현재 샘플에 없습니다.</p>
+    <div class="notfound-actions">
+      <button class="btn secondary" type="button" onclick="openMyWork('list')">내 업무로</button>
+      <button class="btn primary" type="button" onclick="showView('home')">홈으로</button>
+    </div>
+  </div>
+</main>
+
 <main class="view" id="view-work">
   <div class="shell">
     <header class="page-head">
@@ -319,8 +332,10 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
+  const ROUTES=Object.freeze({home:'#home',workList:'#work/list',workCalendar:'#work/calendar'});
 
-  const WORK_ITEMS = [
+  const STORAGE_KEY='jm-workbench-v1';
+  const WORK_SEED = [
     {
       id:'pump-2026', title:'순환수 펌프 정비공사 추진 보고', shortTitle:'순환수 펌프 정비공사', status:'진행 중', repeat:'매년 4월 반복', requester:'공무부장',
       instruction:'“다음 주까지 순환수 펌프 정비공사 추진 보고 올려주세요.”', due:'2026-04-09', dueLabel:'4월 9일 마감', dday:'D-3', stage:'자료 확인 · 일정 협의', progress:42,
@@ -371,7 +386,98 @@
     }
   ];
 
-  let selectedWorkId = 'pump-2026';
+  function deepFreeze(value){
+    if(!value||typeof value!=='object'||Object.isFrozen(value))return value;
+    Object.values(value).forEach(deepFreeze);
+    return Object.freeze(value);
+  }
+  deepFreeze(WORK_SEED);
+
+  function cloneSeed(){return JSON.parse(JSON.stringify(WORK_SEED));}
+  function createInitialState(){return {version:1,works:cloneSeed(),selectedWorkId:'pump-2026',lastVisitedWorkId:null};}
+  function isString(value){return typeof value==='string';}
+  function isSafeId(value){return isString(value)&&/^[a-z0-9][a-z0-9._-]*$/i.test(value);}
+  function isValidStoredWork(work){
+    const textFields=['title','shortTitle','status','repeat','requester','instruction','dueLabel','dday','stage','complete','nextAction','draftText','answer'];
+    const validTodos=Array.isArray(work&&work.todos)&&work.todos.every((todo)=>todo&&isString(todo.text)&&typeof todo.done==='boolean'&&
+      (todo.next===undefined||typeof todo.next==='boolean')&&(todo.candidate===undefined||typeof todo.candidate==='boolean')&&
+      isString(todo.origin)&&Array.isArray(todo.sourceIds)&&todo.sourceIds.every(isSafeId));
+    const validSources=Array.isArray(work&&work.sources)&&work.sources.every((source)=>source&&isSafeId(source.id)&&
+      ['icon','name','meta','type','role','action'].every((field)=>isString(source[field])));
+    const validNotes=Array.isArray(work&&work.notes)&&work.notes.every((note)=>note&&['tag','time','text'].every((field)=>isString(note[field])));
+    const validDeliverable=work&&work.deliverable&&isString(work.deliverable.title)&&Array.isArray(work.deliverable.items)&&work.deliverable.items.every(isString);
+    const validDraft=work&&work.draft&&isString(work.draft.background)&&Array.isArray(work.draft.details)&&work.draft.details.every(isString)&&
+      Array.isArray(work.draft.table)&&work.draft.table.every((row)=>Array.isArray(row)&&row.length===2&&row.every(isString))&&
+      isString(work.draft.warning)&&Array.isArray(work.draft.checks)&&work.draft.checks.every(isString);
+    return Boolean(work&&isSafeId(work.id)&&textFields.every((field)=>isString(work[field]))&&
+      (work.due===null||/^\d{4}-\d{2}-\d{2}$/.test(work.due))&&validTodos&&validSources&&validNotes&&validDeliverable&&validDraft);
+  }
+  function isValidStoredState(saved){
+    return Boolean(saved&&saved.version===1&&Array.isArray(saved.works)&&saved.works.every(isValidStoredWork));
+  }
+
+  let appState=createInitialState();
+  let WORK_ITEMS=appState.works;
+  let selectedWorkId=appState.selectedWorkId;
+
+  function applyState(nextState){
+    appState=nextState;
+    WORK_ITEMS=appState.works;
+    selectedWorkId=typeof appState.selectedWorkId==='string'&&WORK_ITEMS.some((work)=>work.id===appState.selectedWorkId)
+      ? appState.selectedWorkId
+      : (WORK_ITEMS[0]?WORK_ITEMS[0].id:null);
+    appState.selectedWorkId=selectedWorkId;
+    if(!WORK_ITEMS.some((work)=>work.id===appState.lastVisitedWorkId))appState.lastVisitedWorkId=null;
+    WORK_ITEMS.forEach(syncNextAction);
+  }
+
+  function loadState(){
+    let nextState=createInitialState();
+    let needsRepair=false;
+    try{
+      const raw=localStorage.getItem(STORAGE_KEY);
+      if(raw!==null){
+        const saved=JSON.parse(raw);
+        if(isValidStoredState(saved)){
+          nextState={version:1,works:saved.works,selectedWorkId:saved.selectedWorkId,lastVisitedWorkId:saved.lastVisitedWorkId||null};
+        }else needsRepair=true;
+      }
+    }catch(error){needsRepair=true;}
+    applyState(nextState);
+    if(needsRepair)saveState();
+    return appState;
+  }
+
+  function saveState(){
+    appState.version=1;
+    appState.works=WORK_ITEMS;
+    appState.selectedWorkId=selectedWorkId;
+    try{
+      const persisted={...appState,works:WORK_ITEMS.map((work)=>({...work,answer:''}))};
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(persisted));
+      return true;
+    }catch(error){return false;}
+  }
+
+  function getWork(id){return WORK_ITEMS.find((work)=>work.id===id)||null;}
+  function getSelectedWork(){return getWork(selectedWorkId);}
+  function selectWork(id){
+    const work=getWork(id);
+    if(!work)return null;
+    selectedWorkId=id;
+    appState.selectedWorkId=id;
+    appState.lastVisitedWorkId=id;
+    return work;
+  }
+
+  function resetSample(){
+    if(typeof confirm==='function'&&!confirm('저장된 변경을 지우고 샘플 초기값으로 복원할까요?'))return false;
+    applyState(createInitialState());
+    lastAction=null;lastInputConnection=null;pendingRelinkAction=null;
+    saveState();renderWorkList();renderWorkCalendar();navigate('#work/list',{replace:true});
+    return true;
+  }
+
   let currentView = 'home';
   let workMode = 'list';
   let pendingHomeText = '';
@@ -388,21 +494,18 @@
     return String(value == null ? '' : value).replace(/[&<>"']/g,(char)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   }
 
-  function getSelectedWork(){
-    return WORK_ITEMS.find((work)=>work.id===selectedWorkId) || WORK_ITEMS[0];
-  }
-
   function getProgress(work){
-    const todos=Array.isArray(work&&work.todos)?work.todos:[];
-    const total=todos.length;
-    const done=todos.filter((todo)=>todo.done).length;
-    return {done,total,percent:total?Math.round(done/total*100):0};
+    const confirmed=(Array.isArray(work&&work.todos)?work.todos:[]).filter((todo)=>!todo.candidate);
+    const done=confirmed.filter((todo)=>todo.done).length;
+    return {done,total:confirmed.length,percent:confirmed.length?Math.round(done/confirmed.length*100):0};
   }
 
-  function refreshNextAction(work){
-    const next=work.todos.find((todo)=>todo.next&&!todo.done)||work.todos.find((todo)=>!todo.done)||null;
-    work.todos.forEach((todo)=>{todo.next=todo===next});
-    work.nextAction=next?next.text:'모든 할 일을 완료했습니다. 결과물을 점검하세요.';
+  function syncNextAction(work){
+    const todos=Array.isArray(work&&work.todos)?work.todos:[];
+    const next=todos.find((todo)=>!todo.candidate&&todo.next&&!todo.done)||todos.find((todo)=>!todo.candidate&&!todo.done)||null;
+    todos.forEach((todo)=>{todo.next=todo===next});
+    if(work)work.nextAction=next?next.text:'모든 할 일을 완료했습니다. 결과물을 점검하세요.';
+    return next;
   }
 
   function renderWorkSummary(){
@@ -411,22 +514,33 @@
     $('summaryRepeat').textContent=String(WORK_ITEMS.filter((work)=>work.repeat&&work.repeat!=='신규').length);
   }
 
-  function showView(name){
-    const allowed = ['home','work','workbench','draft','clarify'];
+  function navigate(route,options={}){
+    let hash=String(route||'#home');
+    if(!hash.startsWith('#'))hash=`#${hash}`;
+    if(location.hash!==hash)history[options.replace?'replaceState':'pushState'](null,'',hash);
+    if(options.open!==false)openFromHash();
+  }
+
+  function showView(name,options={}){
+    const allowed = ['home','work','workbench','draft','clarify','notfound'];
     const next = allowed.includes(name) ? name : 'home';
     currentView = next;
     document.querySelectorAll('.view').forEach((view)=>view.classList.toggle('active',view.id===`view-${next}`));
     $('navHome').classList.toggle('active',next==='home'||next==='clarify');
-    $('navWork').classList.toggle('active',next==='work'||next==='workbench'||next==='draft');
-    const hashes={home:'#home',work:'#work',workbench:`#workbench/${selectedWorkId}`,draft:`#draft/${selectedWorkId}`,clarify:'#clarify'};
-    const nextHash=hashes[next];
-    if(location.hash!==nextHash)history[syncingHistory?'replaceState':'pushState'](null,'',nextHash);
+    $('navWork').classList.toggle('active',next==='work'||next==='workbench'||next==='draft'||next==='notfound');
+    const hashes={home:ROUTES.home,work:workMode==='calendar'?ROUTES.workCalendar:ROUTES.workList,workbench:`#workbench/${selectedWorkId||''}`,draft:`#draft/${selectedWorkId||''}`,clarify:'#clarify'};
+    if(!options.preserveHash)navigate(hashes[next]||'#home',{replace:syncingHistory,open:false});
     window.scrollTo(0,0);
     if(next==='home') setTimeout(()=>$('homeInput').focus(),30);
     else{
-      const titleIds={work:'workPageTitle',workbench:'benchTitle',draft:'draftWorkTitle',clarify:'clarifyTitle'};
+      const titleIds={work:'workPageTitle',workbench:'benchTitle',draft:'draftWorkTitle',clarify:'clarifyTitle',notfound:'notFoundTitle'};
       setTimeout(()=>{const title=$(titleIds[next]);if(title)title.focus({preventScroll:true})},30);
     }
+  }
+
+  function renderNotFound(id){
+    $('notFoundId').textContent=id||'알 수 없는 업무';
+    showView('notfound',{preserveHash:true});
   }
 
   function formatDue(iso){
@@ -450,7 +564,7 @@
     $('workList').innerHTML = WORK_ITEMS.map((work)=>{
       const progress=getProgress(work);
       return `
-      <button class="work-row card" type="button" data-open-work="${work.id}" onclick="openWorkbench('${work.id}')">
+      <button class="work-row card" type="button" data-work-id="${escapeHtml(work.id)}" data-open-work="${escapeHtml(work.id)}" onclick="openWorkbench('${work.id}')">
         <span class="date-block"><b>${escapeHtml(formatDue(work.due))}</b><span>${escapeHtml(work.dday)}</span></span>
         <span><span class="work-name">${escapeHtml(work.title)}</span><span class="work-instruction">${escapeHtml(work.instruction)}</span><span class="work-meta"><i class="pill ${work.status==='진행 중'?'green':'gray'}">${escapeHtml(work.status)}</i><i class="pill blue">${escapeHtml(work.repeat)}</i></span></span>
         <span class="progress"><span class="progress-label"><span>${escapeHtml(work.stage)}</span><b>${progress.percent}%</b></span><span class="progress-track"><i style="width:${progress.percent}%"></i></span></span>
@@ -540,7 +654,8 @@
     if(!pendingIntentResult)return;
     const result={...pendingIntentResult,intent};pendingIntentResult=null;
     if(result.context==='workbench'){
-      const work=getSelectedWork();const summary=applyResult(work,result);renderWorkbench();showView('workbench');showFeedback(`${work.title}에 ${summary}`,true,false);
+      const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}
+      const summary=applyResult(work,result);saveState();renderWorkbench();showView('workbench');showFeedback(`${work.title}에 ${summary}`,true,false);
       if(intent==='question')askEngine(result.text,work);
     }else if(result.targetId)applyHomeResult(result,result.targetId);
     else{pendingHomeResult=result;showClarification(result.text)}
@@ -572,13 +687,13 @@
     if(pendingRelinkAction){rollbackAction(pendingRelinkAction);pendingRelinkAction=null;}
     const previousSelectedId=selectedWorkId;
     WORK_ITEMS.push({id,title,shortTitle:title,status:'새 업무',repeat:'신규',requester:'입력에서 확인 필요',instruction:`“${pendingHomeText}”`,due:null,dueLabel:'기한 확인 필요',dday:'기한 미정',stage:'지시 확인',complete:'완료 조건 확인 필요',nextAction:'지시자와 기한·완료 결과물을 확인하세요.',todos:[{text:'기한과 완료 결과물 확인',done:false,next:true,origin:'새 업무 생성',sourceIds:[]}],sources:[],notes:[{tag:'지시',time:'방금',text:pendingHomeText}],deliverable:{title:'결과물 미정',items:['지시자에게 완료 조건 확인']},draft:{background:'새 업무의 추진 배경을 확인해 반영합니다.',details:['기한과 완료 결과물 확인','협조 부서와 필요한 근거 확인'],table:[['기한','확인 필요'],['산출물','확인 필요']],warning:'지시자에게 기한과 완료 조건을 확인하세요.',checks:['기한과 완료 조건 확인 필요']},draftText:'',answer:''});
-    selectedWorkId=id;lastAction={type:'createWork',workId:id,previousSelectedId};lastInputConnection={text:pendingHomeText,result:{...routeInput(pendingHomeText,'home'),intent:'instruction'},workId:id,action:lastAction};
+    selectWork(id);lastAction={type:'createWork',workId:id,previousSelectedId};lastInputConnection={text:pendingHomeText,result:{...routeInput(pendingHomeText,'home'),intent:'instruction'},workId:id,action:lastAction};
     renderWorkList();renderWorkCalendar();openWorkbench(id,`“${pendingHomeText}” → ${title} 업무를 새로 만들었습니다. 미완료 할 일 1개와 자료 0건을 준비했습니다.`,true,true);
   }
 
   function applyHomeResult(result,id){
-    selectedWorkId=id;
-    const work=getSelectedWork();
+    const work=selectWork(id);
+    if(!work){renderNotFound(id);return;}
     lastAction=null;
     if(result.intent==='instruction'){
       const previous=work.instruction;work.instruction=`“${result.text}”`;lastAction={type:'instruction',workId:id,previous};
@@ -620,14 +735,23 @@
   }
 
   function openWorkbench(id,feedback,canUndo,canRelink){
-    if(WORK_ITEMS.some((work)=>work.id===id)) selectedWorkId=id;
+    const targetId=id||selectedWorkId||'';
+    const work=selectWork(targetId);
+    if(!work){
+      const invalidHash=`#workbench/${encodeURIComponent(targetId)}`;
+      if(!syncingHistory&&location.hash!==invalidHash){navigate(invalidHash);return false;}
+      renderNotFound(targetId);return false;
+    }
+    saveState();
     renderWorkbench();showView('workbench');
     if(feedback) showFeedback(feedback,canUndo!==false,Boolean(canRelink));
     else hideFeedback();
+    return true;
   }
 
   function renderWorkbench(){
     const work=getSelectedWork();
+    if(!work){renderNotFound(selectedWorkId);return;}
     $('breadcrumbTitle').textContent=work.shortTitle;$('benchTitle').textContent=work.title;$('benchStatus').textContent=work.status;$('benchRepeat').textContent=work.repeat;
     $('benchRequester').textContent=`${work.requester} 지시`;$('benchInstruction').textContent=work.instruction;$('benchDday').textContent=work.dday;$('benchDue').textContent=work.dueLabel;
     const progress=getProgress(work);
@@ -638,7 +762,7 @@
       const links=(todo.sourceIds||[]).map((sourceId)=>{const source=work.sources.find((item)=>item.id===sourceId);return source?`<button class="todo-source" type="button" onclick="focusSource('${escapeHtml(source.id)}')">근거 · ${escapeHtml(source.role)}</button>`:''}).join('');
       return `<div class="todo-item${todo.next?' next':''}"><button class="todo-check${todo.done?' done':''}" type="button" onclick="toggleTodo(${index})" aria-label="${todo.done?'미완료로 변경':'완료 처리'}: ${escapeHtml(todo.text)}">${todo.done?'✓':''}</button><div class="todo-text${todo.done?' done':''}">${escapeHtml(todo.text)}<span class="todo-origin">${escapeHtml(todo.origin||'')}</span>${links?`<span class="todo-links">${links}</span>`:''}</div>${todo.candidate?'<span class="pill amber">할 일 후보</span>':''}</div>`}).join('');
     $('sourceCount').textContent=`근거 ${work.sources.length}건`;
-    $('sourceList').innerHTML=work.sources.length?work.sources.map((source)=>`<div class="source-item" data-source-id="${escapeHtml(source.id)}" tabindex="-1" role="group" aria-label="${escapeHtml(source.name)}. ${escapeHtml(source.role)}. ${escapeHtml(source.action)}"><span class="file-icon">${source.icon}</span><span><span class="source-name">${escapeHtml(source.name)}</span><span class="source-meta">${escapeHtml(source.meta)}</span><span class="source-role">${escapeHtml(source.role)}</span><span class="source-action">${escapeHtml(source.action)}</span></span><button class="source-open" type="button" aria-label="${escapeHtml(source.name)} 원문 열기" onclick="showSourceMock('${escapeHtml(source.type)}')">원문</button></div>`).join(''):'<div class="muted">연결된 자료가 없습니다.</div>';
+    $('sourceList').innerHTML=work.sources.length?work.sources.map((source)=>`<div class="source-item" data-source-id="${escapeHtml(source.id)}" tabindex="-1" role="group" aria-label="${escapeHtml(source.name)}. ${escapeHtml(source.role)}. ${escapeHtml(source.action)}"><span class="file-icon">${escapeHtml(source.icon)}</span><span><span class="source-name">${escapeHtml(source.name)}</span><span class="source-meta">${escapeHtml(source.meta)}</span><span class="source-role">${escapeHtml(source.role)}</span><span class="source-action">${escapeHtml(source.action)}</span></span><button class="source-open" type="button" aria-label="${escapeHtml(source.name)} 원문 열기" onclick="showSourceMock(${escapeHtml(JSON.stringify(source.type))})">원문</button></div>`).join(''):'<div class="muted">연결된 자료가 없습니다.</div>';
     $('sourceLinkStatus').textContent='';
     $('workAnswer').hidden=!work.answer;$('workAnswer').innerHTML=work.answer?`<strong>근거 답변</strong><br>${escapeHtml(work.answer)}<br><span class="engine-mark">샘플 근거 · 실제 연결 시 /api/ask 응답으로 대체</span>`:'';
     $('noteCount').textContent=`기록 ${work.notes.length}건`;
@@ -654,15 +778,15 @@
   }
 
   function toggleTodo(index){
-    const work=getSelectedWork();const todo=work.todos[index];if(!todo)return;const previous=todo.done;const previousNext=work.todos.findIndex((item)=>item.next);const previousNextAction=work.nextAction;todo.done=!todo.done;refreshNextAction(work);lastAction={type:'toggleTodo',workId:work.id,index,previous,previousNext,previousNextAction};renderWorkbench();showFeedback(`${work.title}에서 “${todo.text}”을(를) ${todo.done?'완료':'미완료'}로 바꿨습니다.`,true);
+    const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}const todo=work.todos[index];if(!todo)return;const previous=todo.done;const previousNext=work.todos.findIndex((item)=>item.next);const previousNextAction=work.nextAction;todo.done=!todo.done;syncNextAction(work);lastAction={type:'toggleTodo',workId:work.id,index,previous,previousNext,previousNextAction};saveState();renderWorkbench();showFeedback(`${work.title}에서 “${todo.text}”을(를) ${todo.done?'완료':'미완료'}로 바꿨습니다.`,true);
   }
 
   async function submitContextInput(){
     const input=$('contextInput');const text=input.value.trim();if(!text){input.focus();return;}
-    const work=getSelectedWork();const result=routeInput(text,'workbench');
+    const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}const result=routeInput(text,'workbench');
     if(result.intent==='ambiguous'){input.value='';showIntentClarification(result);return;}
     if(result.intent==='draft'){input.value='';showFeedback(`${work.title}에서 기안 집중 화면을 엽니다.`,false);setTimeout(openDraft,220);return;}
-    const summary=applyResult(work,result);input.value='';renderWorkbench();showFeedback(`${work.title}에 ${summary}`,true,false);
+    const summary=applyResult(work,result);input.value='';saveState();renderWorkbench();showFeedback(`${work.title}에 ${summary}`,true,false);
     if(result.intent==='question') await askEngine(text,work);
   }
 
@@ -681,7 +805,9 @@
     if(!action)return null;
     if(action.type==='createWork'){
       const index=WORK_ITEMS.findIndex((item)=>item.id===action.workId);if(index>=0)WORK_ITEMS.splice(index,1);
-      selectedWorkId=action.previousSelectedId||WORK_ITEMS[0].id;return null;
+      const fallbackId=getWork(action.previousSelectedId)?action.previousSelectedId:(WORK_ITEMS[0]?WORK_ITEMS[0].id:null);
+      if(fallbackId)selectWork(fallbackId);else{selectedWorkId=null;appState.selectedWorkId=null;appState.lastVisitedWorkId=null;}
+      return null;
     }
     const work=WORK_ITEMS.find((item)=>item.id===action.workId);if(!work)return null;
     if(action.type==='todo')work.todos.splice(action.index,1);
@@ -700,26 +826,33 @@
     if(!lastAction){showFeedback('되돌릴 최근 변경이 없습니다.',false);return;}
     engineSeq++;
     const action=lastAction;const work=rollbackAction(action);lastAction=null;
+    saveState();
     renderWorkList();renderWorkCalendar();
     if(action.type==='createWork'){lastInputConnection=null;showView('home');return;}
-    if(!work)return;selectedWorkId=work.id;renderWorkbench();showFeedback(`${work.title}의 마지막 변경을 되돌렸습니다.`,false,false);
+    if(!work)return;selectWork(work.id);saveState();renderWorkbench();showFeedback(`${work.title}의 마지막 변경을 되돌렸습니다.`,false,false);
   }
 
   function openDraft(id){
-    if(id&&WORK_ITEMS.some((work)=>work.id===id))selectedWorkId=id;
-    const work=getSelectedWork();$('draftWorkTitle').textContent=work.shortTitle;$('draftDocumentTitle').textContent=work.deliverable.title;
+    const targetId=id||selectedWorkId||'';
+    const work=selectWork(targetId);
+    if(!work){
+      const invalidHash=`#draft/${encodeURIComponent(targetId)}`;
+      if(!syncingHistory&&location.hash!==invalidHash){navigate(invalidHash);return false;}
+      renderNotFound(targetId);return false;
+    }
+    saveState();$('draftWorkTitle').textContent=work.shortTitle;$('draftDocumentTitle').textContent=work.deliverable.title;
     $('draftBackground').textContent=work.draft.background;$('draftDetails').innerHTML=work.draft.details.map((item)=>`<li>${escapeHtml(item)}</li>`).join('');
     $('draftTable').innerHTML=work.draft.table.map((row)=>`<tr><th>${escapeHtml(row[0])}</th><td>${escapeHtml(row[1])}</td></tr>`).join('');
     const evidence=work.sources.slice(0,3).map((source)=>`<div class="evidence-mini"><b>${escapeHtml(source.name)}</b><span>자료 · ${escapeHtml(source.role)}</span></div>`).join('');
     const notes=work.notes.slice(0,2).map((note)=>`<div class="evidence-mini"><b>${escapeHtml(note.tag)} · ${escapeHtml(note.text)}</b><span>진행 메모 · ${escapeHtml(note.time)}</span></div>`).join('');
     $('draftEvidence').innerHTML=evidence+notes;$('draftChecks').innerHTML=work.draft.checks.map((item,index)=>`<div class="check-row${index===work.draft.checks.length-1?' warn':''}"><span class="check-dot">${index===work.draft.checks.length-1?'!':'✓'}</span><span>${escapeHtml(item)}</span></div>`).join('');
-    $('draftIntent').value=work.draftText||'';$('draftState').textContent=work.draftText?'기안 준비 상태 · 임시 저장됨':'기안 준비 상태 · 작성 중';$('draftNotice').textContent=`점검을 완료했습니다. ${work.draft.warning}`;$('draftNotice').classList.remove('show');showView('draft');
+    $('draftIntent').value=work.draftText||'';$('draftState').textContent=work.draftText?'기안 준비 상태 · 임시 저장됨':'기안 준비 상태 · 작성 중';$('draftNotice').textContent=`점검을 완료했습니다. ${work.draft.warning}`;$('draftNotice').classList.remove('show');showView('draft');return true;
   }
 
   function returnToWorkbench(){openWorkbench(selectedWorkId)}
   function runDraftCheck(){$('draftNotice').classList.add('show')}
-  function saveDraftMock(){const work=getSelectedWork();work.draftText=$('draftIntent').value;$('draftState').textContent='기안 준비 상태 · 임시 저장됨';$('draftNotice').textContent='임시 저장했습니다. 이 시연 탭의 업무 건에 남습니다.';$('draftNotice').classList.add('show')}
-  function showSourceMock(type){showFeedback(`${getSelectedWork().title}의 ${type} 원문 위치를 확인했습니다. 시연용 목업에서는 문서를 열지 않습니다.`,false)}
+  function saveDraftMock(){const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}work.draftText=$('draftIntent').value;saveState();$('draftState').textContent='기안 준비 상태 · 임시 저장됨';$('draftNotice').textContent='임시 저장했습니다. 이 시연 탭의 업무 건에 남습니다.';$('draftNotice').classList.add('show')}
+  function showSourceMock(type){const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}showFeedback(`${work.title}의 ${type} 원문 위치를 확인했습니다. 시연용 목업에서는 문서를 열지 않습니다.`,false)}
 
   /* 선택적 팀원 엔진 연결: ?engine=http://localhost:8399 지정 시 /api/ask만 사용, 실패하면 샘플 답변 유지 */
   function normalizeEngineUrl(value){
@@ -752,16 +885,31 @@
     const guard=setTimeout(()=>{if(video.paused||!video.currentTime)finish()},6000);video.addEventListener('playing',()=>clearTimeout(guard),{once:true});video.play().catch(finish);
   })();
 
+  function routeFromHash(){
+    const [name,...rest]=location.hash.slice(1).split('/');
+    const arg=rest.join('/');
+    if(name==='work'&&['list','calendar'].includes(arg))return {name:'work',mode:arg};
+    if(['workbench','draft'].includes(name)){
+      try{return {name,id:decodeURIComponent(arg||'')}}catch(error){return {name,id:arg||''}}
+    }
+    if(name==='clarify')return {name:'clarify'};
+    return {name:'home'};
+  }
+
   function openFromHash(){
     syncingHistory=true;
     try{
-      const parts=location.hash.replace('#','').split('/');const route=parts[0];const id=parts[1]?decodeURIComponent(parts[1]):selectedWorkId;
-      if(route==='work')openMyWork('list');else if(route==='workbench')openWorkbench(id);else if(route==='draft')openDraft(id);else if(route==='clarify')showView('clarify');else showView('home');
+      const route=routeFromHash();
+      if(route.name==='work')openMyWork(route.mode);
+      else if(route.name==='workbench')openWorkbench(route.id);
+      else if(route.name==='draft')openDraft(route.id);
+      else if(route.name==='clarify')showView('clarify');
+      else showView('home');
     }finally{syncingHistory=false;}
   }
   addEventListener('popstate',openFromHash);
   addEventListener('hashchange',openFromHash);
-  renderWorkList();renderWorkCalendar();openFromHash();
+  loadState();renderWorkList();renderWorkCalendar();openFromHash();
 </script>
 </body>
 </html>

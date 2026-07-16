@@ -18,6 +18,115 @@ function assert(condition, message) {
     if (message.type() === 'error') consoleErrors.push(message.text());
   });
 
+  const baseUrl = appUrl.replace(/#.*$/, '');
+  await page.goto(`${baseUrl}#home`);
+  await page.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await page.reload();
+
+  await page.goto(`${baseUrl}#workbench/pump-2026`);
+  await page.waitForSelector('#view-workbench.active');
+  await page.evaluate(() => {
+    const work = getWork('pump-2026');
+    work.notes.unshift({ id: 'persist-check', tag: '메모', time: '방금', text: '새로고침 유지 확인' });
+    saveState();
+  });
+  await page.reload();
+  assert((await page.textContent('#activityList')).includes('새로고침 유지 확인'), 'notes did not persist');
+
+  await page.goto(`${baseUrl}#draft/missing-work`);
+  await page.waitForSelector('#view-notfound.active');
+  assert((await page.textContent('#notFoundTitle')).includes('업무를 찾을 수 없습니다'), 'invalid deep link silently selected a sample work');
+
+  await page.evaluate(() => localStorage.setItem('jm-workbench-v1', '{broken json'));
+  await page.reload();
+  await page.goto(`${baseUrl}#work/list`);
+  await page.waitForSelector('#view-work.active');
+  assert(await page.locator('[data-work-id="pump-2026"]').count() === 1, 'corrupt storage did not recover the immutable seed');
+
+  await page.evaluate(() => localStorage.setItem('jm-workbench-v1', JSON.stringify({
+    version: 1,
+    works: [{
+      id: 'damaged-work', title: '필수 필드가 빠진 업무', due: null,
+      todos: [], sources: [], notes: [],
+      deliverable: { title: '손상 데이터', items: [] },
+      draft: { background: '', details: [], table: [], checks: [] },
+    }],
+  })));
+  await page.reload();
+  await page.waitForSelector('#view-work.active');
+  assert(await page.locator('[data-work-id="pump-2026"]').count() === 1, 'structurally corrupt storage did not recover the immutable seed');
+
+  await page.goto(`${baseUrl}#work/calendar`);
+  await page.reload();
+  await page.waitForSelector('#view-work.active');
+  assert(await page.isVisible('#workCalendar'), 'calendar hash mode did not survive reload');
+
+  const progressContract = await page.evaluate(() => {
+    const fixture = { todos: [
+      { text: '완료', done: true },
+      { text: '다음', done: false, next: true },
+      { text: '후보', done: false, candidate: true },
+    ] };
+    const progress = getProgress(fixture);
+    const first = syncNextAction(fixture);
+    first.done = true;
+    const next = syncNextAction(fixture);
+    return {
+      progress,
+      first: first.text,
+      next,
+      nextFlags: fixture.todos.map((todo) => Boolean(todo.next)),
+      seedFrozen: Object.isFrozen(WORK_SEED) && Object.isFrozen(WORK_SEED[0]),
+      selectedId: getSelectedWork().id,
+    };
+  });
+  assert(progressContract.progress.done === 1 && progressContract.progress.total === 2 && progressContract.progress.percent === 50, 'candidate todo changed calculated progress');
+  assert(progressContract.first === '다음' && progressContract.next === null, 'next action was not calculated from confirmed incomplete todos');
+  assert(progressContract.nextFlags.every((flag) => !flag), 'completed or candidate todo remained marked as next');
+  assert(progressContract.seedFrozen, 'work seed is mutable');
+  assert(progressContract.selectedId === 'pump-2026', 'selected work did not recover with the seed');
+
+  const sourceIconPayload = '<img src=x onerror="window.__sourceIconXss=1">';
+  const sourceTypePayload = "');window.__sourceActionXss=1;//";
+  await page.goto(`${baseUrl}#workbench/pump-2026`);
+  await page.waitForSelector('#view-workbench.active');
+  await page.evaluate(({ icon, type }) => {
+    const saved = JSON.parse(localStorage.getItem('jm-workbench-v1'));
+    saved.works[0].sources[0].icon = icon;
+    saved.works[0].sources[0].type = type;
+    localStorage.setItem('jm-workbench-v1', JSON.stringify(saved));
+  }, { icon: sourceIconPayload, type: sourceTypePayload });
+  await page.reload();
+  await page.waitForSelector('#view-workbench.active');
+  assert((await page.textContent('.file-icon')).includes(sourceIconPayload), 'stored source icon was not rendered literally');
+  assert(!(await page.evaluate(() => window.__sourceIconXss)), 'stored source icon executed as HTML');
+  await page.click('.source-open');
+  assert(!(await page.evaluate(() => window.__sourceActionXss)), 'stored source action executed from its handler argument');
+  await page.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await page.reload();
+
+  await page.goto(`${baseUrl}#home`);
+  await page.fill('#homeInput', '팀장님이 신규 설비 홍보행사 준비하라고 했어');
+  await page.locator('#homeForm').evaluate((form) => form.requestSubmit());
+  await page.waitForSelector('#view-clarify.active');
+  await page.click('.clarify-create');
+  await page.waitForSelector('#view-workbench.active');
+  const undatedWorkId = await page.evaluate(() => getSelectedWork().id);
+  assert(await page.evaluate(() => getSelectedWork().due === null), 'unknown deadline was replaced with a fake calendar date');
+  await page.reload();
+  assert(await page.evaluate((id) => getWork(id).due === null, undatedWorkId), 'unknown deadline did not persist as null');
+  await page.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await page.goto(`${baseUrl}#work/list`);
+  await page.reload();
+  await page.waitForSelector('#view-work.active');
+
+  if (process.env.WORKBENCH_E2E_SCOPE === 'task2') {
+    assert(consoleErrors.length === 0, `browser console errors: ${consoleErrors.join(' | ')}`);
+    await browser.close();
+    console.log('Work-item workbench state and router flow passed.');
+    return;
+  }
+
   await page.goto(appUrl.replace('#home', '#home'));
   await page.waitForSelector('#view-home.active');
   assert(await page.isVisible('#heroSearch'), 'original centered home search is missing');
