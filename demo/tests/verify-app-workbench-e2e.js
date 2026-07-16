@@ -126,6 +126,104 @@ function assert(condition, message) {
   assert(progressContract.seedFrozen, 'work seed is mutable');
   assert(progressContract.selectedId === 'pump-2026', 'selected work did not recover with the seed');
 
+  const inputPriority = await page.evaluate(() => ({
+    overview: routeInput('이번 주 내가 해야 할 일').intent,
+    targetedQuestion: routeInput('이번 주 펌프 기안 자료 찾아줘', 'home').intent,
+    question: routeInput('펌프 기안 자료 찾아줘', 'home').intent,
+    instruction: routeInput('팀장님이 펌프 계획 올리라고 했어', 'home').intent,
+    note: routeInput('일정은 5월로 확정', 'workbench').intent,
+    draft: routeInput('펌프 추진 보고 기안 작성해줘', 'home').intent,
+    todo: routeInput('안전관리관 작업허가 요청하기', 'workbench').intent,
+    draftMaterialTodo: routeInput('기안 자료 확인해야 함', 'workbench').intent,
+    reportWritingTodo: routeInput('보고서 작성해야 함', 'workbench').intent,
+    ambiguous: routeInput('펌프 최신값', 'workbench').intent,
+    fixedTarget: routeInput('예산 자료 찾아줘', 'workbench').targetId,
+  }));
+  assert(inputPriority.overview === 'overview', 'targetless overview lost first priority');
+  assert(inputPriority.targetedQuestion === 'question' && inputPriority.question === 'question', 'question did not outrank weekly or draft wording');
+  assert(inputPriority.instruction === 'instruction', 'home instruction was not classified after questions');
+  assert(inputPriority.note === 'note', 'confirmed schedule was not classified as a progress note');
+  assert(inputPriority.draft === 'draft', 'explicit draft creation was not classified as drafting');
+  assert(inputPriority.todo === 'todo' && inputPriority.draftMaterialTodo === 'todo' && inputPriority.reportWritingTodo === 'todo', 'action phrasing containing draft nouns was misrouted away from todo');
+  assert(inputPriority.ambiguous === 'ambiguous', 'ambiguous fallback priority is incorrect');
+  assert(inputPriority.fixedTarget === 'pump-2026', 'workbench input lost the selected work target');
+
+  const candidate = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  candidate.setDefaultTimeout(7000);
+  await candidate.goto(`${baseUrl}#workbench/pump-2026`);
+  await candidate.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await candidate.reload();
+  const candidateBaseline = await candidate.evaluate(() => getProgress(getSelectedWork()));
+  const candidateBaselineCount = await candidate.textContent('#todoCount');
+  await candidate.fill('#contextInput', '안전관리관 작업허가 요청하기');
+  await candidate.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  const firstCandidate = candidate.locator('.todo-item.candidate', { hasText: '안전관리관 작업허가 요청하기' });
+  assert(await firstCandidate.count() === 1, 'todo action was not added as a candidate');
+  assert(await firstCandidate.locator('.candidate-confirm').count() === 1 && await firstCandidate.locator('.candidate-delete').count() === 1, 'candidate has no real confirm and delete actions');
+  assert(await firstCandidate.locator('.todo-check').count() === 0, 'candidate can be completed before confirmation');
+  assert((await candidate.textContent('#workFeedback')).includes('순환수 펌프 정비공사') && (await candidate.textContent('#workFeedback')).includes('할 일 후보'), 'candidate feedback does not name its target and change');
+  assert((await candidate.evaluate(() => getProgress(getSelectedWork()))).total === candidateBaseline.total, 'candidate changed progress before confirmation');
+  assert(await candidate.textContent('#todoCount') === candidateBaselineCount, 'candidate changed the formal incomplete todo count');
+  const candidateAddAction = await candidate.evaluate(() => ({ type: lastAction.type, todoId: lastAction.todoId, hasIndex: Object.prototype.hasOwnProperty.call(lastAction, 'index') }));
+  assert(candidateAddAction.type === 'todoAdd' && candidateAddAction.todoId && !candidateAddAction.hasIndex, 'candidate addition undo is not item-ID based');
+  assert(await candidate.evaluate(() => JSON.parse(localStorage.getItem('jm-workbench-v1')).works.find((work) => work.id === 'pump-2026').todos.some((todo) => todo.text === '안전관리관 작업허가 요청하기' && todo.candidate)), 'candidate addition was not saved');
+  await candidate.click('#undoButton');
+  assert(await candidate.locator('.todo-item', { hasText: '안전관리관 작업허가 요청하기' }).count() === 0, 'undo did not remove the newly added candidate');
+
+  await candidate.fill('#contextInput', '계약부 견적서 요청하기');
+  await candidate.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  const secondCandidate = candidate.locator('.todo-item.candidate', { hasText: '계약부 견적서 요청하기' });
+  await secondCandidate.locator('.candidate-confirm').click();
+  const confirmedTodo = candidate.locator('.todo-item', { hasText: '계약부 견적서 요청하기' });
+  assert(await confirmedTodo.count() === 1 && await confirmedTodo.getAttribute('class').then((value) => !value.includes('candidate')), 'confirm did not promote the candidate to the checklist');
+  assert((await candidate.evaluate(() => getProgress(getSelectedWork()))).total === candidateBaseline.total + 1, 'confirmed todo did not enter calculated progress');
+  assert(await candidate.evaluate(() => {
+    const todo = JSON.parse(localStorage.getItem('jm-workbench-v1')).works.find((work) => work.id === 'pump-2026').todos.find((item) => item.text === '계약부 견적서 요청하기');
+    return Boolean(todo && !todo.candidate);
+  }), 'todo confirmation was not saved');
+  assert((await candidate.textContent('#workFeedback')).includes('체크리스트'), 'confirmation feedback does not describe the checklist change');
+  const candidateConfirmAction = await candidate.evaluate(() => ({ type: lastAction.type, todoId: lastAction.todoId, hasIndex: Object.prototype.hasOwnProperty.call(lastAction, 'index'), activeId: document.activeElement.id }));
+  assert(candidateConfirmAction.type === 'todoConfirm' && candidateConfirmAction.todoId && !candidateConfirmAction.hasIndex, 'candidate confirmation undo is not item-ID based');
+  assert(candidateConfirmAction.activeId === 'workFeedback', 'confirmation rerender dropped focus to the document body');
+  await candidate.click('#undoButton');
+  assert(await candidate.locator('.todo-item.candidate', { hasText: '계약부 견적서 요청하기' }).count() === 1, 'undo did not restore the confirmed todo to candidate state');
+  await candidate.locator('.todo-item.candidate', { hasText: '계약부 견적서 요청하기' }).locator('.candidate-delete').click();
+  assert(await candidate.locator('.todo-item', { hasText: '계약부 견적서 요청하기' }).count() === 0, 'candidate delete left the candidate visible');
+  assert(await candidate.evaluate(() => !JSON.parse(localStorage.getItem('jm-workbench-v1')).works.find((work) => work.id === 'pump-2026').todos.some((todo) => todo.text === '계약부 견적서 요청하기')), 'candidate deletion was not saved');
+  const candidateDeleteAction = await candidate.evaluate(() => ({ type: lastAction.type, todoId: lastAction.todoId, hasSnapshot: Boolean(lastAction.todoSnapshot), hasIndex: Object.prototype.hasOwnProperty.call(lastAction, 'index'), activeId: document.activeElement.id }));
+  assert(candidateDeleteAction.type === 'todoDelete' && candidateDeleteAction.todoId && candidateDeleteAction.hasSnapshot && !candidateDeleteAction.hasIndex, 'candidate deletion undo is not ID and snapshot based');
+  assert(candidateDeleteAction.activeId === 'workFeedback', 'candidate deletion rerender dropped focus to the document body');
+  await candidate.click('#undoButton');
+  assert(await candidate.locator('.todo-item.candidate', { hasText: '계약부 견적서 요청하기' }).count() === 1, 'undo did not restore only the deleted candidate');
+  const legacyCandidateBaseline = await candidate.evaluate(() => getProgress(getSelectedWork()));
+  await candidate.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('jm-workbench-v1'));
+    const work = saved.works.find((item) => item.id === 'pump-2026');
+    const todo = work.todos.find((item) => item.text === '계약부 견적서 요청하기');
+    todo.done = true;
+    localStorage.setItem('jm-workbench-v1', JSON.stringify(saved));
+  });
+  await candidate.reload();
+  await candidate.waitForSelector('.todo-item.candidate');
+  assert(await candidate.evaluate(() => {
+    const todo = getSelectedWork().todos.find((item) => item.text === '계약부 견적서 요청하기');
+    return Boolean(todo && todo.candidate && !todo.done);
+  }), 'legacy persisted candidate stayed completed before confirmation');
+  await candidate.locator('.todo-item.candidate', { hasText: '계약부 견적서 요청하기' }).locator('.candidate-confirm').click();
+  const legacyConfirmed = await candidate.evaluate(() => ({
+    progress: getProgress(getSelectedWork()),
+    todo: getSelectedWork().todos.find((item) => item.text === '계약부 견적서 요청하기'),
+  }));
+  assert(!legacyConfirmed.todo.candidate && !legacyConfirmed.todo.done && legacyConfirmed.progress.done === legacyCandidateBaseline.done, 'legacy candidate confirmation promoted a pre-completed Todo');
+  await candidate.click('#undoButton');
+  assert(await candidate.evaluate(() => {
+    const todo = getSelectedWork().todos.find((item) => item.text === '계약부 견적서 요청하기');
+    return Boolean(todo && todo.candidate && !todo.done);
+  }), 'legacy candidate confirmation undo did not restore the normalized candidate exactly');
+  await candidate.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await candidate.close();
+  await page.reload();
+
   const sourceIconPayload = '<img src=x onerror="window.__sourceIconXss=1">';
   const sourceTypePayload = "');window.__sourceActionXss=1;//";
   await page.goto(`${baseUrl}#workbench/pump-2026`);
@@ -207,6 +305,19 @@ function assert(condition, message) {
   assert(homeObjectContract.lastVisitedId === 'audit-2026', 'home did not prefer the last valid visited work');
   assert(homeObjectContract.fallbackId === 'pump-2026', 'home did not fall back from an invalid last visited work');
   assert(homeObjectContract.urgentWorkId === 'pump-2026', 'urgent home object is not bound to app state');
+  await page.click('#homeEvidenceObject', { force: true });
+  await page.waitForSelector('#view-workbench.active');
+  await page.waitForTimeout(90);
+  const homeEvidenceFocus = await page.evaluate(() => {
+    const item = document.querySelector('.source-item.focused');
+    return {
+      active: Boolean(item && document.activeElement === item),
+      status: document.getElementById('sourceLinkStatus').textContent,
+    };
+  });
+  assert(homeEvidenceFocus.active && homeEvidenceFocus.status.includes('근거 자료'), 'home evidence object did not land keyboard and assistive-technology focus on its evidence');
+  await page.goto(`${baseUrl}#home`);
+  await page.waitForSelector('#view-home.active');
 
   const recentNotes = await browser.newPage({ viewport: { width: 1200, height: 900 } });
   recentNotes.setDefaultTimeout(7000);
@@ -385,14 +496,26 @@ function assert(condition, message) {
   assert(await page.isVisible('#relinkButton'), 'home connection cannot be corrected to another work');
   assert(await page.isVisible('#nextActionPanel'), 'next action is not visible in the workbench');
   assert(await page.isVisible('#evidencePanel'), 'evidence is not visible beside the work');
+  const workbenchLayout = await page.evaluate(() => {
+    const shell = document.querySelector('#view-workbench > .workbench-shell');
+    const ids = ['workContext', 'nextActionPanel', 'todoPanel', 'activityPanel', 'deliverablePanel'];
+    return {
+      width: shell && shell.getBoundingClientRect().width,
+      tops: ids.map((id) => document.getElementById(id).getBoundingClientRect().top),
+    };
+  });
+  assert(workbenchLayout.width <= 900, `workbench widened beyond the approved reading width (${workbenchLayout.width}px)`);
+  assert(workbenchLayout.tops.every((top, index, values) => index === 0 || top > values[index - 1]), 'workbench sections do not follow context, next action, checklist, activity, deliverable order');
   assert((await page.textContent('#factProgress')).includes('/'), 'progress does not expose completed checklist count');
   assert(await page.isVisible('.todo-source'), 'next actions do not expose their linked evidence');
+  const todoSourceLabel = await page.locator('#todoList .todo-source').first().getAttribute('aria-label');
+  assert(todoSourceLabel && todoSourceLabel.includes('최근 진동 측정값 확인') && todoSourceLabel.includes('2025년 순환수 펌프 정비공사 추진 보고'), 'evidence link does not name both the action and source');
   await page.locator('.todo-source').first().click();
   assert(await page.isVisible('.source-item.focused'), 'linked evidence was not highlighted from the action');
   assert(await page.locator('.source-item.focused').evaluate((item) => document.activeElement === item), 'linked evidence did not receive focus for assistive technology');
   assert((await page.textContent('#sourceLinkStatus')).includes('근거 자료'), 'linked evidence focus was not announced in a live region');
   const sourceButtonLabel = await page.locator('.source-item.focused .source-open').getAttribute('aria-label');
-  assert(sourceButtonLabel && sourceButtonLabel.includes('원문'), 'source action does not have a specific accessible name');
+  assert(sourceButtonLabel && sourceButtonLabel.includes('2025년 순환수 펌프 정비공사 추진 보고') && sourceButtonLabel.includes('원문'), 'source action does not have a specific accessible name');
   const todoAriaLabel = await page.locator('.todo-check').first().getAttribute('aria-label');
   assert(todoAriaLabel.includes('최근 진동 측정값 확인'), 'todo checkbox does not identify its action to assistive technology');
   const sourceTextIsSeparated = await page.locator('.source-item').first().evaluate((item) => {
@@ -402,11 +525,28 @@ function assert(condition, message) {
   });
   assert(sourceTextIsSeparated, 'source title and metadata run together instead of using separate lines');
 
+  const darkSourceSurface = await page.evaluate(() => {
+    applyTheme('dark');
+    const source = document.querySelector('.source-item:not(.focused)');
+    const root = getComputedStyle(document.documentElement);
+    const sourceStyle = getComputedStyle(source);
+    const result = {
+      sourceSurface: sourceStyle.getPropertyValue('--surface-2').trim(),
+      rootSurface: root.getPropertyValue('--surface-2').trim(),
+      background: sourceStyle.backgroundColor,
+    };
+    applyTheme('light');
+    return result;
+  });
+  assert(darkSourceSurface.sourceSurface === darkSourceSurface.rootSurface && darkSourceSurface.background === 'rgb(26, 34, 48)', `dark workbench source card keeps the light surface and loses text contrast (${JSON.stringify(darkSourceSurface)})`);
+
   const nextActionBefore = await page.textContent('#nextAction');
-  await page.click('.todo-item.next .todo-check');
+  await page.locator('.todo-item.next .todo-check').focus();
+  await page.keyboard.press('Enter');
   const nextActionAfter = await page.textContent('#nextAction');
   assert(nextActionAfter !== nextActionBefore, 'completing the current action did not advance the next action');
   assert((await page.locator('.todo-item.next').count()) === 1, 'workbench did not mark exactly one next incomplete action');
+  assert(await page.locator('#workFeedback').evaluate((feedback) => document.activeElement === feedback), 'keyboard Todo completion discarded focus instead of announcing its feedback');
   await page.click('#undoButton');
   assert((await page.textContent('#nextAction')) === nextActionBefore, 'undo did not restore the previous next action');
 
@@ -429,13 +569,47 @@ function assert(condition, message) {
   const activityBefore = await page.locator('#activityList .activity-item').count();
   await page.fill('#contextInput', '운영부 정지 가능 기간은 5월 둘째 주로 확정');
   await page.locator('#contextForm').evaluate((form) => form.requestSubmit());
-  assert((await page.textContent('#workFeedback')).includes('추가했어요'), 'context feedback did not describe the change');
+  assert((await page.textContent('#workFeedback')).includes('순환수 펌프 정비공사') && (await page.textContent('#workFeedback')).includes('결정 기록'), 'context feedback did not name the selected work and decision change');
   const activityAfter = await page.locator('#activityList .activity-item').count();
   assert(activityAfter === activityBefore + 1, 'context memo did not stay in the selected work');
 
   await page.click('#undoButton');
   const activityUndone = await page.locator('#activityList .activity-item').count();
   assert(activityUndone === activityBefore, 'undo did not restore the work activity');
+
+  const relink = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  relink.setDefaultTimeout(7000);
+  await relink.goto(`${baseUrl}#home`);
+  await relink.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await relink.reload();
+  const relinkBefore = await relink.evaluate(() => ({
+    pump: getWork('pump-2026').notes.length,
+    audit: getWork('audit-2026').notes.length,
+  }));
+  await relink.fill('#homeInput', '펌프 일정은 5월로 확정');
+  await relink.locator('#homeForm').evaluate((form) => form.requestSubmit());
+  await relink.waitForSelector('#view-workbench.active');
+  assert(await relink.isVisible('#relinkButton'), 'a newly applied home decision cannot change targets');
+  assert(await relink.evaluate((before) => getWork('pump-2026').notes.length === before + 1, relinkBefore.pump), 'initial decision was not applied once to the detected work');
+  await relink.click('#relinkButton');
+  await relink.waitForSelector('#view-clarify.active');
+  await relink.click('[data-work-id="audit-2026"]');
+  await relink.waitForSelector('#view-workbench.active');
+  const relinkAfter = await relink.evaluate((before) => ({
+    selected: getSelectedWork().id,
+    pump: getWork('pump-2026').notes.length,
+    audit: getWork('audit-2026').notes.length,
+    copies: WORK_ITEMS.flatMap((work) => work.notes).filter((note) => note.text === '펌프 일정은 5월로 확정').length,
+    pumpBefore: before.pump,
+    auditBefore: before.audit,
+  }), relinkBefore);
+  assert(relinkAfter.selected === 'audit-2026', 'target change did not select the new work');
+  assert(relinkAfter.pump === relinkAfter.pumpBefore && relinkAfter.audit === relinkAfter.auditBefore + 1 && relinkAfter.copies === 1, 'target change did not roll back only the last change and apply it exactly once');
+  assert((await relink.textContent('#workFeedback')).includes('감사 지적사항 조치결과') && (await relink.textContent('#workFeedback')).includes('결정 기록'), 'relinked feedback does not name the new target and change');
+  await relink.click('#undoButton');
+  assert(await relink.evaluate((before) => getWork('pump-2026').notes.length === before.pump && getWork('audit-2026').notes.length === before.audit, relinkBefore), 'undo after relink changed pre-existing notes');
+  await relink.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await relink.close();
 
   await page.click('#draftStart');
   await page.waitForSelector('#view-draft.active');
@@ -551,6 +725,106 @@ function assert(condition, message) {
   assert((await safeText.textContent('#activityList')).includes(xssPayload), 'persisted user text was not rendered literally after reload');
   assert(!(await safeText.evaluate(() => window.__workbenchXss)), 'persisted user text executed as HTML after reload');
 
+  const engine = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  engine.setDefaultTimeout(7000);
+  const engineRequests = [];
+  await engine.route('http://localhost:8399/api/ask', async (route) => {
+    const request = route.request();
+    const payload = request.postDataJSON();
+    engineRequests.push({ url: request.url(), payload });
+    const questionText = payload.question;
+    if (questionText.includes('첫 번째')) await new Promise((resolve) => setTimeout(resolve, 360));
+    if (questionText.includes('취소할')) await new Promise((resolve) => setTimeout(resolve, 360));
+    if (questionText.includes('뒤늦을')) await new Promise((resolve) => setTimeout(resolve, 360));
+    if (questionText.includes('포커스')) await new Promise((resolve) => setTimeout(resolve, 360));
+    const answer = questionText.includes('포커스') ? 'engine-focus-answer' :
+      questionText.includes('두 번째') ? 'engine-two-answer' :
+      questionText.includes('취소할') ? 'engine-cancelled-answer' :
+      questionText.includes('결정 자료') ? 'engine-late-note-answer' :
+      questionText.includes('할 일 자료') ? 'engine-late-todo-answer' : 'engine-one-answer';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ answer }),
+    });
+  });
+  const engineUrl = `${baseUrl}?engine=${encodeURIComponent('http://localhost:8399')}#workbench/pump-2026`;
+  await engine.goto(engineUrl);
+  await engine.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await engine.reload();
+  const engineUrlContract = await engine.evaluate(() => ({
+    local: normalizeEngineUrl('http://localhost:8399/'),
+    ipv4: normalizeEngineUrl('https://127.0.0.1:8399'),
+    ipv6: normalizeEngineUrl('http://[::1]:8399'),
+    remote: normalizeEngineUrl('https://example.com'),
+    credentials: normalizeEngineUrl('http://user:secret@localhost:8399'),
+    script: normalizeEngineUrl('javascript:alert(1)'),
+  }));
+  assert(engineUrlContract.local && engineUrlContract.ipv4 && engineUrlContract.ipv6, 'loopback engine URLs were rejected');
+  assert(!engineUrlContract.remote && !engineUrlContract.credentials && !engineUrlContract.script, 'unsafe engine URL was accepted');
+  await engine.fill('#contextInput', '첫 번째 자료 찾아줘');
+  await engine.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await engine.waitForSelector('#workAnswer:not([hidden])');
+  await engine.fill('#contextInput', '두 번째 자료 찾아줘');
+  await engine.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await engine.waitForFunction(() => document.getElementById('workAnswer').textContent.includes('engine-two-answer'));
+  await engine.waitForTimeout(450);
+  const racedAnswer = await engine.textContent('#workAnswer');
+  assert(racedAnswer.includes('engine-two-answer') && !racedAnswer.includes('engine-one-answer'), 'late engine response overwrote a newer question');
+  assert(engineRequests.length === 2 && engineRequests.every((request) => new URL(request.url).pathname === '/api/ask'), 'engine used an endpoint other than /api/ask');
+  assert(engineRequests.every((request) => request.payload.work_id === 'pump-2026' && request.payload.title.includes('순환수 펌프')), 'engine request lost the selected work context');
+  const storedEngineState = await engine.evaluate(() => localStorage.getItem('jm-workbench-v1'));
+  assert(!storedEngineState.includes('localhost:8399') && !storedEngineState.includes('첫 번째 자료 찾아줘') && !storedEngineState.includes('두 번째 자료 찾아줘'), 'engine URL or question was persisted');
+  await engine.fill('#contextInput', '포커스 자료 찾아줘');
+  await engine.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await engine.locator('.todo-source').first().click();
+  const focusedEvidence = await engine.locator('.source-item.focused').evaluate((item) => ({
+    sourceId: item.dataset.sourceId,
+    status: document.getElementById('sourceLinkStatus').textContent,
+    active: document.activeElement === item,
+  }));
+  assert(focusedEvidence.active && focusedEvidence.status.includes('근거 자료'), 'evidence focus was not established while the engine response was pending');
+  await engine.waitForFunction(() => document.getElementById('workAnswer').textContent.includes('engine-focus-answer'));
+  const focusAfterEngine = await engine.evaluate((sourceId) => {
+    const item = document.querySelector(`.source-item[data-source-id="${sourceId}"]`);
+    return {
+      focused: Boolean(item && item.classList.contains('focused')),
+      active: document.activeElement === item,
+      status: document.getElementById('sourceLinkStatus').textContent,
+    };
+  }, focusedEvidence.sourceId);
+  assert(focusAfterEngine.focused && focusAfterEngine.active && focusAfterEngine.status === focusedEvidence.status, 'engine response discarded the user\'s evidence focus or live announcement');
+  await engine.fill('#contextInput', '취소할 자료 찾아줘');
+  await engine.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await engine.waitForFunction(() => document.getElementById('workAnswer').textContent.includes('취소할 자료 찾아줘'));
+  await engine.click('#undoButton');
+  await engine.waitForTimeout(450);
+  assert(!(await engine.textContent('#workAnswer')).includes('engine-cancelled-answer'), 'engine response survived undo and replaced the restored answer');
+
+  const noteRaceBaseline = await engine.locator('#activityList .activity-item').count();
+  await engine.fill('#contextInput', '뒤늦을 결정 자료 찾아줘');
+  await engine.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await engine.fill('#contextInput', '일정은 6월로 확정');
+  await engine.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await engine.waitForTimeout(450);
+  assert(!(await engine.textContent('#workAnswer')).includes('engine-late-note-answer'), 'late question response survived a newer note input');
+  assert((await engine.textContent('#workFeedback')).includes('결정 기록') && await engine.isVisible('#undoButton'), 'late question replaced the newer note feedback or undo action');
+  await engine.click('#undoButton');
+  assert(await engine.locator('#activityList .activity-item').count() === noteRaceBaseline, 'undo after a question-to-note race did not undo the note');
+
+  await engine.fill('#contextInput', '뒤늦을 할 일 자료 찾아줘');
+  await engine.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await engine.fill('#contextInput', '품질관리부 검수 요청하기');
+  await engine.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await engine.waitForTimeout(450);
+  assert(!(await engine.textContent('#workAnswer')).includes('engine-late-todo-answer'), 'late question response survived a newer todo input');
+  assert((await engine.textContent('#workFeedback')).includes('할 일 후보') && await engine.isVisible('#undoButton'), 'late question replaced the newer todo feedback or undo action');
+  await engine.click('#undoButton');
+  assert(await engine.locator('.todo-item', { hasText: '품질관리부 검수 요청하기' }).count() === 0, 'undo after a question-to-todo race did not undo the candidate');
+  await engine.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await engine.close();
+
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   mobile.setDefaultTimeout(5000);
   await mobile.goto(appUrl.replace('#home', '#workbench/pump-2026'));
@@ -558,8 +832,30 @@ function assert(condition, message) {
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert(overflow <= 1, `mobile layout overflows horizontally by ${overflow}px`);
   assert(await mobile.isVisible('.sample-badge'), 'mobile hides the sample-data disclosure');
-  const nextActionTop = await mobile.locator('#nextActionPanel').evaluate((node) => node.getBoundingClientRect().top);
-  assert(nextActionTop < 650, `mobile pushes the next action below the first screen (${nextActionTop}px)`);
+  assert(await mobile.isVisible('#benchTitle') && await mobile.isVisible('#benchDue'), 'mobile first screen hides the work title or due date');
+  const mobileContextBounds = await mobile.evaluate(() => ({
+    titleBottom: document.getElementById('benchTitle').getBoundingClientRect().bottom,
+    dueBottom: document.querySelector('.due-state').getBoundingClientRect().bottom,
+    viewport: innerHeight,
+  }));
+  assert(mobileContextBounds.titleBottom <= mobileContextBounds.viewport && mobileContextBounds.dueBottom <= mobileContextBounds.viewport, 'mobile title or due date ends below the first viewport');
+  const nextActionBounds = await mobile.locator('#nextActionPanel').evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    return { top: rect.top, bottom: rect.bottom, viewport: innerHeight };
+  });
+  assert(nextActionBounds.top < 650, `mobile pushes the next action below the first screen (${nextActionBounds.top}px)`);
+  assert(nextActionBounds.bottom <= nextActionBounds.viewport, `mobile cuts off the next action below the first viewport (${nextActionBounds.bottom}px)`);
+  await mobile.fill('#contextInput', '안전관리관 작업허가 요청하기');
+  await mobile.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  await mobile.waitForSelector('.todo-item.candidate');
+  const candidateMobileBounds = await mobile.locator('#nextActionPanel').evaluate((node) => ({
+    bottom: node.getBoundingClientRect().bottom,
+    viewport: innerHeight,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  assert(candidateMobileBounds.bottom <= candidateMobileBounds.viewport, `candidate feedback pushed the next action below the first viewport (${candidateMobileBounds.bottom}px)`);
+  assert(candidateMobileBounds.overflow <= 1, `candidate state overflows mobile horizontally by ${candidateMobileBounds.overflow}px`);
+  await mobile.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
   await mobile.goto(appUrl);
   const homeOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert(homeOverflow <= 1, `mobile home overflows horizontally by ${homeOverflow}px`);

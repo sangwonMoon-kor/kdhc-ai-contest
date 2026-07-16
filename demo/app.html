@@ -129,22 +129,19 @@
   .calendar-panel{padding:16px}.calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.calendar-head h3{font-size:18px}.calendar-legend{display:flex;gap:12px;color:var(--muted);font-size:11px}.calendar-legend span::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-right:5px}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.calendar-dow{text-align:center;color:var(--muted);font-size:11px;font-weight:720;padding:5px}.calendar-day{min-height:88px;padding:7px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);text-align:left}.calendar-day.blank{opacity:.35}.calendar-day.today{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}.calendar-day .num{font-size:11px;font-weight:720;color:var(--muted)}
   .cal-event{display:block;width:100%;margin-top:7px;padding:6px 7px;border-radius:8px;background:var(--blue-soft);color:var(--blue);font-size:11px;font-weight:700;line-height:1.35;text-align:left}.cal-event:hover{filter:brightness(.97)}
 
-  /* workbench */
-  .bench-shell{width:min(1240px,calc(100% - 48px));margin:0 auto;padding:28px 0 88px}.breadcrumb{display:flex;align-items:center;gap:7px;margin-bottom:18px;color:var(--muted);font-size:13px}.breadcrumb button{color:var(--blue);font-weight:680}
-  .bench-hero{padding:26px 28px}.bench-top{display:flex;justify-content:space-between;align-items:flex-start;gap:26px}.bench-kicker{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bench-title{font-size:clamp(28px,3.8vw,43px);margin-top:13px;letter-spacing:-.045em}.instruction{max-width:780px;margin-top:10px;color:var(--ink-2);font-size:15px}
-  .dday-box{flex:0 0 92px;padding:14px 10px;border-radius:17px;background:var(--navy);color:var(--bg);text-align:center}.dday-box b{display:block;font-size:25px;letter-spacing:-.04em}.dday-box span{display:block;margin-top:1px;font-size:10px;opacity:.7}
-  html[data-theme="dark"] .dday-box{background:var(--blue);color:#08101d}
-  .bench-facts{display:grid;grid-template-columns:repeat(4,1fr);margin-top:24px;border-top:1px solid var(--line)}.fact{padding:17px 18px 0 0}.fact+.fact{padding-left:18px;border-left:1px solid var(--line)}.fact span{display:block;color:var(--muted);font-size:11px}.fact b{display:block;margin-top:4px;font-size:13px;font-weight:720}
-  .context-box{margin-top:14px;padding:14px 16px}.context-label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.context-label b{font-size:13px}.context-label span{font-size:11px;color:var(--muted)}
-  .context-form{display:flex;align-items:center;gap:9px;padding:7px 7px 7px 14px;border:1px solid var(--line-strong);border-radius:14px;background:var(--surface-2)}.context-form:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}.context-form input{width:100%;min-width:0;padding:8px 0;font-size:14px}
-  .context-form button{flex:0 0 auto;padding:9px 14px;border-radius:10px;color:#fff;background:var(--blue);font-size:13px;font-weight:720}
-  .feedback{display:none;align-items:flex-start;justify-content:space-between;gap:16px;margin-top:10px;padding:11px 13px;border-radius:12px;background:var(--blue-soft);color:var(--ink-2);font-size:13px}.feedback.show{display:flex}.feedback strong{color:var(--blue)}.feedback-actions{display:flex;flex:0 0 auto;align-items:center;gap:11px}.undo-btn{color:var(--blue);font-weight:780;text-decoration:underline;text-underline-offset:3px}.relink-btn{color:var(--ink-2);font-weight:730;white-space:nowrap}
-  .workbench-grid{display:grid;grid-template-columns:minmax(0,1.03fr) minmax(0,.97fr);gap:14px;margin-top:14px}.bench-card{padding:22px}.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:17px}.section-head h3{font-size:18px;letter-spacing:-.025em}.section-head p{margin-top:3px;color:var(--muted);font-size:12px}.section-count{color:var(--blue);font-size:12px;font-weight:780}
-  .todo-list{display:grid;gap:7px}.todo-item{display:grid;grid-template-columns:25px minmax(0,1fr) auto;align-items:start;gap:10px;padding:11px;border-radius:12px;background:var(--surface-2);border:1px solid transparent}.todo-item.next{border-color:var(--blue);background:var(--blue-soft)}.todo-check{width:22px;height:22px;border:1.5px solid var(--line-strong);border-radius:7px;background:var(--surface);display:grid;place-items:center;color:#fff;font-size:12px}.todo-check.done{border-color:var(--mint);background:var(--mint)}.todo-text{font-size:13.5px;font-weight:650;line-height:1.45}.todo-text.done{text-decoration:line-through;color:var(--muted)}.todo-origin{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:520}.todo-links{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.todo-source{padding:3px 7px;border-radius:7px;background:var(--surface);border:1px solid var(--line);color:var(--blue);font-size:10px;font-weight:720}.todo-source:hover,.todo-source:focus-visible{border-color:var(--blue);outline:0}
-  .next-banner{display:flex;align-items:center;gap:9px;margin-bottom:11px;padding:10px 12px;border-radius:11px;background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:730}.next-banner span:first-child{width:22px;height:22px;border-radius:7px;background:var(--blue);color:#fff;display:grid;place-items:center}
-  .source-list{display:grid;gap:8px}.source-item{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);transition:border-color .18s,background .18s,box-shadow .18s}.source-item.focused{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 14%,transparent)}.file-icon{width:38px;height:42px;border:1px solid var(--line);border-radius:9px;background:var(--surface);display:grid;place-items:center;font-size:18px}.source-name{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.source-meta{display:block;margin-top:2px;color:var(--muted);font-size:10px}.source-role{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:6px;background:var(--surface);color:var(--blue);font-size:9px;font-weight:760}.source-action{display:block;margin-top:3px;color:var(--ink-2);font-size:10px}.source-open{color:var(--blue);font-size:11px;font-weight:750}.answer-box{margin-top:10px;padding:12px;border-left:3px solid var(--blue);border-radius:0 10px 10px 0;background:var(--blue-soft);font-size:12.5px;color:var(--ink-2)}.answer-box[hidden]{display:none}.engine-mark{display:inline-flex;margin-top:6px;color:var(--muted);font-size:10px}
+  /* workbench — 승인된 v3 읽기 폭과 한 업무 흐름 */
+  .workbench-shell{width:min(860px,calc(100% - 48px));margin:0 auto;padding:28px 0 88px}.breadcrumb{display:flex;align-items:center;gap:7px;margin-bottom:14px;color:var(--muted);font-size:13px}.breadcrumb button{color:var(--blue);font-weight:680}.breadcrumb span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .work-context{padding:24px 26px}.work-context-top{display:flex;align-items:flex-start;justify-content:space-between;gap:22px}.work-context-copy{min-width:0}.bench-kicker{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.bench-title{margin-top:10px;font-size:clamp(28px,4.4vw,38px);letter-spacing:-.045em}.instruction{max-width:690px;margin-top:8px;color:var(--ink-2);font-size:14px;line-height:1.6}.due-state{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);white-space:nowrap}.due-state strong{color:var(--blue);font-size:12px}.due-state span{color:var(--muted);font-size:10px}
+  .bench-facts{display:grid;grid-template-columns:repeat(4,1fr);margin-top:20px;border-top:1px solid var(--line)}.fact{min-width:0;padding:14px 14px 0 0}.fact+.fact{padding-left:14px;border-left:1px solid var(--line)}.fact span{display:block;color:var(--muted);font-size:10px}.fact b{display:block;margin-top:3px;font-size:12px;font-weight:700;line-height:1.45}
+  .context-box{margin-top:12px;padding:13px 15px}.context-label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.context-label b{font-size:12px}.context-label span{font-size:10px;color:var(--muted)}
+  .context-form{display:flex;align-items:center;gap:8px;padding:5px 5px 5px 13px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2)}.context-form:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}.context-form input{width:100%;min-width:0;padding:8px 0;font-size:13px}.context-form button{flex:0 0 auto;padding:8px 13px;border-radius:9px;color:#fff;background:var(--blue);font-size:12px;font-weight:720}
+  .feedback{display:none;align-items:flex-start;justify-content:space-between;gap:16px;margin-top:9px;padding:10px 12px;border-radius:10px;background:var(--blue-soft);color:var(--ink-2);font-size:12px}.feedback.show{display:flex}.feedback strong{color:var(--ink-2)}.feedback-actions{display:flex;flex:0 0 auto;align-items:center;gap:11px}.undo-btn{color:var(--blue);font-weight:780;text-decoration:underline;text-underline-offset:3px}.relink-btn{color:var(--ink-2);font-weight:730;white-space:nowrap}
+  .workbench-stack{display:grid;gap:12px;margin-top:12px}.bench-card{padding:21px 23px}.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:15px}.section-head h3{font-size:17px;letter-spacing:-.025em}.section-head p{margin-top:3px;color:var(--muted);font-size:11px}.section-count{color:var(--blue);font-size:11px;font-weight:780}
+  .next-action{display:grid;grid-template-columns:34px minmax(0,1fr);gap:13px;align-items:start;padding:15px;border:1px solid color-mix(in srgb,var(--blue) 30%,var(--line));border-radius:13px;background:var(--blue-soft)}.next-action-mark{width:34px;height:34px;border-radius:10px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800}.next-action-label{display:block;color:var(--blue);font-size:10px;font-weight:800}.next-action strong{display:block;margin-top:3px;font-size:16px;line-height:1.45}.next-evidence{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.next-evidence:empty::after{content:"직접 연결된 근거가 아직 없습니다.";color:var(--muted);font-size:10px;font-weight:500}
+  .todo-list{display:grid;gap:7px}.todo-item{display:grid;grid-template-columns:25px minmax(0,1fr) auto;align-items:start;gap:10px;padding:11px;border:1px solid transparent;border-radius:11px;background:var(--surface-2)}.todo-item.next{border-color:color-mix(in srgb,var(--blue) 38%,var(--line));background:var(--blue-soft)}.todo-item.candidate{border-style:dashed;border-color:var(--line-strong);background:var(--surface)}.todo-check{width:22px;height:22px;border:1.5px solid var(--line-strong);border-radius:7px;background:var(--surface);display:grid;place-items:center;color:#fff;font-size:12px}.todo-check.done{border-color:var(--mint);background:var(--mint)}.candidate-mark{width:22px;height:22px;border-radius:7px;background:var(--amber-soft);color:var(--amber);display:grid;place-items:center;font-size:14px;font-weight:800}.todo-text{font-size:13px;font-weight:650;line-height:1.45}.todo-text.done{text-decoration:line-through;color:var(--muted)}.todo-origin{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:520}.todo-links{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.todo-source{padding:3px 7px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--blue);font-size:10px;font-weight:720}.todo-source:hover,.todo-source:focus-visible{border-color:var(--blue);outline:0}.candidate-actions{display:flex;align-items:center;gap:5px}.candidate-actions button{padding:5px 8px;border-radius:8px;font-size:10px;font-weight:760}.candidate-confirm{background:var(--blue);color:#fff}.candidate-delete{border:1px solid var(--line);color:var(--muted);background:var(--surface)}
+  .evidence-panel{margin-top:18px;padding-top:17px;border-top:1px solid var(--line)}.inline-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.inline-section-head h4{font-size:13px}.source-list{display:grid;gap:7px}.source-item{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2);transition:border-color .18s,box-shadow .18s}.source-item.focused{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 14%,transparent)}.file-icon{width:36px;height:40px;border:1px solid var(--line);border-radius:9px;background:var(--surface);display:grid;place-items:center;font-size:17px}.source-name{display:block;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.source-meta{display:block;margin-top:2px;color:var(--muted);font-size:9px}.source-role{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:6px;background:var(--surface);color:var(--blue);font-size:9px;font-weight:760}.source-action{display:block;margin-top:3px;color:var(--ink-2);font-size:10px}.source-open{color:var(--blue);font-size:10px;font-weight:750}.answer-box{margin-top:10px;padding:12px;border-left:3px solid var(--blue);border-radius:0 10px 10px 0;background:var(--blue-soft);font-size:12px;color:var(--ink-2)}.answer-box[hidden]{display:none}.engine-mark{display:inline-flex;margin-top:6px;color:var(--muted);font-size:10px}
   .timeline{position:relative;padding-left:19px}.timeline::before{content:"";position:absolute;left:5px;top:7px;bottom:8px;width:1px;background:var(--line-strong)}.note{position:relative;padding:0 0 15px}.note:last-child{padding-bottom:0}.note::before{content:"";position:absolute;left:-18px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--surface);border:2px solid var(--blue)}.note-top{display:flex;justify-content:space-between;gap:12px}.note-tag{color:var(--blue);font-size:10px;font-weight:800}.note-time{color:var(--muted);font-size:10px}.note p{margin-top:3px;color:var(--ink-2);font-size:12.5px}
-  .deliverable{padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--navy),#1d447a);color:#fff}.deliverable-top{display:flex;justify-content:space-between;gap:12px}.deliverable small{display:block;opacity:.68;font-size:10px}.deliverable h4{margin-top:5px;font-size:17px;line-height:1.4}.deliverable ul{margin:14px 0 0 18px;color:rgba(255,255,255,.77);font-size:12px}.deliverable li+li{margin-top:5px}.deliverable .btn{width:100%;margin-top:16px;background:#fff;color:#164d9b}.warning-strip{display:flex;gap:9px;margin-top:10px;padding:11px;border-radius:11px;background:var(--amber-soft);color:var(--amber);font-size:11.5px}
+  .deliverable{padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--surface-2);color:var(--ink)}.deliverable-top{display:flex;justify-content:space-between;gap:12px}.deliverable small{display:block;color:var(--muted);font-size:10px}.deliverable h4{margin-top:5px;font-size:16px;line-height:1.4}.deliverable ul{margin:13px 0 0 18px;color:var(--ink-2);font-size:12px}.deliverable li+li{margin-top:5px}.deliverable .btn{width:100%;margin-top:15px;background:var(--blue);color:#fff}.warning-strip{display:flex;gap:9px;margin-top:10px;padding:11px;border-radius:11px;background:var(--amber-soft);color:var(--amber);font-size:11.5px}
 
   /* draft focus */
   .draft-shell{width:min(1180px,calc(100% - 48px));margin:0 auto;padding:30px 0 90px}.draft-nav{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}.return-btn{display:flex;align-items:center;gap:7px;color:var(--blue);font-size:13px;font-weight:750}.draft-state{font-size:11px;color:var(--muted)}
@@ -156,14 +153,14 @@
     .hero-stage{min-height:calc(100vh - 24px);padding:82px 20px 52px}.float-object,.collage-check{display:none}
   }
   @media (max-width:960px){
-    .workbench-grid{grid-template-columns:1fr}.draft-layout{grid-template-columns:1fr}.draft-side{grid-template-columns:1fr 1fr}.work-row{grid-template-columns:70px minmax(0,1fr) 130px 36px}.bench-facts{grid-template-columns:1fr 1fr}.fact:nth-child(3){border-left:0;padding-left:0}.fact:nth-child(n+3){padding-top:15px;margin-top:15px;border-top:1px solid var(--line)}
+    .draft-layout{grid-template-columns:1fr}.draft-side{grid-template-columns:1fr 1fr}.work-row{grid-template-columns:70px minmax(0,1fr) 130px 36px}.bench-facts{grid-template-columns:1fr 1fr}.fact:nth-child(3){border-left:0;padding-left:0}.fact:nth-child(n+3){padding-top:12px;margin-top:12px;border-top:1px solid var(--line)}
   }
   @media (max-width:680px){
     .topbar{height:52px;padding:0 8px;grid-template-columns:auto 1fr auto;gap:5px}.brand{font-size:12px;gap:6px}.brand small{display:none}.brand-mark{width:25px;height:25px;border-radius:8px}.primary-nav{justify-self:center;padding:3px}.nav-btn{min-width:auto;padding:5px 9px;font-size:11px}.icon-btn{display:none}.top-actions{gap:0}.sample-badge{display:inline-flex;padding:4px 6px;font-size:0}.sample-badge::after{content:"샘플";font-size:9px}
-    .shell,.bench-shell,.draft-shell{width:calc(100% - 28px);padding-top:28px}.hero-stage{min-height:calc(100vh - 14px);margin:7px;padding:70px 13px 34px;border-radius:19px}.home-utilities{top:10px;right:10px}.logo-tile{width:72px;height:72px;margin-bottom:22px;border-radius:19px}.logo-tile .brand-mark{width:39px;height:39px}.hero-title{font-size:38px}.hero-promise{font-size:29px}.hero-lead{font-size:15px}.hero-search-wrap{margin-top:29px}.hero-search{gap:7px;padding-left:12px}.hero-search .search-icon{font-size:18px}.hero-search input{padding:11px 0;font-size:14px}.hero-search button{padding:10px 13px;font-size:13px}.home-work-link{margin-top:14px}.home-examples{width:calc(100% - 28px);padding:27px 0 56px}.example-list{grid-template-columns:1fr}.example-chip{border-radius:11px}
+    .shell,.workbench-shell,.draft-shell{width:calc(100% - 28px);padding-top:28px}.hero-stage{min-height:calc(100vh - 14px);margin:7px;padding:70px 13px 34px;border-radius:19px}.home-utilities{top:10px;right:10px}.logo-tile{width:72px;height:72px;margin-bottom:22px;border-radius:19px}.logo-tile .brand-mark{width:39px;height:39px}.hero-title{font-size:38px}.hero-promise{font-size:29px}.hero-lead{font-size:15px}.hero-search-wrap{margin-top:29px}.hero-search{gap:7px;padding-left:12px}.hero-search .search-icon{font-size:18px}.hero-search input{padding:11px 0;font-size:14px}.hero-search button{padding:10px 13px;font-size:13px}.home-work-link{margin-top:14px}.home-examples{width:calc(100% - 28px);padding:27px 0 56px}.example-list{grid-template-columns:1fr}.example-chip{border-radius:11px}
     .clarify-shell{padding-top:44px}.clarify-grid{grid-template-columns:1fr}.clarify-create{grid-column:auto;align-items:flex-start;flex-direction:column}
     .work-search{margin-bottom:20px}.work-search .search-icon{display:none}.work-search button[type="submit"]{padding:8px 11px}.page-head{align-items:flex-start;flex-direction:column}.page-head h1{font-size:38px}.work-summary{padding:10px 7px}.summary-card{display:block;flex:1;padding:0 7px;text-align:center}.summary-card strong,.summary-card span{display:block}.summary-card span{white-space:normal;font-size:9px;line-height:1.3}.work-row{grid-template-columns:55px minmax(0,1fr) 34px;padding:15px 14px;gap:11px}.date-block{padding:6px 3px}.date-block b{font-size:15px}.work-row>.progress{grid-column:2/-1}.work-instruction{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.calendar-panel{padding:11px;overflow:hidden}.calendar-grid{gap:3px}.calendar-day{min-height:73px;padding:5px;border-radius:8px}.cal-event{font-size:9px;padding:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.calendar-legend{display:none}
-    .bench-shell{padding-top:10px}.breadcrumb{margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bench-hero{padding:14px 15px}.bench-top{display:grid;grid-template-columns:minmax(0,1fr) 66px;gap:9px}.bench-kicker{gap:5px}.bench-kicker .pill{padding:3px 6px;font-size:9px}.bench-kicker .muted{display:none}.bench-title{font-size:25px;margin-top:7px}.instruction{margin-top:5px;font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.dday-box{width:66px;margin:0;padding:9px 5px;border-radius:13px}.dday-box b{font-size:20px}.bench-facts{grid-template-columns:1fr 1fr;margin-top:11px}.fact,.fact+.fact,.fact:nth-child(3),.fact:nth-child(n+3){padding:8px 7px 0 0;margin:0;border:0;border-top:1px solid var(--line)}.fact+.fact{padding-left:8px;border-left:1px solid var(--line)}.fact span{font-size:9px}.fact b{margin-top:2px;font-size:11px;line-height:1.35}.context-box{margin-top:9px;padding:10px}.context-label{margin-bottom:6px}.context-label span{display:none}.context-form{padding:4px 4px 4px 10px}.context-form input{padding:6px 0;font-size:12px}.context-form button{padding:7px 9px;font-size:11px}.workbench-grid{margin-top:9px}.bench-card{padding:15px}.feedback{align-items:flex-start;flex-direction:column}.feedback-actions{width:100%;justify-content:flex-end}.source-item{grid-template-columns:34px minmax(0,1fr) auto}.file-icon{width:34px;height:38px}.todo-item{grid-template-columns:23px minmax(0,1fr)}.todo-item>.pill{grid-column:2}
+    .workbench-shell{padding-top:10px}.breadcrumb{margin-bottom:7px}.work-context{padding:12px 13px}.work-context-top{display:block}.bench-kicker{gap:5px}.bench-kicker .pill{padding:3px 6px;font-size:9px}.bench-kicker .muted{display:none}.bench-title{font-size:24px;margin-top:6px;line-height:1.2}.instruction{margin-top:4px;font-size:11px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.due-state{margin-top:7px;padding:4px 7px}.due-state strong{font-size:10px}.due-state span{font-size:9px}.bench-facts{grid-template-columns:1fr 1fr;margin-top:8px}.fact,.fact+.fact,.fact:nth-child(3),.fact:nth-child(n+3){padding:6px 6px 0 0;margin:0;border:0;border-top:1px solid var(--line)}.fact+.fact{padding-left:7px;border-left:1px solid var(--line)}.fact span{font-size:8px}.fact b{margin-top:1px;font-size:10px;line-height:1.3}.context-box{margin-top:8px;padding:9px}.context-label{margin-bottom:5px}.context-label span{display:none}.context-form{padding:3px 3px 3px 9px}.context-form input{padding:6px 0;font-size:11px}.context-form button{padding:7px 9px;font-size:10px}.workbench-stack{gap:8px;margin-top:8px}.bench-card{padding:13px}.section-head{margin-bottom:8px}.section-head h3{font-size:15px}.section-head p{display:none}.next-action{grid-template-columns:29px minmax(0,1fr);gap:10px;padding:10px}.next-action-mark{width:29px;height:29px;border-radius:9px}.next-action strong{font-size:13px;line-height:1.35}.next-evidence{margin-top:6px}.feedback{align-items:center;flex-direction:row;padding:8px 9px}.feedback-actions{width:auto;margin-left:auto;justify-content:flex-end}.evidence-panel{margin-top:12px;padding-top:10px}.inline-section-head{margin-bottom:7px}.source-list{gap:5px}.source-item{grid-template-columns:minmax(0,1fr) auto;padding:5px 7px}.file-icon{display:none}.source-meta,.source-action{display:none}.source-role{margin-top:2px}.todo-item{grid-template-columns:23px minmax(0,1fr)}.todo-item>.pill,.todo-item>.candidate-actions{grid-column:2}.candidate-actions{justify-content:flex-start}.deliverable{padding:13px}
     .draft-nav,.draft-head{align-items:flex-start;flex-direction:column}.draft-actions{width:100%}.draft-actions .btn{flex:1}.paper{padding:28px 20px;min-height:auto}.paper-title{font-size:20px}.draft-side{grid-template-columns:1fr}.doc-table th,.doc-table td{padding:7px;font-size:10px}
     .open-ui{right:12px;bottom:12px}.open-btn{padding:8px 12px;font-size:12px}
   }
@@ -309,16 +306,16 @@
 </main>
 
 <main class="view" id="view-workbench" inert aria-hidden="true">
-  <div class="bench-shell">
-    <div class="breadcrumb"><button type="button" onclick="openMyWork('list')">내 업무</button><span>›</span><span id="breadcrumbTitle">업무 작업대</span></div>
-    <section class="bench-hero card">
-      <div class="bench-top">
-        <div>
+  <div class="bench-shell product-shell workbench-shell">
+    <nav class="breadcrumb" aria-label="업무 위치"><button id="backToWork" type="button" onclick="openMyWork('list')">내 업무</button><span aria-hidden="true">›</span><span id="workTitleCrumb">업무 작업대</span></nav>
+    <header class="work-context card" id="workContext">
+      <div class="work-context-top">
+        <div class="work-context-copy">
           <div class="bench-kicker"><span class="pill gray bench-label">업무 작업대</span><span class="pill green" id="benchStatus">진행 중</span><span class="pill blue" id="benchRepeat">반복 업무</span><span class="muted" id="benchRequester"></span></div>
           <h1 class="bench-title" id="benchTitle" tabindex="-1">업무 작업대</h1>
           <p class="instruction" id="benchInstruction"></p>
         </div>
-        <div class="dday-box"><b id="benchDday">D-3</b><span id="benchDue">4월 9일 마감</span></div>
+        <div class="due-state" aria-label="업무 기한"><strong id="benchDday">D-3</strong><span id="benchDue">4월 9일 마감</span></div>
       </div>
       <div class="bench-facts">
         <div class="fact"><span>지시자</span><b id="factRequester"></b></div>
@@ -326,7 +323,7 @@
         <div class="fact"><span>현재 단계</span><b id="factStage"></b></div>
         <div class="fact"><span>진행률</span><b id="factProgress"></b></div>
       </div>
-    </section>
+    </header>
 
     <section class="context-box card">
       <div class="context-label"><b>이 업무에 이어서 말하기</b><span>업무는 이미 고정되어 있습니다 · 질문, 메모, 할 일, 기안 요청을 그대로 입력하세요.</span></div>
@@ -335,26 +332,29 @@
         <input id="contextInput" autocomplete="off" placeholder="예: 운영부에 정지 가능 기간 확인해야 함">
         <button type="submit">반영하기</button>
       </form>
-      <div class="feedback" id="workFeedback" role="status"><span id="feedbackText"></span><span class="feedback-actions"><button class="relink-btn" id="relinkButton" type="button" onclick="relinkLastInput()" hidden>대상 변경</button><button class="undo-btn" id="undoButton" type="button" onclick="undoLastAction()">되돌리기</button></span></div>
+      <div class="feedback" id="workFeedback" role="status" tabindex="-1"><span id="feedbackText"></span><span class="feedback-actions"><button class="relink-btn" id="relinkButton" type="button" onclick="relinkLastInput()" hidden>대상 변경</button><button class="undo-btn" id="undoButton" type="button" onclick="undoLastAction()">되돌리기</button></span></div>
     </section>
 
-    <div class="workbench-grid">
+    <div class="workbench-stack">
       <section class="bench-card card" id="nextActionPanel">
-        <header class="section-head"><div><h3>지금 할 일</h3><p>다음 행동부터, 완료 조건까지</p></div><span class="section-count" id="todoCount"></span></header>
-        <div class="next-banner"><span>→</span><span id="nextAction"></span></div>
+        <header class="section-head"><div><h3>지금 할 일</h3><p>이 행동과 바로 필요한 근거부터 봅니다.</p></div><span class="section-count">다음 행동 1건</span></header>
+        <div class="next-action"><span class="next-action-mark" aria-hidden="true">→</span><div><span class="next-action-label">가장 먼저</span><strong id="nextAction"></strong><div class="next-evidence" id="nextEvidenceLinks"></div></div></div>
+        <div class="evidence-panel" id="evidencePanel">
+          <div class="inline-section-head"><h4>이 업무에 연결된 자료</h4><span class="section-count" id="sourceCount"></span></div>
+          <div class="source-list" id="sourceList"></div>
+          <div class="sr-only" id="sourceLinkStatus" role="status" aria-live="polite"></div>
+          <div class="answer-box" id="workAnswer" role="status" aria-live="polite" hidden></div>
+        </div>
+      </section>
+      <section class="bench-card card" id="todoPanel">
+        <header class="section-head"><div><h3>전체 체크리스트</h3><p>후보는 반영하기 전까지 진행률에 들어가지 않습니다.</p></div><span class="section-count" id="todoCount"></span></header>
         <div class="todo-list" id="todoList"></div>
       </section>
-      <section class="bench-card card" id="evidencePanel">
-        <header class="section-head"><div><h3>함께 볼 자료</h3><p>찾는 시간을 줄이는 근거 묶음</p></div><span class="section-count" id="sourceCount"></span></header>
-        <div class="source-list" id="sourceList"></div>
-        <div class="sr-only" id="sourceLinkStatus" role="status" aria-live="polite"></div>
-        <div class="answer-box" id="workAnswer" hidden></div>
-      </section>
-      <section class="bench-card card">
+      <section class="bench-card card" id="activityPanel">
         <header class="section-head"><div><h3>진행 기록</h3><p>메모, 결정, 협업 내용이 시간순으로 남습니다.</p></div><span class="section-count" id="noteCount"></span></header>
         <div class="timeline" id="activityList"></div>
       </section>
-      <section class="bench-card card">
+      <section class="bench-card card" id="deliverablePanel">
         <header class="section-head"><div><h3>만들어야 할 결과물</h3><p>자료와 기록을 그대로 이어서 완성합니다.</p></div><span class="pill amber">제출 전 점검 1건</span></header>
         <div id="deliverableBox"></div>
       </section>
@@ -453,14 +453,18 @@
   function createInitialState(){return {version:1,works:cloneSeed(),selectedWorkId:'pump-2026',lastVisitedWorkId:null,workMode:'list',workFilter:'all'};}
   function isString(value){return typeof value==='string';}
   function isSafeId(value){return isString(value)&&/^[a-z0-9][a-z0-9._-]*$/i.test(value);}
+  let recordSequence=0;
+  function createRecordId(prefix='item'){recordSequence+=1;return `${prefix}-${Date.now().toString(36)}-${recordSequence.toString(36)}`;}
   function isValidStoredWork(work){
     const textFields=['title','shortTitle','status','repeat','requester','instruction','dueLabel','dday','stage','complete','nextAction','draftText','answer'];
     const validTodos=Array.isArray(work&&work.todos)&&work.todos.every((todo)=>todo&&isString(todo.text)&&typeof todo.done==='boolean'&&
+      (todo.id===undefined||isSafeId(todo.id))&&
       (todo.next===undefined||typeof todo.next==='boolean')&&(todo.candidate===undefined||typeof todo.candidate==='boolean')&&
       isString(todo.origin)&&Array.isArray(todo.sourceIds)&&todo.sourceIds.every(isSafeId));
     const validSources=Array.isArray(work&&work.sources)&&work.sources.every((source)=>source&&isSafeId(source.id)&&
       ['icon','name','meta','type','role','action'].every((field)=>isString(source[field])));
     const validNotes=Array.isArray(work&&work.notes)&&work.notes.every((note)=>note&&['tag','time','text'].every((field)=>isString(note[field]))&&
+      (note.id===undefined||isSafeId(note.id))&&
       (note.sequence===undefined||(Number.isSafeInteger(note.sequence)&&note.sequence>0)));
     const validDeliverable=work&&work.deliverable&&isString(work.deliverable.title)&&Array.isArray(work.deliverable.items)&&work.deliverable.items.every(isString);
     const validDraft=work&&work.draft&&isString(work.draft.background)&&Array.isArray(work.draft.details)&&work.draft.details.every(isString)&&
@@ -489,7 +493,10 @@
     appState.workMode=['list','calendar'].includes(appState.workMode)?appState.workMode:'list';
     appState.workFilter=['all','repeat'].includes(appState.workFilter)?appState.workFilter:'all';
     workMode=appState.workMode;
-    WORK_ITEMS.forEach(syncNextAction);
+    WORK_ITEMS.forEach((work)=>{
+      work.todos.forEach((todo)=>{if(!isSafeId(todo.id))todo.id=createRecordId('todo');if(todo.candidate)todo.done=false});
+      syncNextAction(work);
+    });
   }
 
   function loadState(){
@@ -534,6 +541,7 @@
 
   function resetSample(){
     if(typeof confirm==='function'&&!confirm('저장된 변경을 지우고 샘플 초기값으로 복원할까요?'))return false;
+    engineSeq++;
     applyState(createInitialState());
     lastAction=null;lastInputConnection=null;pendingRelinkAction=null;
     saveState();renderMyWork();renderHomeObjects();navigate('#work/list',{replace:true});
@@ -661,7 +669,7 @@
     const id=object.dataset.homeWorkId,sourceId=object.dataset.sourceId;
     if(!id){openMyWork('list');return;}
     openWorkbench(id);
-    if(sourceId)requestAnimationFrame(()=>focusSource(sourceId));
+    if(sourceId)setTimeout(()=>focusSource(sourceId),60);
   }
 
   function renderWorkSummary(){
@@ -780,20 +788,23 @@
     return null;
   }
 
-  function routeInput(text,context){
+  function routeInput(text,context='home'){
     const clean=String(text||'').trim();
-    const targetId=context==='workbench' ? selectedWorkId : detectTarget(clean);
+    const normalizedContext=context==='workbench'?'workbench':'home';
+    const targetId=normalizedContext==='workbench' ? selectedWorkId : detectTarget(clean);
     let intent='ambiguous';
-    if(/이번 ?주|내 업무|뭐 ?해야|할 ?일 전체/.test(clean) && context==='home' && !targetId) intent='overview';
-    else if(/[?？]$|어디|찾아|알려|보여|무엇|뭐가|어떤/.test(clean)) intent='question';
-    else if(context==='home' && /팀장|부장|지시|올리래|하라고/.test(clean)) intent='instruction';
+    const explicitDraft=/(?:초안|기안|보고서).*(?:써\s*줘|작성해\s*줘|만들어\s*줘|작성해\s*주세요|만들어\s*주세요|작성\s*부탁|만들어\s*주세요)/.test(clean)&&!/(?:해야|하기|할\s*것)/.test(clean);
+    if(normalizedContext==='home'&&!targetId&&/(?:내 업무|이번 ?주.*(?:할 ?일|해야)|이번 ?주 내가 해야 할 일)/.test(clean)) intent='overview';
+    else if(/[?？]$|찾아|어디|알려|보여|무엇|뭐가|어떤/.test(clean)) intent='question';
+    else if(normalizedContext==='home' && /팀장|부장|지시|올리래|하라고/.test(clean)) intent='instruction';
     else if(/확정|결정|변경|합의|메모|기록|도착|회신/.test(clean)) intent='note';
-    else if(/기안|초안|보고서 써|작성해/.test(clean)) intent='draft';
+    else if(explicitDraft) intent='draft';
     else if(/해야|확인|요청|챙겨|할 것|하기|까지/.test(clean)) intent='todo';
-    return {text:clean,intent,targetId,context};
+    return {text:clean,intent,targetId,context:normalizedContext};
   }
 
   function submitHomeInput(){
+    engineSeq++;
     const text=$('homeInput').value.trim();
     if(!text){$('homeInput').focus();return;}
     const result=routeInput(text,'home');
@@ -836,16 +847,18 @@
 
   function chooseIntent(intent){
     if(!pendingIntentResult)return;
+    engineSeq++;
     const result={...pendingIntentResult,intent};pendingIntentResult=null;
     if(result.context==='workbench'){
       const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}
-      const summary=applyResult(work,result);saveState();renderWorkbench();showView('workbench');showFeedback(`${work.title}에 ${summary}`,true,false);
+      const summary=applyInput(result,work);saveState();renderWorkbench(work);showView('workbench');showFeedback(`${work.shortTitle} 업무에 ${summary}`,true,false);
       if(intent==='question')askEngine(result.text,work);
     }else if(result.targetId)applyHomeResult(result,result.targetId);
     else{pendingHomeResult=result;showClarification(result.text)}
   }
 
   function cancelClarification(){
+    engineSeq++;
     if(clarificationMode==='intent'&&pendingIntentResult&&pendingIntentResult.context==='workbench')openWorkbench(selectedWorkId);
     else if(pendingRelinkAction&&lastInputConnection)openWorkbench(lastInputConnection.workId);
     else showView('home');
@@ -860,17 +873,19 @@
       return;
     }
     if(!WORK_ITEMS.some((work)=>work.id===id)){pendingRelinkAction=null;showClarification(pendingHomeText);return;}
+    engineSeq++;
     const result={...(pendingHomeResult||routeInput(pendingHomeText,'home')),targetId:id};
     if(pendingRelinkAction){rollbackAction(pendingRelinkAction);pendingRelinkAction=null;}
     applyHomeResult(result,id);
   }
 
   function createWorkFromPending(){
+    engineSeq++;
     const title=(pendingHomeText||'새 업무').replace(/[.?？!]/g,'').slice(0,36);
     const id=`new-${Date.now()}`;
     if(pendingRelinkAction){rollbackAction(pendingRelinkAction);pendingRelinkAction=null;}
     const previousSelectedId=selectedWorkId;
-    WORK_ITEMS.push({id,title,shortTitle:title,status:'새 업무',repeat:'신규',requester:'입력에서 확인 필요',instruction:`“${pendingHomeText}”`,due:null,dueLabel:'기한 확인 필요',dday:'기한 미정',stage:'지시 확인',complete:'완료 조건 확인 필요',nextAction:'지시자와 기한·완료 결과물을 확인하세요.',todos:[{text:'기한과 완료 결과물 확인',done:false,next:true,origin:'새 업무 생성',sourceIds:[]}],sources:[],notes:[{tag:'지시',time:'방금',text:pendingHomeText,sequence:getNextNoteSequence()}],deliverable:{title:'결과물 미정',items:['지시자에게 완료 조건 확인']},draft:{background:'새 업무의 추진 배경을 확인해 반영합니다.',details:['기한과 완료 결과물 확인','협조 부서와 필요한 근거 확인'],table:[['기한','확인 필요'],['산출물','확인 필요']],warning:'지시자에게 기한과 완료 조건을 확인하세요.',checks:['기한과 완료 조건 확인 필요']},draftText:'',answer:''});
+    WORK_ITEMS.push({id,title,shortTitle:title,status:'새 업무',repeat:'신규',requester:'입력에서 확인 필요',instruction:`“${pendingHomeText}”`,due:null,dueLabel:'기한 확인 필요',dday:'기한 미정',stage:'지시 확인',complete:'완료 조건 확인 필요',nextAction:'지시자와 기한·완료 결과물을 확인하세요.',todos:[{id:createRecordId('todo'),text:'기한과 완료 결과물 확인',done:false,next:true,origin:'새 업무 생성',sourceIds:[]}],sources:[],notes:[{id:createRecordId('note'),tag:'지시',time:'방금',text:pendingHomeText,sequence:getNextNoteSequence()}],deliverable:{title:'결과물 미정',items:['지시자에게 완료 조건 확인']},draft:{background:'새 업무의 추진 배경을 확인해 반영합니다.',details:['기한과 완료 결과물 확인','협조 부서와 필요한 근거 확인'],table:[['기한','확인 필요'],['산출물','확인 필요']],warning:'지시자에게 기한과 완료 조건을 확인하세요.',checks:['기한과 완료 조건 확인 필요']},draftText:'',answer:''});
     selectWork(id);lastAction={type:'createWork',workId:id,previousSelectedId};lastInputConnection={text:pendingHomeText,result:{...routeInput(pendingHomeText,'home'),intent:'instruction'},workId:id,action:lastAction};
     renderWorkList();renderWorkCalendar();openWorkbench(id,`“${pendingHomeText}” → ${title} 업무를 새로 만들었습니다. 미완료 할 일 1개와 자료 0건을 준비했습니다.`,true,true);
   }
@@ -879,37 +894,40 @@
     const work=selectWork(id);
     if(!work){renderNotFound(id);return;}
     lastAction=null;
+    let summary='';
     if(result.intent==='instruction'){
-      const previous=work.instruction;work.instruction=`“${result.text}”`;lastAction={type:'instruction',workId:id,previous};
+      const previous=work.instruction;work.instruction=`“${result.text}”`;lastAction={type:'instruction',workId:id,previous};summary='전달 지시를 갱신했습니다.';
     }else if(result.intent==='draft'){
       lastInputConnection={text:result.text,result:{...result},workId:id,action:null};
       $('homeInput').value='';
+      navigate(`#workbench/${id}`,{open:false});
       openDraft(id);
       $('draftNotice').textContent=`“${result.text}” → ${work.shortTitle} 업무의 기안 화면을 열었습니다.`;
       $('draftNotice').classList.add('show');
       return;
     }else{
-      applyResult(work,result);
-      if(result.intent==='question') askEngine(result.text,work);
+      summary=applyInput(result,work);
     }
     const progress=getProgress(work);
-    const message=`“${result.text}” → ${work.shortTitle} 업무에 연결했습니다. 미완료 할 일 ${progress.total-progress.done}개와 자료 ${work.sources.length}건을 준비했습니다.`;
+    const prepared=result.intent==='instruction'?` 미완료 할 일 ${progress.total-progress.done}개와 자료 ${work.sources.length}건을 준비했습니다.`:'';
+    const message=`“${result.text}” → ${work.shortTitle} 업무에 ${summary}${prepared}`;
     lastInputConnection={text:result.text,result:{...result},workId:id,action:lastAction};
     openWorkbench(id,message,Boolean(lastAction),true);
+    if(result.intent==='question')askEngine(result.text,work);
     $('homeInput').value='';
   }
 
-  function applyResult(work,result){
+  function applyInput(result,work){
     if(result.intent==='todo'){
-      const item={text:result.text,done:false,candidate:true,origin:'방금 입력 · 할 일 후보',sourceIds:[]};work.todos.unshift(item);lastAction={type:'todo',workId:work.id,index:0};return '입력한 내용을 할 일 후보로 추가했습니다.';
+      const item={id:createRecordId('todo'),text:result.text,done:false,candidate:true,origin:'방금 입력 · 할 일 후보',sourceIds:[]};work.todos.unshift(item);lastAction={type:'todoAdd',workId:work.id,todoId:item.id};return `할 일 후보 “${result.text}”를 추가했습니다.`;
     }
     if(result.intent==='note'){
-      const item={tag:/확정|결정|합의/.test(result.text)?'결정':'메모',time:'방금 · 4월 6일',text:result.text,sequence:getNextNoteSequence()};work.notes.unshift(item);lastAction={type:'note',workId:work.id,index:0};return `${item.tag}으로 진행 기록에 추가했어요.`;
+      const item={id:createRecordId('note'),tag:/확정|결정|합의/.test(result.text)?'결정':'메모',time:'방금 · 4월 6일',text:result.text,sequence:getNextNoteSequence()};work.notes.unshift(item);lastAction={type:'noteAdd',workId:work.id,noteId:item.id};return item.tag==='결정'?'결정 기록을 추가했습니다.':'진행 메모를 추가했습니다.';
     }
     if(result.intent==='question'){
-      const previous=work.answer;work.answer=mockAnswer(work,result.text);lastAction={type:'answer',workId:work.id,previous};return '관련 자료를 찾아 근거 답변을 표시했습니다.';
+      const previous=work.answer;work.answer=mockAnswer(work,result.text);lastAction={type:'answer',workId:work.id,previous};return '자료 답변을 표시했습니다.';
     }
-    return '입력을 이 업무의 진행 기록에 연결했습니다.';
+    return '입력을 진행 기록에 연결했습니다.';
   }
 
   function mockAnswer(work,question){
@@ -919,6 +937,7 @@
   }
 
   function openWorkbench(id,feedback,canUndo,canRelink){
+    engineSeq++;
     const targetId=id===undefined?selectedWorkId:id;
     const work=selectWork(targetId);
     if(!work){
@@ -933,22 +952,30 @@
     return true;
   }
 
-  function renderWorkbench(){
-    const work=getSelectedWork();
+  function renderWorkAnswer(work){
+    $('workAnswer').hidden=!work.answer;
+    $('workAnswer').innerHTML=work.answer?`<strong>근거 답변</strong><br>${escapeHtml(work.answer)}<br><span class="engine-mark">샘플 근거 · 실제 연결 시 /api/ask 응답으로 대체</span>`:'';
+  }
+
+  function renderWorkbench(work=getSelectedWork()){
     if(!work){renderNotFound(selectedWorkId);return;}
-    $('breadcrumbTitle').textContent=work.shortTitle;$('benchTitle').textContent=work.title;$('benchStatus').textContent=work.status;$('benchRepeat').textContent=work.repeat;
+    $('workTitleCrumb').textContent=work.shortTitle;$('benchTitle').textContent=work.title;$('benchStatus').textContent=work.status;$('benchRepeat').textContent=work.repeat;
     $('benchRequester').textContent=`${work.requester} 지시`;$('benchInstruction').textContent=work.instruction;$('benchDday').textContent=work.dday;$('benchDue').textContent=work.dueLabel;
     const progress=getProgress(work);
     $('factRequester').textContent=work.requester;$('factComplete').textContent=work.complete;$('factStage').textContent=work.stage;$('factProgress').textContent=`${progress.done}/${progress.total} 완료 · ${progress.percent}%`;
+    const nextTodo=syncNextAction(work);
     $('nextAction').textContent=work.nextAction;
-    const openCount=work.todos.filter((todo)=>!todo.done).length;$('todoCount').textContent=`미완료 ${openCount}개`;
+    const nextSources=nextTodo?(nextTodo.sourceIds||[]).map((sourceId)=>work.sources.find((source)=>source.id===sourceId)).filter(Boolean):[];
+    $('nextEvidenceLinks').innerHTML=nextSources.map((source)=>`<button class="todo-source" type="button" onclick="focusSource('${escapeHtml(source.id)}')" aria-label="${escapeHtml(nextTodo.text)}의 근거, ${escapeHtml(source.name)} 보기">근거 · ${escapeHtml(source.role)}</button>`).join('');
+    const openCount=progress.total-progress.done;$('todoCount').textContent=`미완료 ${openCount}개`;
     $('todoList').innerHTML=work.todos.map((todo,index)=>{
-      const links=(todo.sourceIds||[]).map((sourceId)=>{const source=work.sources.find((item)=>item.id===sourceId);return source?`<button class="todo-source" type="button" onclick="focusSource('${escapeHtml(source.id)}')">근거 · ${escapeHtml(source.role)}</button>`:''}).join('');
-      return `<div class="todo-item${todo.next?' next':''}"><button class="todo-check${todo.done?' done':''}" type="button" onclick="toggleTodo(${index})" aria-label="${todo.done?'미완료로 변경':'완료 처리'}: ${escapeHtml(todo.text)}">${todo.done?'✓':''}</button><div class="todo-text${todo.done?' done':''}">${escapeHtml(todo.text)}<span class="todo-origin">${escapeHtml(todo.origin||'')}</span>${links?`<span class="todo-links">${links}</span>`:''}</div>${todo.candidate?'<span class="pill amber">할 일 후보</span>':''}</div>`}).join('');
+      const links=(todo.sourceIds||[]).map((sourceId)=>{const source=work.sources.find((item)=>item.id===sourceId);return source?`<button class="todo-source" type="button" onclick="focusSource('${escapeHtml(source.id)}')" aria-label="${escapeHtml(todo.text)}의 근거, ${escapeHtml(source.name)} 보기">근거 · ${escapeHtml(source.role)}</button>`:''}).join('');
+      if(todo.candidate)return `<div class="todo-item candidate" data-todo-id="${escapeHtml(todo.id)}"><span class="candidate-mark" aria-hidden="true">＋</span><div class="todo-text">${escapeHtml(todo.text)}<span class="todo-origin">${escapeHtml(todo.origin||'')}</span></div><span class="candidate-actions"><button class="candidate-confirm" type="button" onclick="confirmTodo('${escapeHtml(todo.id)}')" aria-label="할 일 후보 반영: ${escapeHtml(todo.text)}">반영</button><button class="candidate-delete" type="button" onclick="deleteTodoCandidate('${escapeHtml(todo.id)}')" aria-label="할 일 후보 삭제: ${escapeHtml(todo.text)}">삭제</button></span></div>`;
+      return `<div class="todo-item${todo.next?' next':''}"${todo.id?` data-todo-id="${escapeHtml(todo.id)}"`:''}><button class="todo-check${todo.done?' done':''}" type="button" onclick="toggleTodo(${index})" aria-label="${todo.done?'미완료로 변경':'완료 처리'}: ${escapeHtml(todo.text)}">${todo.done?'✓':''}</button><div class="todo-text${todo.done?' done':''}">${escapeHtml(todo.text)}<span class="todo-origin">${escapeHtml(todo.origin||'')}</span>${links?`<span class="todo-links">${links}</span>`:''}</div>${todo.next?'<span class="pill blue">다음</span>':''}</div>`}).join('');
     $('sourceCount').textContent=`근거 ${work.sources.length}건`;
     $('sourceList').innerHTML=work.sources.length?work.sources.map((source)=>`<div class="source-item" data-source-id="${escapeHtml(source.id)}" tabindex="-1" role="group" aria-label="${escapeHtml(source.name)}. ${escapeHtml(source.role)}. ${escapeHtml(source.action)}"><span class="file-icon">${escapeHtml(source.icon)}</span><span><span class="source-name">${escapeHtml(source.name)}</span><span class="source-meta">${escapeHtml(source.meta)}</span><span class="source-role">${escapeHtml(source.role)}</span><span class="source-action">${escapeHtml(source.action)}</span></span><button class="source-open" type="button" aria-label="${escapeHtml(source.name)} 원문 열기" onclick="showSourceMock(${escapeHtml(JSON.stringify(source.type))})">원문</button></div>`).join(''):'<div class="muted">연결된 자료가 없습니다.</div>';
     $('sourceLinkStatus').textContent='';
-    $('workAnswer').hidden=!work.answer;$('workAnswer').innerHTML=work.answer?`<strong>근거 답변</strong><br>${escapeHtml(work.answer)}<br><span class="engine-mark">샘플 근거 · 실제 연결 시 /api/ask 응답으로 대체</span>`:'';
+    renderWorkAnswer(work);
     $('noteCount').textContent=`기록 ${work.notes.length}건`;
     $('activityList').innerHTML=work.notes.map((note)=>`<div class="note activity-item"><div class="note-top"><span class="note-tag">${escapeHtml(note.tag)}</span><span class="note-time">${escapeHtml(note.time)}</span></div><p>${escapeHtml(note.text)}</p></div>`).join('');
     $('deliverableBox').innerHTML=`<div class="deliverable"><div class="deliverable-top"><div><small>최종 산출물</small><h4>${escapeHtml(work.deliverable.title)}</h4></div><span>📄</span></div><ul>${work.deliverable.items.map((item)=>`<li>${escapeHtml(item)}</li>`).join('')}</ul><button class="btn" id="draftStart" type="button" onclick="openDraft()">작년 양식으로 기안 시작 →</button></div><div class="warning-strip"><span>⚠</span><span>${escapeHtml(work.draft.warning)}</span></div>`;
@@ -962,25 +989,52 @@
   }
 
   function toggleTodo(index){
-    const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}const todo=work.todos[index];if(!todo)return;const previous=todo.done;const previousNext=work.todos.findIndex((item)=>item.next);const previousNextAction=work.nextAction;todo.done=!todo.done;syncNextAction(work);lastAction={type:'toggleTodo',workId:work.id,index,previous,previousNext,previousNextAction};saveState();renderWorkbench();showFeedback(`${work.title}에서 “${todo.text}”을(를) ${todo.done?'완료':'미완료'}로 바꿨습니다.`,true);
+    engineSeq++;
+    const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}
+    const todo=work.todos[index];if(!todo||todo.candidate)return;
+    const previous=todo.done;const previousNextTodo=work.todos.find((item)=>item.next)||null;const previousNextAction=work.nextAction;
+    todo.done=!todo.done;syncNextAction(work);lastAction={type:'toggleTodo',workId:work.id,todoId:todo.id,previous,previousNextTodoId:previousNextTodo?previousNextTodo.id:null,previousNextAction};
+    saveState();renderWorkbench(work);showFeedback(`${work.shortTitle} 업무에서 “${todo.text}”을(를) ${todo.done?'완료':'미완료'}로 바꿨습니다.`,true,false,true);
+  }
+
+  function confirmTodo(todoId){
+    engineSeq++;
+    const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}
+    const todo=work.todos.find((item)=>item.id===todoId);if(!todo||!todo.candidate)return;
+    const previousOrigin=todo.origin;todo.candidate=false;todo.origin='방금 입력 · 체크리스트 반영';syncNextAction(work);
+    lastAction={type:'todoConfirm',workId:work.id,todoId:todo.id,previousOrigin};
+    saveState();renderWorkbench(work);showFeedback(`${work.shortTitle} 업무의 “${todo.text}”을(를) 정식 체크리스트에 반영했습니다.`,true,false,true);
+  }
+
+  function deleteTodoCandidate(todoId){
+    engineSeq++;
+    const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}
+    const todoIndex=work.todos.findIndex((item)=>item.id===todoId&&item.candidate);if(todoIndex<0)return;
+    const todo=work.todos[todoIndex];const nextTodo=work.todos[todoIndex+1]||null;
+    lastAction={type:'todoDelete',workId:work.id,todoId:todo.id,todoSnapshot:JSON.parse(JSON.stringify(todo)),beforeTodoId:nextTodo?nextTodo.id:null};
+    work.todos.splice(todoIndex,1);syncNextAction(work);saveState();renderWorkbench(work);
+    showFeedback(`${work.shortTitle} 업무에서 할 일 후보 “${todo.text}”을(를) 삭제했습니다.`,true,false,true);
   }
 
   async function submitContextInput(){
+    engineSeq++;
     const input=$('contextInput');const text=input.value.trim();if(!text){input.focus();return;}
     const work=getSelectedWork();if(!work){renderNotFound(selectedWorkId);return;}const result=routeInput(text,'workbench');
     if(result.intent==='ambiguous'){input.value='';showIntentClarification(result);return;}
-    if(result.intent==='draft'){input.value='';showFeedback(`${work.title}에서 기안 집중 화면을 엽니다.`,false);setTimeout(openDraft,220);return;}
-    const summary=applyResult(work,result);input.value='';saveState();renderWorkbench();showFeedback(`${work.title}에 ${summary}`,true,false);
+    if(result.intent==='draft'){input.value='';showFeedback(`${work.shortTitle} 업무의 기안 집중 화면을 엽니다.`,false,false);setTimeout(openDraft,220);return;}
+    const summary=applyInput(result,work);input.value='';saveState();renderWorkbench(work);showFeedback(`${work.shortTitle} 업무에 ${summary}`,true,false);
     if(result.intent==='question') await askEngine(text,work);
   }
 
-  function showFeedback(message,canUndo,canRelink){
+  function showFeedback(message,canUndo,canRelink,shouldFocus=false){
     $('feedbackText').innerHTML=`<strong>${escapeHtml(message)}</strong>`;$('undoButton').hidden=!canUndo;$('relinkButton').hidden=!canRelink;$('workFeedback').classList.add('show');
+    if(shouldFocus)$('workFeedback').focus({preventScroll:true});
   }
   function hideFeedback(){$('workFeedback').classList.remove('show')}
 
   function relinkLastInput(){
     if(!lastInputConnection)return;
+    engineSeq++;
     pendingHomeText=lastInputConnection.text;pendingHomeResult={...lastInputConnection.result,targetId:null};pendingRelinkAction=lastInputConnection.action;
     showClarification(pendingHomeText);
   }
@@ -994,13 +1048,26 @@
       return null;
     }
     const work=WORK_ITEMS.find((item)=>item.id===action.workId);if(!work)return null;
-    if(action.type==='todo')work.todos.splice(action.index,1);
-    else if(action.type==='note')work.notes.splice(action.index,1);
+    if(action.type==='todoAdd'){
+      const todoIndex=work.todos.findIndex((todo)=>todo.id===action.todoId);if(todoIndex>=0)work.todos.splice(todoIndex,1);syncNextAction(work);
+    }
+    else if(action.type==='todoConfirm'){
+      const todo=work.todos.find((item)=>item.id===action.todoId);if(todo){todo.candidate=true;todo.origin=action.previousOrigin;todo.done=false;syncNextAction(work)}
+    }
+    else if(action.type==='todoDelete'){
+      if(!work.todos.some((todo)=>todo.id===action.todoId)){
+        const beforeIndex=action.beforeTodoId?work.todos.findIndex((todo)=>todo.id===action.beforeTodoId):-1;
+        const insertAt=beforeIndex>=0?beforeIndex:work.todos.length;work.todos.splice(insertAt,0,JSON.parse(JSON.stringify(action.todoSnapshot)));syncNextAction(work);
+      }
+    }
+    else if(action.type==='noteAdd'){
+      const noteIndex=work.notes.findIndex((note)=>note.id===action.noteId);if(noteIndex>=0)work.notes.splice(noteIndex,1);
+    }
     else if(action.type==='instruction')work.instruction=action.previous;
     else if(action.type==='answer')work.answer=action.previous;
-    else if(action.type==='toggleTodo'&&work.todos[action.index]){
-      work.todos[action.index].done=action.previous;
-      work.todos.forEach((todo,index)=>{todo.next=index===action.previousNext});
+    else if(action.type==='toggleTodo'){
+      const todo=work.todos.find((item)=>item.id===action.todoId);if(todo)todo.done=action.previous;
+      work.todos.forEach((item)=>{item.next=Boolean(action.previousNextTodoId&&item.id===action.previousNextTodoId)});
       work.nextAction=action.previousNextAction;
     }
     return work;
@@ -1013,10 +1080,11 @@
     saveState();
     renderWorkList();renderWorkCalendar();
     if(action.type==='createWork'){lastInputConnection=null;showView('home');return;}
-    if(!work)return;selectWork(work.id);saveState();renderWorkbench();showFeedback(`${work.title}의 마지막 변경을 되돌렸습니다.`,false,false);
+    if(!work)return;selectWork(work.id);saveState();renderWorkbench(work);showFeedback(`${work.shortTitle} 업무의 마지막 변경을 되돌렸습니다.`,false,false,true);
   }
 
   function openDraft(id){
+    engineSeq++;
     const targetId=id===undefined?selectedWorkId:id;
     const work=selectWork(targetId);
     if(!work){
@@ -1041,7 +1109,7 @@
   /* 선택적 팀원 엔진 연결: ?engine=http://localhost:8399 지정 시 /api/ask만 사용, 실패하면 샘플 답변 유지 */
   function normalizeEngineUrl(value){
     if(!value)return '';
-    try{const url=new URL(value);if(!['http:','https:'].includes(url.protocol)||!['localhost','127.0.0.1','::1'].includes(url.hostname)||url.username||url.password)return '';return url.href.replace(/\/+$/,'')}catch(error){return ''}
+    try{const url=new URL(value);const hostname=url.hostname.replace(/^\[|\]$/g,'');if(!['http:','https:'].includes(url.protocol)||!['localhost','127.0.0.1','::1'].includes(hostname)||url.username||url.password)return '';return url.href.replace(/\/+$/,'')}catch(error){return ''}
   }
   const engineParam=new URLSearchParams(location.search).get('engine');
   const ENGINE=normalizeEngineUrl(engineParam);
@@ -1049,10 +1117,11 @@
     if(!ENGINE||!question)return;
     const seq=++engineSeq;const expectedAnswer=work.answer;const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),2500);
     try{
-      const response=await fetch(`${ENGINE}/api/ask`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,work_id:work.id,title:work.title}),signal:controller.signal});
+      const endpoint=new URL('/api/ask',ENGINE);
+      const response=await fetch(endpoint.href,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,work_id:work.id,title:work.title}),signal:controller.signal});
       if(!response.ok)throw new Error('engine unavailable');const data=await response.json();
-      if(seq!==engineSeq||work.answer!==expectedAnswer||!WORK_ITEMS.includes(work))return;
-      const raw=Array.isArray(data.answer)?data.answer.join(' '):data.answer;if(raw){work.answer=String(raw);if(selectedWorkId===work.id&&currentView==='workbench'){renderWorkbench();showFeedback(`${work.title}에서 연결된 엔진의 근거 답변으로 갱신했습니다.`,false,false);}}
+      if(seq!==engineSeq||work.answer!==expectedAnswer||getWork(work.id)!==work)return;
+      const raw=Array.isArray(data.answer)?data.answer.join(' '):data.answer;if(raw){work.answer=String(raw);if(selectedWorkId===work.id&&currentView==='workbench')renderWorkAnswer(work)}
     }catch(error){/* 연결 실패는 의도된 샘플 폴백 */}finally{clearTimeout(timeout)}
   }
 

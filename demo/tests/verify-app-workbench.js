@@ -28,6 +28,28 @@ const checks = [
     /function submitContextInput\(/.test(html) &&
     /function relinkLastInput\(/.test(html) &&
     /function undoLastAction\(/.test(html)],
+  ['implements the Task 4 input and candidate lifecycle contracts', () =>
+    /function routeInput\(text,context='home'\)/.test(html) &&
+    /function applyInput\(/.test(html) &&
+    /function confirmTodo\(/.test(html) &&
+    /function deleteTodoCandidate\(/.test(html) &&
+    html.includes('candidate-confirm') &&
+    html.includes('candidate-delete')],
+  ['keeps the workbench in the approved reading-width sequence', () => {
+    const shell = html.indexOf('class="bench-shell product-shell workbench-shell"');
+    const context = html.indexOf('id="workContext"', shell);
+    const next = html.indexOf('id="nextActionPanel"', context);
+    const todos = html.indexOf('id="todoPanel"', next);
+    const activity = html.indexOf('id="activityPanel"', todos);
+    const deliverable = html.indexOf('id="deliverablePanel"', activity);
+    return shell >= 0 && context > shell && next > context && todos > next && activity > todos && deliverable > activity &&
+      /\.workbench-shell\{width:min\((?:8[3-8]0)px,/.test(html);
+  }],
+  ['guards the optional loopback evidence engine', () =>
+    /function normalizeEngineUrl\(/.test(html) &&
+    html.includes("['localhost','127.0.0.1','::1']") &&
+    html.includes("new URL('/api/ask',ENGINE)") &&
+    /engineSeq\+\+/.test(html)],
   ['renders invalid links safely', () =>
     html.includes('업무를 찾을 수 없습니다') && /function renderNotFound\(/.test(html)],
   ['renders user-provided text safely', () =>
