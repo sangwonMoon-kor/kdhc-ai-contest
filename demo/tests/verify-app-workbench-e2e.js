@@ -184,6 +184,23 @@ function assert(condition, message) {
   await historyFlow.waitForSelector('#view-workbench.active');
   assert(historyFlow.url().endsWith('#workbench/pump-2026'), 'browser Back did not restore the selected workbench from draft');
 
+  const safeText = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  safeText.setDefaultTimeout(5000);
+  const xssPayload = '<img src=x onerror="window.__workbenchXss=1"> 메모';
+  await safeText.goto(appUrl.replace('#home', '#workbench/pump-2026'));
+  await safeText.fill('#contextInput', xssPayload);
+  await safeText.locator('#contextForm').evaluate((form) => form.requestSubmit());
+  if (await safeText.isVisible('#view-clarify.active')) {
+    await safeText.click('[data-intent="note"]');
+  }
+  await safeText.waitForSelector('#view-workbench.active');
+  assert((await safeText.textContent('#activityList')).includes(xssPayload), 'user text was not rendered literally');
+  assert(!(await safeText.evaluate(() => window.__workbenchXss)), 'user text executed as HTML before reload');
+  await safeText.reload();
+  await safeText.waitForSelector('#view-workbench.active');
+  assert((await safeText.textContent('#activityList')).includes(xssPayload), 'persisted user text was not rendered literally after reload');
+  assert(!(await safeText.evaluate(() => window.__workbenchXss)), 'persisted user text executed as HTML after reload');
+
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   mobile.setDefaultTimeout(5000);
   await mobile.goto(appUrl.replace('#home', '#workbench'));

@@ -30,6 +30,8 @@ const checks = [
     /function undoLastAction\(/.test(html)],
   ['renders invalid links safely', () =>
     html.includes('업무를 찾을 수 없습니다') && /function renderNotFound\(/.test(html)],
+  ['renders user-provided text safely', () =>
+    /function escapeHtml\(/.test(html)],
 ];
 
 const failures = checks.filter(([, test]) => {
