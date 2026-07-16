@@ -131,9 +131,14 @@ function assert(condition, message) {
     targetedQuestion: routeInput('이번 주 펌프 기안 자료 찾아줘', 'home').intent,
     question: routeInput('펌프 기안 자료 찾아줘', 'home').intent,
     instruction: routeInput('팀장님이 펌프 계획 올리라고 했어', 'home').intent,
+    managerRecipientTodo: routeInput('펌프 팀장님에게 보고해야 함', 'home').intent,
     note: routeInput('일정은 5월로 확정', 'workbench').intent,
     draft: routeInput('펌프 추진 보고 기안 작성해줘', 'home').intent,
+    compoundDraft: routeInput('펌프 기안 작성해줘. 금요일까지 검토도 해야 해', 'home').intent,
+    memoSourceDraft: routeInput('펌프 메모를 바탕으로 보고서 만들어줘', 'home').intent,
+    replySourceDraft: routeInput('운영부 회신 내용으로 펌프 보고서 만들어줘', 'home').intent,
     todo: routeInput('안전관리관 작업허가 요청하기', 'workbench').intent,
+    replyCheckTodo: routeInput('운영부 회신 확인해야 함', 'workbench').intent,
     draftMaterialTodo: routeInput('기안 자료 확인해야 함', 'workbench').intent,
     reportWritingTodo: routeInput('보고서 작성해야 함', 'workbench').intent,
     ambiguous: routeInput('펌프 최신값', 'workbench').intent,
@@ -142,9 +147,10 @@ function assert(condition, message) {
   assert(inputPriority.overview === 'overview', 'targetless overview lost first priority');
   assert(inputPriority.targetedQuestion === 'question' && inputPriority.question === 'question', 'question did not outrank weekly or draft wording');
   assert(inputPriority.instruction === 'instruction', 'home instruction was not classified after questions');
+  assert(inputPriority.managerRecipientTodo === 'todo', 'a manager mentioned as the action recipient was misclassified as the instruction source');
   assert(inputPriority.note === 'note', 'confirmed schedule was not classified as a progress note');
-  assert(inputPriority.draft === 'draft', 'explicit draft creation was not classified as drafting');
-  assert(inputPriority.todo === 'todo' && inputPriority.draftMaterialTodo === 'todo' && inputPriority.reportWritingTodo === 'todo', 'action phrasing containing draft nouns was misrouted away from todo');
+  assert(inputPriority.draft === 'draft' && inputPriority.compoundDraft === 'draft' && inputPriority.memoSourceDraft === 'draft' && inputPriority.replySourceDraft === 'draft', 'explicit draft creation was not classified as drafting');
+  assert(inputPriority.todo === 'todo' && inputPriority.replyCheckTodo === 'todo' && inputPriority.draftMaterialTodo === 'todo' && inputPriority.reportWritingTodo === 'todo', 'action phrasing containing source or draft nouns was misrouted away from todo');
   assert(inputPriority.ambiguous === 'ambiguous', 'ambiguous fallback priority is incorrect');
   assert(inputPriority.fixedTarget === 'pump-2026', 'workbench input lost the selected work target');
 
@@ -220,6 +226,35 @@ function assert(condition, message) {
     const todo = getSelectedWork().todos.find((item) => item.text === '계약부 견적서 요청하기');
     return Boolean(todo && todo.candidate && !todo.done);
   }), 'legacy candidate confirmation undo did not restore the normalized candidate exactly');
+  await candidate.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('jm-workbench-v1'));
+    const work = saved.works.find((item) => item.id === 'pump-2026');
+    work.todos.unshift(
+      { id: 'duplicate-todo', text: '중복 후보 첫 번째', done: false, candidate: true, origin: '저장 복구 테스트', sourceIds: [] },
+      { id: 'duplicate-todo', text: '중복 후보 두 번째', done: false, candidate: true, origin: '저장 복구 테스트', sourceIds: [] },
+    );
+    localStorage.setItem('jm-workbench-v1', JSON.stringify(saved));
+  });
+  await candidate.reload();
+  await candidate.waitForSelector('.todo-item.candidate');
+  const repairedDuplicateIds = await candidate.evaluate(() => {
+    const live = getSelectedWork().todos.filter((todo) => todo.text.startsWith('중복 후보')).map((todo) => todo.id);
+    const saved = JSON.parse(localStorage.getItem('jm-workbench-v1')).works.find((work) => work.id === 'pump-2026').todos
+      .filter((todo) => todo.text.startsWith('중복 후보')).map((todo) => todo.id);
+    return { live, saved };
+  });
+  assert(new Set(repairedDuplicateIds.live).size === 2 && new Set(repairedDuplicateIds.saved).size === 2, 'duplicate persisted todo IDs were not repaired and saved');
+  const firstDuplicateCandidate = candidate.locator('.todo-item.candidate', { hasText: '중복 후보 첫 번째' });
+  const secondDuplicateCandidate = candidate.locator('.todo-item.candidate', { hasText: '중복 후보 두 번째' });
+  await secondDuplicateCandidate.locator('.candidate-confirm').click();
+  assert(await firstDuplicateCandidate.count() === 1, 'confirming the second repaired candidate changed the first candidate');
+  assert(await candidate.locator('.todo-item:not(.candidate)', { hasText: '중복 후보 두 번째' }).count() === 1, 'confirming the second repaired candidate did not change that item');
+  await candidate.click('#undoButton');
+  assert(await candidate.locator('.todo-item.candidate', { hasText: '중복 후보' }).count() === 2, 'undo did not restore exactly the confirmed repaired candidate');
+  await candidate.locator('.todo-item.candidate', { hasText: '중복 후보 두 번째' }).locator('.candidate-delete').click();
+  assert(await candidate.locator('.todo-item.candidate', { hasText: '중복 후보 첫 번째' }).count() === 1 && await candidate.locator('.todo-item', { hasText: '중복 후보 두 번째' }).count() === 0, 'deleting the second repaired candidate changed the wrong item');
+  await candidate.click('#undoButton');
+  assert(await candidate.locator('.todo-item.candidate', { hasText: '중복 후보' }).count() === 2, 'undo did not restore exactly the deleted repaired candidate');
   await candidate.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
   await candidate.close();
   await page.reload();
@@ -654,6 +689,33 @@ function assert(condition, message) {
   await draftHome.waitForSelector('#view-draft.active');
   assert(draftHome.url().endsWith('#draft/pump-2026'), 'clear home draft request did not preserve the target work in the draft URL');
   assert((await draftHome.textContent('#draftWorkTitle')).includes('순환수 펌프'), 'clear home draft request opened the wrong work context');
+  await draftHome.goto(appUrl);
+  await draftHome.fill('#homeInput', '펌프 기안 작성해줘. 금요일까지 검토도 해야 해');
+  await draftHome.locator('#homeForm').evaluate((form) => form.requestSubmit());
+  await draftHome.waitForSelector('#view-draft.active');
+  assert(draftHome.url().endsWith('#draft/pump-2026'), 'an explicit draft clause followed by a todo clause was demoted from drafting');
+  assert(await draftHome.evaluate(() => !getWork('pump-2026').todos.some((todo) => todo.text.includes('금요일까지 검토'))), 'compound draft request was added as a todo instead of opening drafting');
+  for (const sourceDraftText of ['펌프 메모를 바탕으로 보고서 만들어줘', '운영부 회신 내용으로 펌프 보고서 만들어줘']) {
+    await draftHome.goto(appUrl);
+    await draftHome.fill('#homeInput', sourceDraftText);
+    await draftHome.locator('#homeForm').evaluate((form) => form.requestSubmit());
+    await draftHome.waitForSelector('#view-draft.active');
+    assert(draftHome.url().endsWith('#draft/pump-2026'), `source material noun demoted drafting: ${sourceDraftText}`);
+  }
+
+  const managerRecipient = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  managerRecipient.setDefaultTimeout(5000);
+  await managerRecipient.goto(appUrl);
+  await managerRecipient.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await managerRecipient.reload();
+  const originalInstruction = await managerRecipient.evaluate(() => getWork('pump-2026').instruction);
+  await managerRecipient.fill('#homeInput', '펌프 팀장님에게 보고해야 함');
+  await managerRecipient.locator('#homeForm').evaluate((form) => form.requestSubmit());
+  await managerRecipient.waitForSelector('#view-workbench.active');
+  assert(await managerRecipient.locator('.todo-item.candidate', { hasText: '팀장님에게 보고해야 함' }).count() === 1, 'manager-recipient action was not added as a todo candidate');
+  assert(await managerRecipient.evaluate((expected) => getWork('pump-2026').instruction === expected, originalInstruction), 'manager-recipient action overwrote the original instruction');
+  await managerRecipient.evaluate(() => localStorage.removeItem('jm-workbench-v1'));
+  await managerRecipient.close();
 
   const newWork = await browser.newPage({ viewport: { width: 1100, height: 900 } });
   newWork.setDefaultTimeout(5000);

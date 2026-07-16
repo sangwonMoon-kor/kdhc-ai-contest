@@ -482,7 +482,20 @@
   let WORK_ITEMS=appState.works;
   let selectedWorkId=appState.selectedWorkId;
 
+  function repairRecordIds(items,prefix){
+    const seen=new Set();let repaired=false;
+    items.forEach((item)=>{
+      if(!isSafeId(item.id)||seen.has(item.id)){
+        do{item.id=createRecordId(prefix)}while(seen.has(item.id));
+        repaired=true;
+      }
+      seen.add(item.id);
+    });
+    return repaired;
+  }
+
   function applyState(nextState){
+    let repaired=false;
     appState=nextState;
     WORK_ITEMS=appState.works;
     selectedWorkId=typeof appState.selectedWorkId==='string'&&WORK_ITEMS.some((work)=>work.id===appState.selectedWorkId)
@@ -494,9 +507,12 @@
     appState.workFilter=['all','repeat'].includes(appState.workFilter)?appState.workFilter:'all';
     workMode=appState.workMode;
     WORK_ITEMS.forEach((work)=>{
-      work.todos.forEach((todo)=>{if(!isSafeId(todo.id))todo.id=createRecordId('todo');if(todo.candidate)todo.done=false});
+      repaired=repairRecordIds(work.todos,'todo')||repaired;
+      repaired=repairRecordIds(work.notes,'note')||repaired;
+      work.todos.forEach((todo)=>{if(todo.candidate&&todo.done){todo.done=false;repaired=true}});
       syncNextAction(work);
     });
+    return repaired;
   }
 
   function loadState(){
@@ -511,8 +527,8 @@
         }else needsRepair=true;
       }
     }catch(error){needsRepair=true;}
-    applyState(nextState);
-    if(needsRepair)saveState();
+    const stateRepaired=applyState(nextState);
+    if(needsRepair||stateRepaired)saveState();
     return appState;
   }
 
@@ -793,11 +809,11 @@
     const normalizedContext=context==='workbench'?'workbench':'home';
     const targetId=normalizedContext==='workbench' ? selectedWorkId : detectTarget(clean);
     let intent='ambiguous';
-    const explicitDraft=/(?:초안|기안|보고서).*(?:써\s*줘|작성해\s*줘|만들어\s*줘|작성해\s*주세요|만들어\s*주세요|작성\s*부탁|만들어\s*주세요)/.test(clean)&&!/(?:해야|하기|할\s*것)/.test(clean);
+    const explicitDraft=/(?:초안|기안|보고서).*(?:써\s*줘|작성해\s*줘|만들어\s*줘|작성해\s*주세요|만들어\s*주세요|작성\s*부탁|만들어\s*주세요)/.test(clean);
     if(normalizedContext==='home'&&!targetId&&/(?:내 업무|이번 ?주.*(?:할 ?일|해야)|이번 ?주 내가 해야 할 일)/.test(clean)) intent='overview';
     else if(/[?？]$|찾아|어디|알려|보여|무엇|뭐가|어떤/.test(clean)) intent='question';
-    else if(normalizedContext==='home' && /팀장|부장|지시|올리래|하라고/.test(clean)) intent='instruction';
-    else if(/확정|결정|변경|합의|메모|기록|도착|회신/.test(clean)) intent='note';
+    else if(normalizedContext==='home' && /(?:올리래|(?:하|해|올리)라고(?:\s*(?:했|하셨|말했|말씀|시켰))?|지시(?:받|했|함|하))|(?:팀장|부장)님?(?:이|께서).*(?:라고|올리래|지시|시켰|말했|말씀)/.test(clean)) intent='instruction';
+    else if(/확정|결정|변경|합의|(?:메모|기록)\s*(?:해|하자|남겨|추가|$)|(?:회신|답변).*(?:왔|도착|받았)|도착(?:했|함|$)/.test(clean)) intent='note';
     else if(explicitDraft) intent='draft';
     else if(/해야|확인|요청|챙겨|할 것|하기|까지/.test(clean)) intent='todo';
     return {text:clean,intent,targetId,context:normalizedContext};
