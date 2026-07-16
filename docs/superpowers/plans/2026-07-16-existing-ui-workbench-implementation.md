@@ -655,7 +655,7 @@ git commit -m "기존 UI 기반 업무 작업대 제품 v4 완성"
 - Consumes: 검증된 `main` 로컬 커밋
 - Produces: `origin/main`과 GitHub Pages 공개 화면
 
-- [ ] **Step 1: 푸시 전 상태 확인**
+- [x] **Step 1: 푸시 전 상태 확인**
 
 ```powershell
 git status --short
@@ -665,7 +665,7 @@ git diff origin/main...HEAD --name-only
 
 Expected: worktree clean; 발표용 3파일과 팀원 저장소 변경 없음.
 
-- [ ] **Step 2: main 푸시**
+- [x] **Step 2: main 푸시**
 
 ```powershell
 git push origin main
@@ -673,7 +673,7 @@ git push origin main
 
 Expected: push succeeds without force.
 
-- [ ] **Step 3: GitHub Pages 배포 대기·확인**
+- [x] **Step 3: GitHub Pages 배포 대기·확인**
 
 Poll no longer than 60 seconds per request:
 
@@ -683,6 +683,6 @@ https://sangwonmoon-kor.github.io/kdhc-ai-contest/demo/app.html
 
 페이지 title에 `제품 프로토타입 v4`가 포함되고, `#home`, `#work/list`, `#workbench/pump-2026`, `#draft/pump-2026`가 모두 HTTP 200과 정상 DOM을 반환해야 한다.
 
-- [ ] **Step 4: 공개 링크 최종 전달**
+- [x] **Step 4: 공개 링크 최종 전달**
 
 최종 응답에는 공개 미리보기 링크, 핵심 변경, 검증 결과, 푸시 커밋을 간결하게 적는다.
