@@ -18,8 +18,13 @@ function assert(condition, message) {
     if (message.type() === 'error') consoleErrors.push(message.text());
   });
 
-  await page.goto(appUrl);
+  await page.goto(appUrl.replace('#home', '#home'));
   await page.waitForSelector('#view-home.active');
+  assert(await page.isVisible('#heroSearch'), 'original centered home search is missing');
+  assert(await page.isVisible('#homeForecastObject'), 'original forecast object was removed');
+  assert(await page.isVisible('#homeMemoObject'), 'original memo object was removed');
+  assert(await page.isVisible('#homeEvidenceObject'), 'original evidence object was removed');
+  assert(await page.isVisible('#openMyWork'), 'home has no explicit My Work entry');
 
   await page.fill('#homeInput', '팀장님이 다음 주까지 순환수 펌프 정비공사 계획 올리래');
   await page.locator('#homeForm').evaluate((form) => form.requestSubmit());
