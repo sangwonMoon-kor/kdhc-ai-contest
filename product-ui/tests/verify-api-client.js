@@ -27,6 +27,7 @@ function response(body, ok = true, status = 200) {
   assert.equal(fixturePath("/api/draft", { task: "unknown-stage" }), null, "unknown draft stage used an unrelated fixture");
 
   const validShapes = [
+    ["/api/forecast", { items: [{ name: "순환수 펌프 정비", task: "설계·내역 작성", stageId: "design-and-costing", month: 4, lastDate: "2025-04-09", dueDate: "2026-04-09", dday: 97, docCount: 2, docs: ["APPR-2025-0409"] }] }],
     ["/api/graph", { nodes: [], edges: [] }],
     ["/api/draft", { ok: true, stageId: "problem-recognition", baseDocId: "DOC-1", title: "초안", sections: [], checklist: [] }],
     ["/api/hint/stage", { guard: { flagged: false }, triples: [] }],
@@ -40,6 +41,7 @@ function response(body, ok = true, status = 200) {
   for (const [apiPath, value] of validShapes) assert.equal(normalizeResponse(apiPath, value), value);
 
   const invalidShapes = [
+    ["/api/forecast", { items: [{ name: "순환수 펌프 정비", task: "설계·내역 작성", stageId: "design-and-costing", month: 4, lastDate: "2025-04-09", dueDate: '\"><img src=x onerror=alert(1)>', dday: 97, docCount: 2, docs: ["APPR-2025-0409"] }] }, /forecast contract mismatch/],
     ["/api/graph", { nodes: [] }, /graph contract mismatch/],
     ["/api/draft", { ok: true }, /draft contract mismatch/],
     ["/api/hint/stage", { triples: [] }, /hint stage contract mismatch/],
@@ -61,6 +63,23 @@ function response(body, ok = true, status = 200) {
   assert.deepEqual(await fixture.request("/api/summary"), { docCount: 19, stats: { nodes: 193, edges: 938 } });
   assert(fixtureCalls.every((url) => String(url).startsWith("fixtures/")), "fixture mode attempted an API call");
   assert.equal(fixture.getStatus().activeMode, "fixture");
+
+  const fixtureActionCalls = [];
+  const fixtureAction = createApiClient({ mode: "fixture", fetchImpl: async (url, options = {}) => {
+    fixtureActionCalls.push({ url, method: options.method || "GET", body: options.body });
+    if (url.endsWith("manifest.json")) return response({ contractVersion: 1 });
+    return response({ ok: true, text: "시연용 스캔 PDF 고정 텍스트", model: "fixture" });
+  }});
+  await fixtureAction.request("/api/extract", { filename: "private-scan.pdf", mime: "application/pdf", dataB64: "c2Vuc2l0aXZl" });
+  assert(fixtureActionCalls.every((call) => call.method === "GET" && call.body === undefined), "fixture action body was sent to the fixture host");
+
+  const invalidManifestCalls = [];
+  const invalidManifest = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
+    invalidManifestCalls.push(url);
+    return response({ contractVersion: 2 });
+  }});
+  await assert.rejects(() => invalidManifest.request("/api/summary"), /fixture contract mismatch/);
+  assert.deepEqual(invalidManifestCalls, ["fixtures/manifest.json"], "invalid fixture manifest allowed a data request");
 
   const liveCalls = [];
   const live = createApiClient({ mode: "live", fetchImpl: async (url) => {

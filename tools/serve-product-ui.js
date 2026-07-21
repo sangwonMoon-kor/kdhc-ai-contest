@@ -19,7 +19,12 @@ const mime = {
 
 http.createServer((req, res) => {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
-  const rel = pathname === "/" ? "index.html" : decodeURIComponent(pathname.slice(1));
+  let rel;
+  try {
+    rel = pathname === "/" ? "index.html" : decodeURIComponent(pathname.slice(1));
+  } catch (error) {
+    res.writeHead(400); return res.end("bad request");
+  }
   const file = path.resolve(root, rel);
   if (!file.startsWith(root + path.sep) && file !== path.join(root, "index.html")) {
     res.writeHead(403); return res.end("forbidden");

@@ -87,12 +87,16 @@ async function run() {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce", locale: "ko-KR" });
     const errors = [];
     const apiRequests = [];
+    const fixtureBodyRequests = [];
     page.on("console", (message) => { if (message.type() === "error") errors.push(`console: ${message.text()}`); });
     page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
     page.on("response", (response) => { if (response.status() >= 400) errors.push(`HTTP ${response.status()}: ${response.url()}`); });
     page.on("request", (request) => {
       const url = new URL(request.url());
       if (/^\/api(?:\/|$)/.test(url.pathname)) apiRequests.push(url.href);
+      if (url.pathname.includes("/fixtures/") && (request.method() !== "GET" || request.postData() !== null)) {
+        fixtureBodyRequests.push(`${request.method()} ${url.pathname}`);
+      }
     });
 
     await page.goto(`${base}/?data=fixture#home`, { waitUntil: "networkidle" });
@@ -167,6 +171,7 @@ async function run() {
     await page.waitForFunction(() => document.querySelector("#toast")?.textContent.includes("자료를 이 업무의 근거로 저장"));
 
     assert.deepEqual(apiRequests, [], `fixture flows requested live API routes: ${apiRequests.join(" | ")}`);
+    assert.deepEqual(fixtureBodyRequests, [], `fixture flows sent action bodies to fixture files: ${fixtureBodyRequests.join(" | ")}`);
     assert.deepEqual(errors, [], `fixture flows emitted browser errors: ${errors.join(" | ")}`);
     console.log("Fixture reachable-flow E2E passed (graph, non-design draft, hint, scanned-PDF extract, ingest)");
   } finally {

@@ -55,6 +55,34 @@
     return Boolean(error && error.connectionFailure);
   }
 
+  function nonEmptyString(value) {
+    return typeof value === "string" && value.length > 0;
+  }
+
+  function canonicalDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }
+
+  function validForecastItem(item) {
+    return Boolean(
+      item &&
+      typeof item === "object" &&
+      !Array.isArray(item) &&
+      nonEmptyString(item.name) &&
+      nonEmptyString(item.task) &&
+      typeof item.stageId === "string" &&
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.stageId) &&
+      Number.isInteger(item.month) && item.month >= 1 && item.month <= 12 &&
+      canonicalDate(item.lastDate) &&
+      canonicalDate(item.dueDate) &&
+      Number.isInteger(item.dday) &&
+      Number.isInteger(item.docCount) && item.docCount >= 0 &&
+      Array.isArray(item.docs) && item.docs.length > 0 && item.docs.every(nonEmptyString)
+    );
+  }
+
   function normalizeResponse(path, value) {
     if (path === "/api/documents") {
       if (!Array.isArray(value)) throw new Error("documents contract mismatch");
@@ -66,7 +94,7 @@
     if (path.startsWith("/api/documents/") && !(value.doc && typeof value.doc.id === "string" && Array.isArray(value.edges))) throw new Error("document detail contract mismatch");
     if (path.startsWith("/api/okf/") && typeof value.id !== "string") throw new Error("OKF detail contract mismatch");
     if (path === "/api/summary" && !(Number.isInteger(value.docCount) && value.stats && Number.isInteger(value.stats.nodes) && Number.isInteger(value.stats.edges))) throw new Error("summary contract mismatch");
-    if (path === "/api/forecast" && !Array.isArray(value.items)) throw new Error("forecast contract mismatch");
+    if (path === "/api/forecast" && !(Array.isArray(value.items) && value.items.every(validForecastItem))) throw new Error("forecast contract mismatch");
     if (path === "/api/briefing" && !(Array.isArray(value.stages) && Array.isArray(value.cautions))) throw new Error("briefing contract mismatch");
     if (path === "/api/graph" && !(Array.isArray(value.nodes) && Array.isArray(value.edges))) throw new Error("graph contract mismatch");
     if (path === "/api/ask" && !(typeof value.grounded === "boolean" && Array.isArray(value.answer) && Array.isArray(value.docs))) throw new Error("ask contract mismatch");

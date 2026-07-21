@@ -33,6 +33,11 @@ node tools/sync-product-ui.js --target /path/to/jikmu-memory --write
 
 `--check`는 파일을 쓰지 않는다. `changed=true`면 변경 내용을 검토한 뒤에만 `--write`하고,
 팀원 저장소에서 테스트·커밋한다. 두 저장소의 `main`에는 직접 push하지 않는다.
+검사는 실행 시점의 상태만 보장하므로 `--write` 직전에 다시 실행한다. 현재 두 저장소에는
+submodule이 없으며, 향후 추가하면 내부 작업 트리의 clean 상태도 별도로 확인해야 한다.
+
+프로세스 강제 종료로 `.git/jikmu-product-ui-sync.lock`이나 `.ui-sync-*`가 남으면 자동 삭제하지 않는다.
+실행 중인 동기화 프로세스가 없는지와 양쪽 저장소가 clean인지 먼저 확인한 뒤 수동 검토한다.
 
 ## 팀원 엔진에서 fixture 다시 받기
 

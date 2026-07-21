@@ -2,6 +2,7 @@
 
 const assert = require("assert");
 const fs = require("fs");
+const http = require("http");
 const path = require("path");
 const { spawn } = require("child_process");
 const { chromium } = require("playwright");
@@ -118,6 +119,15 @@ async function verifyServer(server) {
   assert.equal(response.ok, true, "spawned product-ui server did not serve index.html");
   const html = await response.text();
   assert(html.includes('id="dataStatus"') && html.includes('src="api-client.js"'), "spawned server did not serve the current product-ui worktree");
+  const malformedStatus = await new Promise(function (resolve, reject) {
+    const request = http.get({ host: "127.0.0.1", port: port, path: "/%E0%A4%A" }, function (rawResponse) {
+      rawResponse.resume();
+      rawResponse.on("end", function () { resolve(rawResponse.statusCode); });
+    });
+    request.on("error", reject);
+  });
+  assert.equal(malformedStatus, 400, "malformed percent path did not return 400");
+  assert.equal(server.exitCode, null, "malformed percent path terminated the product-ui server");
 }
 
 async function stopServer(server) {
@@ -271,6 +281,11 @@ async function run() {
     assert.equal(detachedFailureAfter.connected, false, "failure answer box remained connected after navigation");
     assert.equal(detachedFailureAfter.html, detachedFailureBefore, "rejection mutated the disconnected answer box");
     await askPage.close();
+
+    const malformedRoutePage = await openApp(browser, "fixture", errors);
+    await malformedRoutePage.evaluate(function () { location.hash = "#draft/%E0%A4%A"; });
+    await malformedRoutePage.getByRole("heading", { name: "화면을 찾을 수 없습니다" }).waitFor();
+    await malformedRoutePage.close();
 
     assert.deepEqual(errors, [], "SPA emitted console/page errors during stale-response handling");
     console.log("App data-mode browser contract passed");

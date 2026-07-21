@@ -222,7 +222,11 @@ function parseHash() {
   let h = location.hash || "#home";
   if (LEGACY[h] && LEGACY[h] !== h) { location.replace(LEGACY[h]); h = LEGACY[h]; }
   const m = h.slice(1).split("/");
-  return { v: m[0] || "home", a: m[1] ? decodeURIComponent(m[1]) : null };
+  try {
+    return { v: m[0] || "home", a: m[1] ? decodeURIComponent(m[1]) : null };
+  } catch (error) {
+    return { v: "invalid-route", a: null };
+  }
 }
 function nav(hash) { if (location.hash === hash) route(); else location.hash = hash; }
 async function route() {
