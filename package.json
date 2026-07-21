@@ -3,9 +3,15 @@
   "private": true,
   "scripts": {
     "test:workbench": "node demo/tests/verify-app-workbench.js",
-    "test:workbench:e2e": "node demo/tests/verify-app-workbench-e2e.js"
+    "test:workbench:e2e": "node demo/tests/verify-app-workbench-e2e.js",
+    "demo:ai": "node demo/openai-server.js",
+    "test:openai": "node demo/tests/verify-openai-server.js && node demo/tests/verify-openai-search.js",
+    "test:openai:e2e": "node demo/tests/verify-openai-search-e2e.js"
   },
   "devDependencies": {
     "playwright": "1.61.1"
+  },
+  "dependencies": {
+    "openai": "^6.48.0"
   }
 }
