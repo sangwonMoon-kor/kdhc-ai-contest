@@ -12,7 +12,8 @@
     "test:product-ui:data-mode": "node product-ui/tests/verify-app-data-mode.js && PRODUCT_UI_TEST_CLIENT=1 node product-ui/tests/verify-app-data-mode-browser.js",
     "test:product-ui:fixture-flows": "node product-ui/tests/verify-fixture-reachable-flows.js",
     "test:product-ui:e2e": "node product-ui/tests/verify-showcase-e2e.js",
-    "test:product-ui:sync": "node tools/test-sync-product-ui.js"
+    "test:product-ui:sync": "node tools/test-sync-product-ui.js",
+    "test:product-ui": "npm run test:product-ui:source && npm run test:product-ui:fixtures && npm run test:product-ui:api && npm run test:product-ui:data-mode && npm run test:product-ui:fixture-flows && npm run test:product-ui:sync && npm run test:product-ui:e2e"
   },
   "devDependencies": {
     "playwright": "1.61.1"
