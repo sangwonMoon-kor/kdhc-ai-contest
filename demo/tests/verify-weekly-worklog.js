@@ -29,14 +29,19 @@ async function verify() {
   assert.doesNotMatch(html, /<(?:script|img)\b/i);
   assert.doesNotMatch(html, /<link\b[^>]*rel=["']stylesheet["']/i);
   assert.doesNotMatch(html, /url\(\s*["']?https?:/i);
+  assert.match(html, /<pre>OPENAI_API_KEY\s+OPENAI_MODEL\s+PORT<\/pre>/);
+  assert.doesNotMatch(html, /<pre>[^<]*(?:OPENAI_API_KEY|OPENAI_MODEL|PORT)\s*=\s*[^<]+<\/pre>/);
+  assert.match(html, /sanitized\.md[^<]{0,160}약 0\.9MB/);
+  assert.match(html, /변환결과_REVIEW\.json[^<]{0,160}약 1\.2MB/);
 
   const server = http.createServer((request, response) => {
     response.writeHead(200, {'content-type': 'text/html; charset=utf-8'});
     response.end(html);
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
-  const browser = await chromium.launch({headless: true});
+  let browser = null;
   try {
+    browser = await chromium.launch({headless: true});
     const port = server.address().port;
     const page = await browser.newPage();
     for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}]) {
@@ -48,7 +53,13 @@ async function verify() {
       assert.match(state.h1, /7월 4주차 작업 기록/);
       assert.ok(state.scrollWidth <= state.clientWidth + 1, `horizontal overflow at ${viewport.width}px`);
     }
-  } finally { await browser.close(); await new Promise((resolve) => server.close(resolve)); }
+  } finally {
+    try {
+      if (browser) await browser.close();
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  }
   process.stdout.write('Weekly worklog verification passed.\n');
 }
 
