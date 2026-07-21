@@ -77,26 +77,59 @@ const testClient = String.raw`
 `;
 
 function startServer() {
-  const server = spawn(process.execPath, ["tools/serve-product-ui.js"], {
-    cwd: repoRoot,
-    env: Object.assign({}, process.env, { PRODUCT_UI_PORT: String(port) }),
-    stdio: ["ignore", "ignore", "pipe"]
+  return new Promise(function (resolve, reject) {
+    const server = spawn(process.execPath, ["tools/serve-product-ui.js"], {
+      cwd: repoRoot,
+      env: Object.assign({}, process.env, { PRODUCT_UI_PORT: String(port) }),
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    const expected = `product-ui http://127.0.0.1:${port}`;
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const timeout = setTimeout(function () {
+      fail(new Error(`product-ui server did not claim port ${port}\nstdout: ${stdout}\nstderr: ${stderr}`));
+    }, 5000);
+    function fail(error) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (server.exitCode === null) server.kill("SIGTERM");
+      reject(error);
+    }
+    server.on("error", fail);
+    server.on("exit", function (code, signal) {
+      fail(new Error(`product-ui server exited before ready (code=${code}, signal=${signal})\nstdout: ${stdout}\nstderr: ${stderr}`));
+    });
+    server.stdout.on("data", function (chunk) {
+      stdout += String(chunk);
+      if (settled || !stdout.includes(expected)) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(server);
+    });
+    server.stderr.on("data", function (chunk) { stderr += String(chunk); });
   });
-  const startupErrors = [];
-  server.stderr.on("data", function (chunk) { startupErrors.push(String(chunk)); });
-  return server;
 }
 
-async function waitForServer() {
-  let lastError;
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    try {
-      const response = await fetch(`${base}/index.html`);
-      if (response.ok) return;
-    } catch (error) { lastError = error; }
-    await new Promise(function (resolve) { setTimeout(resolve, 50); });
-  }
-  throw lastError || new Error("product-ui server did not start");
+async function verifyServer(server) {
+  assert.equal(server.exitCode, null, "spawned product-ui server exited before verification");
+  const response = await fetch(`${base}/index.html`);
+  assert.equal(response.ok, true, "spawned product-ui server did not serve index.html");
+  const html = await response.text();
+  assert(html.includes('id="dataStatus"') && html.includes('src="api-client.js"'), "spawned server did not serve the current product-ui worktree");
+}
+
+async function stopServer(server) {
+  if (!server || server.exitCode !== null) return;
+  await new Promise(function (resolve) {
+    const forceTimer = setTimeout(function () { server.kill("SIGKILL"); }, 1000);
+    server.once("exit", function () {
+      clearTimeout(forceTimer);
+      resolve();
+    });
+    server.kill("SIGTERM");
+  });
 }
 
 async function launchBrowser() {
@@ -142,10 +175,11 @@ async function settleAsk(page, method, question, value) {
 }
 
 async function run() {
-  const server = startServer();
+  let server;
   let browser;
   try {
-    await waitForServer();
+    server = await startServer();
+    await verifyServer(server);
     browser = await launchBrowser();
 
     const redPage = await openApp(browser, "fixture", []);
@@ -201,28 +235,48 @@ async function run() {
 
     const detachedSuccess = "다섯 번째 근거 찾아줘";
     await ask(askPage, detachedSuccess);
+    const detachedSuccessBefore = await askPage.evaluate(function () {
+      const box = document.getElementById("homeResult");
+      window.__detachedSuccessBox = box;
+      return box.innerHTML;
+    });
     await askPage.evaluate(function () { location.hash = "#work/list"; });
     await askPage.locator("#omniIn").waitFor({ state: "detached" });
     await settleAsk(askPage, "resolveAsk", detachedSuccess, "분리된 성공");
     await askPage.waitForTimeout(20);
     assert.equal(await askPage.locator("#homeResult").count(), 0, "detached success rendered a home answer");
+    const detachedSuccessAfter = await askPage.evaluate(function () {
+      return { connected: window.__detachedSuccessBox.isConnected, html: window.__detachedSuccessBox.innerHTML };
+    });
+    assert.equal(detachedSuccessAfter.connected, false, "success answer box remained connected after navigation");
+    assert.equal(detachedSuccessAfter.html, detachedSuccessBefore, "success mutated the disconnected answer box");
 
     await askPage.evaluate(function () { location.hash = "#home"; });
     await askPage.locator("#omniIn").waitFor();
     const detachedFailure = "여섯 번째 근거 찾아줘";
     await ask(askPage, detachedFailure);
+    const detachedFailureBefore = await askPage.evaluate(function () {
+      const box = document.getElementById("homeResult");
+      window.__detachedFailureBox = box;
+      return box.innerHTML;
+    });
     await askPage.evaluate(function () { location.hash = "#work/list"; });
     await askPage.locator("#omniIn").waitFor({ state: "detached" });
     await settleAsk(askPage, "rejectAsk", detachedFailure, "detached request failed");
     await askPage.waitForTimeout(20);
     assert.equal(await askPage.locator("#homeResult").count(), 0, "detached rejection rendered a home error");
+    const detachedFailureAfter = await askPage.evaluate(function () {
+      return { connected: window.__detachedFailureBox.isConnected, html: window.__detachedFailureBox.innerHTML };
+    });
+    assert.equal(detachedFailureAfter.connected, false, "failure answer box remained connected after navigation");
+    assert.equal(detachedFailureAfter.html, detachedFailureBefore, "rejection mutated the disconnected answer box");
     await askPage.close();
 
     assert.deepEqual(errors, [], "SPA emitted console/page errors during stale-response handling");
     console.log("App data-mode browser contract passed");
   } finally {
     if (browser) await browser.close();
-    server.kill("SIGTERM");
+    await stopServer(server);
   }
 }
 
