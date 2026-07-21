@@ -920,7 +920,7 @@
       lastInputConnection={text:sourceText,result:{text:sourceText,intent:'question',targetId,context:surface},workId:targetId,action:lastAction};
       saveState();renderWorkAnswer(work);
       showFeedback(`${work.shortTitle} 업무에 AI 근거 답변을 표시했습니다.`,true,surface==='home');
-      if(evidenceId)focusSource(evidenceId);
+      if(evidenceId)setTimeout(()=>{if(selectedWorkId===work.id&&currentView==='workbench')focusSource(evidenceId)},60);
       return action;
     }
     throw new Error('unsupported ai action');
