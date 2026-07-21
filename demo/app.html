@@ -885,7 +885,14 @@
     return 'clarify';
   }
 
-  function applyAiDecision(decision,sourceText,surface){
+  function canRestoreAiEvidenceFocus(workId,requestSequence){
+    if(requestSequence!==aiRequestSeq||selectedWorkId!==workId||currentView!=='workbench')return false;
+    const activeElement=document.activeElement;
+    const focusIsLost=!activeElement||activeElement===document.body||activeElement===document.documentElement;
+    return focusIsLost||activeElement===$('benchTitle');
+  }
+
+  function applyAiDecision(decision,sourceText,surface,requestSequence=aiRequestSeq){
     const action=decision.suggestedAction;
     if(action==='clarify')return showAiClarification(sourceText,surface);
     if(action==='open_work_list'){openMyWork('list');return action}
@@ -920,7 +927,7 @@
       lastInputConnection={text:sourceText,result:{text:sourceText,intent:'question',targetId,context:surface},workId:targetId,action:lastAction};
       saveState();renderWorkAnswer(work);
       showFeedback(`${work.shortTitle} 업무에 AI 근거 답변을 표시했습니다.`,true,surface==='home');
-      if(evidenceId)setTimeout(()=>{if(selectedWorkId===work.id&&currentView==='workbench')focusSource(evidenceId)},60);
+      if(evidenceId)setTimeout(()=>{if(canRestoreAiEvidenceFocus(work.id,requestSequence))focusSource(evidenceId)},60);
       return action;
     }
     throw new Error('unsupported ai action');
@@ -946,7 +953,7 @@
       const request=buildAiRequest(text,'home');
       const decision=await requestAiDecision(request);
       if(seq!==aiRequestSeq)throw new Error('stale ai response');
-      const outcome=applyAiDecision(decision,text,'home');
+      const outcome=applyAiDecision(decision,text,'home',seq);
       rememberAiExchange(text,decision.reply);
       if(outcome!=='clarify')$('homeInput').value='';
     }catch(error){if(seq===aiRequestSeq)fallbackHomeInput(text)}
@@ -1175,7 +1182,7 @@
       const request=buildAiRequest(text,'workbench');
       const decision=await requestAiDecision(request);
       if(seq!==aiRequestSeq)throw new Error('stale ai response');
-      applyAiDecision(decision,text,'workbench');
+      applyAiDecision(decision,text,'workbench',seq);
       rememberAiExchange(text,decision.reply);
       input.value='';
     }catch(error){if(seq===aiRequestSeq)await fallbackContextInput(text,work)}
