@@ -47,6 +47,12 @@ async function verify() {
     for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}]) {
       await page.setViewportSize(viewport);
       await page.goto(`http://127.0.0.1:${port}/`, {waitUntil: 'load'});
+      const sourceFileSizes = page.getByTestId('source-file-sizes');
+      assert.equal(await sourceFileSizes.isVisible(), true, 'source file sizes must be visible');
+      await assert.doesNotReject(() => sourceFileSizes.textContent().then((text) => {
+        assert.match(text, /sanitized\.md[^\n]{0,100}약 0\.9MB/);
+        assert.match(text, /변환결과_REVIEW\.json[^\n]{0,100}약 1\.2MB/);
+      }));
       const state = await page.evaluate(() => ({title: document.title, lang: document.documentElement.lang, scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, h1: document.querySelector('h1')?.textContent?.trim()}));
       assert.equal(state.lang, 'ko');
       assert.match(state.title, /7월 4주차 작업 기록/);
