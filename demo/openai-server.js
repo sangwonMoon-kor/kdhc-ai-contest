@@ -70,16 +70,26 @@ function hasJsonContentType(request) {
   return typeof contentType === 'string' && contentType.split(';', 1)[0].trim().toLowerCase() === 'application/json';
 }
 
-function hasAllowedOrigin(request) {
+function getLoopbackRequestOrigin(request) {
+  const host = request.headers.host;
+  const localPort = request.socket.localPort;
+  if (typeof host !== 'string' || !Number.isInteger(localPort)) return null;
+  try {
+    const parsed = new URL(`http://${host}`);
+    const hostname = parsed.hostname.toLowerCase();
+    const port = parsed.port ? Number(parsed.port) : 80;
+    if ((hostname !== '127.0.0.1' && hostname !== 'localhost') || port !== localPort) return null;
+    if (parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+function hasAllowedOrigin(request, requestOrigin) {
   const origin = request.headers.origin;
   if (origin === undefined) return true;
-  const host = request.headers.host;
-  if (typeof origin !== 'string' || typeof host !== 'string') return false;
-  try {
-    return origin === new URL(`http://${host}`).origin;
-  } catch {
-    return false;
-  }
+  return typeof origin === 'string' && origin === requestOrigin;
 }
 
 async function readJsonBody(request) {
@@ -209,7 +219,12 @@ function createJarvisServer({openaiClient, model, demoRoot, timeoutMs = TIMEOUT_
         sendJson(response, 415, {error: 'invalid_request'});
         return;
       }
-      if (!hasAllowedOrigin(request)) {
+      const requestOrigin = getLoopbackRequestOrigin(request);
+      if (!requestOrigin) {
+        sendJson(response, 400, {error: 'invalid_request'});
+        return;
+      }
+      if (!hasAllowedOrigin(request, requestOrigin)) {
         sendJson(response, 403, {error: 'invalid_request'});
         return;
       }

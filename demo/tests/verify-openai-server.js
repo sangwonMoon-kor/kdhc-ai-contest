@@ -44,6 +44,7 @@ assert.throws(() => normalizeAiRequest({message:'',surface:'home',works:[]}), /m
 console.log('OpenAI contract verification passed.');
 
 const fs = require('fs');
+const http = require('http');
 const path = require('path');
 const {createJarvisServer} = require('../openai-server.js');
 
@@ -61,6 +62,33 @@ async function withServer(fakeClient, run, options = {}) {
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+}
+
+function postJsonWithHeaders(url, payload, headers) {
+  const target = new URL(url);
+  const body = JSON.stringify(payload);
+  return new Promise((resolve, reject) => {
+    const request = http.request({
+      hostname: target.hostname,
+      port: target.port,
+      path: target.pathname,
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-length': Buffer.byteLength(body),
+        ...headers,
+      },
+    }, (response) => {
+      const chunks = [];
+      response.on('data', (chunk) => chunks.push(chunk));
+      response.on('end', () => resolve({
+        status: response.statusCode,
+        body: JSON.parse(Buffer.concat(chunks).toString('utf8')),
+      }));
+    });
+    request.on('error', reject);
+    request.end(body);
+  });
 }
 
 const serverRequest = {
@@ -185,13 +213,34 @@ async function verifyServer() {
     assert.strictEqual(crossOrigin.status, 403);
     assert.deepStrictEqual(await crossOrigin.json(), {error: 'invalid_request'});
 
+    const forgedHost = await postJsonWithHeaders(`${url}/api/ai`, serverRequest, {
+      host: 'rebinding.example',
+      origin: 'http://rebinding.example',
+    });
+    assert.strictEqual(forgedHost.status, 400);
+    assert.deepStrictEqual(forgedHost.body, {error: 'invalid_request'});
+    assert.strictEqual(guardedCreateCalls, 0);
+
+    const forgedHostWithoutOrigin = await postJsonWithHeaders(`${url}/api/ai`, serverRequest, {
+      host: 'rebinding.example',
+    });
+    assert.strictEqual(forgedHostWithoutOrigin.status, 400);
+    assert.deepStrictEqual(forgedHostWithoutOrigin.body, {error: 'invalid_request'});
+    assert.strictEqual(guardedCreateCalls, 0);
+
+    const localPort = new URL(url).port;
+    const localhostWithoutOrigin = await postJsonWithHeaders(`${url}/api/ai`, serverRequest, {
+      host: `localhost:${localPort}`,
+    });
+    assert.strictEqual(localhostWithoutOrigin.status, 200);
+
     const sameOrigin = await fetch(`${url}/api/ai`, {
       method: 'POST',
       headers: {'content-type': 'application/json', origin: url},
       body: JSON.stringify(serverRequest),
     });
     assert.strictEqual(sameOrigin.status, 200);
-    assert.strictEqual(guardedCreateCalls, 1);
+    assert.strictEqual(guardedCreateCalls, 2);
   });
 
   await withServer({responses: {create: async () => validModelDecision()}}, async (url) => {
