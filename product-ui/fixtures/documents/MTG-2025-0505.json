@@ -1,0 +1,435 @@
+{
+  "doc": {
+    "id": "MTG-2025-0505",
+    "kind": "회의록",
+    "kindConfidence": 1,
+    "title": "순환수 펌프 정비공사 착수회의",
+    "stageId": "contractor-management",
+    "task": "업체 관리",
+    "taskScore": 14,
+    "date": "2025-05-05",
+    "drafter": null,
+    "author": "지사 공무부",
+    "fields": {
+      "dates": [
+        {
+          "raw": "2025-05-05",
+          "span": [
+            25,
+            35
+          ],
+          "iso": "2025-05-05",
+          "year": 2025,
+          "month": 5,
+          "day": 5,
+          "gran": "day"
+        }
+      ],
+      "title": "순환수 펌프 정비공사 착수회의",
+      "attendees": "지사 공무부, 계약업체, 지사 안전관리관, 지사 품질관리부",
+      "decisions": [
+        "사진 기록 필수 지점과 중간검사 포인트를 착수계에 명시한다. 현장대리인 부재 시 대체 책임자를 지정한다."
+      ],
+      "actions": []
+    },
+    "text": "제목: 순환수 펌프 정비공사 착수회의\n일시: 2025-05-05\n참석: 지사 공무부, 계약업체, 지사 안전관리관, 지사 품질관리부\n\n안건: 과업범위 해석 정렬 및 착수 조건 확인.\n\n논의: 업체 현장대리인의 발전소 정지정비 경험을 확인함. 작업허가와 격리 확인 완료 후 작업을 개시하며, 분해 전 축 정렬 상태와 커플링 마킹 사진 기록을 필수로 한다.\n결정: 사진 기록 필수 지점과 중간검사 포인트를 착수계에 명시한다. 현장대리인 부재 시 대체 책임자를 지정한다.",
+    "entities": {
+      "actors": [
+        "지사 품질관리부",
+        "지사 안전관리관",
+        "지사 공무부",
+        "계약업체"
+      ],
+      "assets": [
+        "순환수 펌프",
+        "커플링"
+      ],
+      "docRefs": [
+        "사진대지",
+        "작업허가서",
+        "착수계"
+      ],
+      "dates": [
+        {
+          "raw": "2025-05-05",
+          "iso": "2025-05-05",
+          "gran": "day"
+        }
+      ],
+      "amounts": []
+    }
+  },
+  "edges": [
+    {
+      "key": "WorkflowStage:계약|requires_document|Document:착수계",
+      "from": "WorkflowStage:계약",
+      "to": "Document:착수계",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.96,
+      "provCount": 2,
+      "provenance": [
+        {
+          "docId": "okf:contracting",
+          "label": "계약",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            197,
+            234
+          ],
+          "text": "결정: 사진 기록 필수 지점과 중간검사 포인트를 착수계에 명시한다."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:업체 관리|is_controlled_by|Constraint:작업허가·격리 선행 원칙",
+      "from": "WorkflowStage:업체 관리",
+      "to": "Constraint:작업허가·격리 선행 원칙",
+      "rel": "is_controlled_by",
+      "meta": {
+        "ko": "통제 규칙",
+        "hue": "#0a8fc9",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 4,
+      "provenance": [
+        {
+          "docId": "okf:contractor-management",
+          "label": "업체 관리",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "APPR-2025-0409",
+          "label": "2025년 순환수 펌프 정비공사 추진 보고",
+          "kind": "전자결재",
+          "date": "2025-04-09",
+          "span": [
+            244,
+            269
+          ],
+          "text": "작업허가 및 격리 확인 완료 후 작업 개시."
+        },
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            133,
+            196
+          ],
+          "text": "작업허가와 격리 확인 완료 후 작업을 개시하며, 분해 전 축 정렬 상태와 커플링 마킹 사진 기록을 필수로 한다."
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            331,
+            370
+          ],
+          "text": "제17조(안전) 작업허가와 에너지 격리 확인 완료 후 작업을 개시한다."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:계약|requires_document|Document:사진대지",
+      "from": "WorkflowStage:계약",
+      "to": "Document:사진대지",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.73,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            197,
+            234
+          ],
+          "text": "결정: 사진 기록 필수 지점과 중간검사 포인트를 착수계에 명시한다."
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-05-05"
+    },
+    {
+      "key": "WorkflowStage:업체 관리|produces_document|Document:순환수 펌프 정비공사 착수회의",
+      "from": "WorkflowStage:업체 관리",
+      "to": "Document:순환수 펌프 정비공사 착수회의",
+      "rel": "produces_document",
+      "meta": {
+        "ko": "산출 문서",
+        "hue": "#7d8db0",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.95,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": null,
+          "text": "분류 근거: 착수회의×1, 작업허가×1, 현장대리인×2, 격리×1"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-05-05"
+    },
+    {
+      "key": "Document:순환수 펌프 정비공사 착수회의|mentions|Actor:지사 품질관리부",
+      "from": "Document:순환수 펌프 정비공사 착수회의",
+      "to": "Actor:지사 품질관리부",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            64,
+            72
+          ],
+          "text": "지사 품질관리부"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-05-05"
+    },
+    {
+      "key": "Document:순환수 펌프 정비공사 착수회의|mentions|Actor:지사 안전관리관",
+      "from": "Document:순환수 펌프 정비공사 착수회의",
+      "to": "Actor:지사 안전관리관",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            54,
+            62
+          ],
+          "text": "지사 안전관리관"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-05-05"
+    },
+    {
+      "key": "Document:순환수 펌프 정비공사 착수회의|mentions|Actor:지사 공무부",
+      "from": "Document:순환수 펌프 정비공사 착수회의",
+      "to": "Actor:지사 공무부",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            40,
+            46
+          ],
+          "text": "지사 공무부"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-05-05"
+    },
+    {
+      "key": "Document:순환수 펌프 정비공사 착수회의|mentions|Actor:계약업체",
+      "from": "Document:순환수 펌프 정비공사 착수회의",
+      "to": "Actor:계약업체",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            48,
+            52
+          ],
+          "text": "계약업체"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-05-05"
+    },
+    {
+      "key": "Document:순환수 펌프 정비공사 착수회의|mentions|Asset:순환수 펌프",
+      "from": "Document:순환수 펌프 정비공사 착수회의",
+      "to": "Asset:순환수 펌프",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            4,
+            10
+          ],
+          "text": "순환수 펌프"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-05-05"
+    },
+    {
+      "key": "Document:순환수 펌프 정비공사 착수회의|mentions|Asset:커플링",
+      "from": "Document:순환수 펌프 정비공사 착수회의",
+      "to": "Asset:커플링",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-0505",
+          "label": "순환수 펌프 정비공사 착수회의",
+          "kind": "회의록",
+          "date": "2025-05-05",
+          "span": [
+            175,
+            178
+          ],
+          "text": "커플링"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-05-05"
+    }
+  ]
+}
