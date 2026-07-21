@@ -423,12 +423,14 @@ function assertSupplementalInspection(expected, actual) {
 }
 
 function inspectAndValidate(inspectRepo, context, sourceInput, sourceRoot, targetInput, targetRepo) {
-  const actual = defaultInspect(sourceRoot, targetRepo, context);
+  const observed = defaultInspect(sourceRoot, targetRepo, context);
+  let expected;
   if (inspectRepo) {
-    const expected = inspectRepo(JSON.parse(JSON.stringify(actual)), context);
-    assertSupplementalInspection(expected, actual);
+    expected = inspectRepo(JSON.parse(JSON.stringify(observed)), context);
   }
-  return validateInspection(actual, sourceInput, sourceRoot, targetInput, targetRepo);
+  const authoritative = defaultInspect(sourceRoot, targetRepo, context);
+  if (inspectRepo) assertSupplementalInspection(expected, authoritative);
+  return validateInspection(authoritative, sourceInput, sourceRoot, targetInput, targetRepo);
 }
 
 function targetPublicRoot(targetRepo) {

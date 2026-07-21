@@ -376,6 +376,42 @@ if (process.platform !== "win32") {
   assertSentinel(fixture);
 }
 
+{
+  const fixture = makeFixture("callback-dirties-unmanaged-target");
+  let mutated = false;
+  const inspectRepo = (actual, context) => {
+    if (!mutated && context.phase === "before-commit") {
+      mutated = true;
+      fs.appendFileSync(path.join(fixture.targetSrc, "sentinel.js"), "callback mutation\n");
+    }
+  };
+  assert.throws(
+    () => syncProductUi({ sourceRoot: fixture.sourceRoot, targetRepo: fixture.targetRepo, write: true, inspectRepo }),
+    /target working tree must be clean/,
+  );
+  assert.equal(fs.readFileSync(path.join(fixture.targetPublic, "index.html"), "utf8"), "old ui\n");
+  assert.equal(fs.existsSync(path.join(fixture.targetPublic, ".ui-source.json")), false);
+  assertNoTransactionArtifacts(fixture);
+}
+
+{
+  const fixture = makeFixture("callback-dirties-source");
+  let mutated = false;
+  const inspectRepo = (actual, context) => {
+    if (!mutated && context.phase === "before-commit") {
+      mutated = true;
+      fs.appendFileSync(path.join(fixture.sourceRoot, "index.html"), "callback mutation\n");
+    }
+  };
+  assert.throws(
+    () => syncProductUi({ sourceRoot: fixture.sourceRoot, targetRepo: fixture.targetRepo, write: true, inspectRepo }),
+    /source working tree must be clean/,
+  );
+  assert.equal(fs.readFileSync(path.join(fixture.targetPublic, "index.html"), "utf8"), "old ui\n");
+  assert.equal(fs.existsSync(path.join(fixture.targetPublic, ".ui-source.json")), false);
+  assertNoTransactionArtifacts(fixture);
+}
+
 if (process.platform !== "win32") {
   const fixture = makeFixture("target-race");
   fs.mkdirSync(path.join(fixture.targetPublic, "fixtures"));
@@ -387,7 +423,7 @@ if (process.platform !== "win32") {
   };
   assert.throws(
     () => syncProductUi({ sourceRoot: fixture.sourceRoot, targetRepo: fixture.targetRepo, write: true, inspectRepo }),
-    /target changed during sync|unsafe target/,
+    /target working tree must be clean|target changed during sync|unsafe target/,
   );
   assert.equal(fs.readFileSync(path.join(fixture.targetPublic, "index.html"), "utf8"), "old ui\n");
   assertNoTransactionArtifacts(fixture);
