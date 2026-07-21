@@ -666,7 +666,13 @@ async function vWorkbench(main, id) {
   const gd = $("#goDraft"); if (gd) gd.onclick = () => nav("#draft/" + w.id);
   const gd1 = $("#goDraft1"); if (gd1) gd1.onclick = () => nav("#draft/" + w.id);
   const gc1 = $("#goCheck1"); if (gc1) gc1.onclick = () => nav("#draft/" + w.id);
-  $("#wbOmni").onsubmit = (e) => { e.preventDefault(); handleOmni($("#wbIn").value, w, $("#wbResult"), sim); $("#wbIn").value = ""; };
+  $("#wbOmni").onsubmit = (e) => {
+    e.preventDefault();
+    const input = $("#wbIn");
+    const text = input.value;
+    input.value = "";
+    handleOmni(text, w, $("#wbResult"), sim);
+  };
   $("#fileIn").onchange = (e) => { if (e.target.files[0]) ingestFlow(w, e.target.files[0], null); };
   $("#ingestBtn").onclick = () => { const t = $("#pasteIn").value.trim(); if (t) ingestFlow(w, null, t); };
 }
