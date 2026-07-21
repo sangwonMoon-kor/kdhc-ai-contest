@@ -210,7 +210,7 @@
       "to": {
         "type": "Document",
         "name": "2026년 순환수 펌프 정비 계획 보고",
-        "id": "doc-1k1s2jl"
+        "id": "DOC-FIXTURE-001"
       },
       "confidence": 0.9,
       "provenance": {
@@ -227,7 +227,7 @@
       "from": {
         "type": "Document",
         "name": "2026년 순환수 펌프 정비 계획 보고",
-        "id": "doc-1k1s2jl"
+        "id": "DOC-FIXTURE-001"
       },
       "rel": "mentions",
       "to": {
@@ -253,7 +253,7 @@
       "from": {
         "type": "Document",
         "name": "2026년 순환수 펌프 정비 계획 보고",
-        "id": "doc-1k1s2jl"
+        "id": "DOC-FIXTURE-001"
       },
       "rel": "mentions",
       "to": {

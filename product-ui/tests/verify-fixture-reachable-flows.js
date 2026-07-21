@@ -9,6 +9,20 @@ const { chromium } = require("playwright");
 const repoRoot = path.resolve(__dirname, "..", "..");
 const port = 8800 + (process.pid % 500);
 const base = `http://127.0.0.1:${port}`;
+const scannedPdf = Buffer.from(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R >>
+endobj
+trailer
+<< /Root 1 0 R >>
+%%EOF`, "latin1");
+const extractFailureReason = "LLM 미연결 — 스캔 PDF를 텍스트로 저장하거나 내용을 붙여넣어 주세요.";
 
 function startServer() {
   return new Promise((resolve, reject) => {
@@ -119,6 +133,32 @@ async function run() {
     await page.waitForFunction(() => document.querySelector("#toast")?.textContent.includes("다음 담당자 브리핑에 반영"));
     await page.waitForFunction(() => document.querySelector("#recList")?.textContent.includes("다음 담당자 메모로 남김"));
 
+    await page.locator("#fileIn").setInputFiles({ name: "fixture-scan.pdf", mimeType: "application/pdf", buffer: scannedPdf });
+    await page.locator("#ingestPanel [data-tr]").first().waitFor();
+    assert((await page.locator("#ingestPanel [data-tr]").count()) > 0, "fixture scanned-PDF extraction did not reach ingest staging");
+
+    await page.route("**/fixtures/extract/scanned-pdf.json", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: false, reason: extractFailureReason })
+    }));
+    await page.locator("#fileIn").setInputFiles({ name: "unavailable-scan.pdf", mimeType: "application/pdf", buffer: scannedPdf });
+    await settlePanel(page, "#ingestPanel", "문서를 읽는 중");
+    const extractFailureText = (await page.locator("#ingestPanel").innerText()).trim();
+    assert(extractFailureText.includes(extractFailureReason), "scanned-PDF extraction failure did not show the server reason");
+    assert(!extractFailureText.includes("추출된 내용이 너무 짧습니다."), "scanned-PDF extraction failure fell through to the generic short-text error");
+    await page.unroute("**/fixtures/extract/scanned-pdf.json");
+
+    await page.route("**/fixtures/extract/scanned-pdf.json", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, text: "", model: "fixture" })
+    }));
+    await page.locator("#fileIn").setInputFiles({ name: "malformed-scan.pdf", mimeType: "application/pdf", buffer: scannedPdf });
+    await settlePanel(page, "#ingestPanel", "문서를 읽는 중");
+    assert((await page.locator("#ingestPanel").innerText()).includes("스캔 PDF 텍스트 추출 응답이 올바르지 않습니다."), "malformed scanned-PDF success response was not rejected explicitly");
+    await page.unroute("**/fixtures/extract/scanned-pdf.json");
+
     await page.locator("#pasteIn").fill("2026년 순환수 펌프 정비 계획 보고\n운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다.");
     await page.locator("#ingestBtn").click();
     await settlePanel(page, "#ingestPanel", "후보를 만드는 중");
@@ -128,7 +168,7 @@ async function run() {
 
     assert.deepEqual(apiRequests, [], `fixture flows requested live API routes: ${apiRequests.join(" | ")}`);
     assert.deepEqual(errors, [], `fixture flows emitted browser errors: ${errors.join(" | ")}`);
-    console.log("Fixture reachable-flow E2E passed (graph, non-design draft, hint, ingest)");
+    console.log("Fixture reachable-flow E2E passed (graph, non-design draft, hint, scanned-PDF extract, ingest)");
   } finally {
     if (browser) await browser.close();
     await stopServer(server);

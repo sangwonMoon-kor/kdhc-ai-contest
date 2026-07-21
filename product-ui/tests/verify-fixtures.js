@@ -44,7 +44,7 @@ if (!failures.length) {
   if (manifest.contractVersion !== 1) failures.push("contractVersion must be 1");
   if (manifest.fixtureVersion !== "v2.4") failures.push("fixtureVersion must be v2.4");
   if (manifest.engine.repository !== "creationy/jikmu-memory") failures.push("wrong engine repository");
-  if (manifest.engine.commit !== "13e232e") failures.push("wrong engine commit");
+  if (manifest.engine.commit !== "e7dcfb17632560d1e660b2380cc0ccfaab0ac894") failures.push("wrong engine commit");
   if (summary.docCount !== 19 || summary.stats.nodes !== 193 || summary.stats.edges !== 938) failures.push("unexpected v2.4 summary");
   if (!(forecast.items || []).some((item) => /펌프/.test(item.name))) failures.push("pump forecast missing");
   if (!ask.grounded || !(ask.docs || []).length) failures.push("grounded pump answer missing");

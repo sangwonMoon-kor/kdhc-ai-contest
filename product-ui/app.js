@@ -728,7 +728,14 @@ async function extractFileText(file) {
     // 텍스트 레이어 없음 → 서버 비전 추출 폴백
     if (buf.byteLength > 8 * 1024 * 1024) throw new Error("스캔본이 8MB를 넘습니다 — 페이지를 나눠 첨부해 주세요.");
     const sr = await api("/api/extract", { filename: file.name, mime: "application/pdf", dataB64: bufToB64(buf) });
-    if (sr.error) throw new Error(sr.error);
+    if (sr.ok === false) {
+      const reason = typeof sr.reason === "string" ? sr.reason.trim() : "";
+      if (!reason) throw new Error("스캔 PDF 텍스트 추출 응답이 올바르지 않습니다.");
+      throw new Error(reason);
+    }
+    if (sr.ok !== true || typeof sr.text !== "string" || !sr.text.trim()) {
+      throw new Error("스캔 PDF 텍스트 추출 응답이 올바르지 않습니다.");
+    }
     return { text: sr.text };
   }
   if (["txt", "md", "csv"].includes(ext)) return { text: decodeSmart(buf) };

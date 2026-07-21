@@ -2,22 +2,41 @@
 const fs = require("fs");
 const path = require("path");
 
-const args = Object.fromEntries(process.argv.slice(2).map((arg) => {
-  const index = arg.indexOf("=");
-  return index < 0 ? [arg.replace(/^--/, ""), true] : [arg.slice(2, index), arg.slice(index + 1)];
-}));
-const baseUrl = String(args["base-url"] || "http://127.0.0.1:8343").replace(/\/$/, "");
-const engineCommit = String(args["engine-commit"] || "13e232e");
-const outRoot = path.resolve(__dirname, "..", "product-ui", "fixtures");
+const defaultOutRoot = path.resolve(__dirname, "..", "product-ui", "fixtures");
+const usage = "Usage: node tools/capture-product-fixtures.js --engine-commit=<40-hex SHA> --generated-at=<canonical ISO timestamp> [--base-url=http://127.0.0.1:8343]";
 
-async function request(apiPath, body) {
+function parseCliArgs(argv) {
+  const args = {};
+  for (const arg of argv) {
+    const match = /^--([^=]+)=(.*)$/.exec(arg);
+    if (!match) throw new Error(`Expected --name=value argument: ${arg}`);
+    if (!["base-url", "engine-commit", "generated-at"].includes(match[1])) throw new Error(`Unknown capture argument: --${match[1]}`);
+    args[match[1]] = match[2];
+  }
+  const engineCommit = args["engine-commit"];
+  if (!engineCommit) throw new Error("Missing required --engine-commit=<40-hex SHA>");
+  if (!/^[0-9a-f]{40}$/.test(engineCommit)) throw new Error("--engine-commit must be a full 40-character hexadecimal SHA");
+  const generatedAt = args["generated-at"];
+  if (!generatedAt) throw new Error("Missing required --generated-at=<canonical ISO timestamp>");
+  const timestamp = new Date(generatedAt);
+  if (Number.isNaN(timestamp.getTime()) || timestamp.toISOString() !== generatedAt) {
+    throw new Error("--generated-at must be a canonical ISO timestamp such as 2026-07-21T15:26:11.445Z");
+  }
+  return {
+    baseUrl: String(args["base-url"] || "http://127.0.0.1:8343").replace(/\/$/, ""),
+    engineCommit,
+    generatedAt
+  };
+}
+
+async function request(baseUrl, apiPath, body) {
   const response = await fetch(baseUrl + apiPath, body ? {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
   } : undefined);
   if (!response.ok) throw new Error(`${apiPath} returned HTTP ${response.status}`);
   return response.json();
 }
-function write(rel, value) {
+function write(outRoot, rel, value) {
   const file = path.join(outRoot, rel);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(value, null, 2) + "\n");
@@ -110,6 +129,10 @@ function validateResponses({ summary, forecast, briefing, graph, documents, askP
   assert(ingestStage.doc.id === "DOC-FIXTURE-001", "ingestStage.doc.id must be stable");
   fields(ingestCommit, "ingestCommit", { ok: (value) => value === true, merged: Number.isInteger, doc: object });
   assert(ingestCommit.doc.id === ingestStage.doc.id, "ingest commit must return the staged fixture document");
+  ingestStage.triples.forEach((triple, index) => {
+    [triple.from, triple.to].filter((node) => node && node.type === "Document" && node.name === ingestStage.doc.title)
+      .forEach((node) => assert(node.id === ingestStage.doc.id, `ingestStage.triples[${index}] fixture document id must be stable`));
+  });
   fields(extract, "extract", { ok: (value) => value === true, text: string, model: string });
 }
 function collectEvidenceIds(value, docs, okf) {
@@ -135,25 +158,42 @@ function collectEvidenceIds(value, docs, okf) {
   });
 }
 
-async function capture() {
-  const summary = await request("/api/summary");
-  const forecast = await request("/api/forecast");
-  const briefing = await request("/api/briefing");
-  const graph = await request("/api/graph");
-  const documents = await request("/api/documents");
-  const askPump = await request("/api/ask", { question: "작년 펌프 정비 추진 보고 찾아줘" });
-  const askMissing = await request("/api/ask", { question: "점심 뭐 먹지?" });
+function buildManifest(summary, { engineCommit, generatedAt }) {
+  return {
+    contractVersion: 1,
+    fixtureVersion: summary.versionLabel,
+    generatedAt,
+    engine: { repository: "creationy/jikmu-memory", commit: engineCommit },
+    stats: { docCount: summary.docCount, nodes: summary.stats.nodes, edges: summary.stats.edges },
+    scenarios: { primary: "pump-maintenance", simDate: summary.simDate }
+  };
+}
+
+async function capture({ baseUrl, engineCommit, generatedAt, outRoot = defaultOutRoot }) {
+  const get = (apiPath, body) => request(baseUrl, apiPath, body);
+  const put = (rel, value) => write(outRoot, rel, value);
+  const summary = await get("/api/summary");
+  const forecast = await get("/api/forecast");
+  const briefing = await get("/api/briefing");
+  const graph = await get("/api/graph");
+  const documents = await get("/api/documents");
+  const askPump = await get("/api/ask", { question: "작년 펌프 정비 추진 보고 찾아줘" });
+  const askMissing = await get("/api/ask", { question: "점심 뭐 먹지?" });
   const drafts = {};
-  for (const stageId of [...new Set(forecast.items.map((item) => item.stageId))].sort()) drafts[stageId] = await request("/api/draft", { task: stageId });
+  for (const stageId of [...new Set(forecast.items.map((item) => item.stageId))].sort()) drafts[stageId] = await get("/api/draft", { task: stageId });
   const riskyText = "작년 내역을 그대로 준용하고 특정 모델로 지정한다. 산출근거 없이 구두 지시로 먼저 시공하고 검수 전 대금을 지급한다.";
-  const riskyCheck = await request("/api/check", { text: riskyText });
-  const cleanCheck = await request("/api/check", { text: "올해 산출근거와 동등 이상 판단 기준을 첨부하고 검수 완료 후 지급한다." });
+  const riskyCheck = await get("/api/check", { text: riskyText });
+  const cleanCheck = await get("/api/check", { text: "올해 산출근거와 동등 이상 판단 기준을 첨부하고 검수 완료 후 지급한다." });
   const hintText = "운영부 일정은 5월 둘째 주로 확정";
-  const hintStage = await request("/api/hint/stage", { text: hintText, stageId: "design-and-costing" });
+  const hintStage = await get("/api/hint/stage", { text: hintText, stageId: "design-and-costing" });
   const ingestText = "2026년 순환수 펌프 정비 계획 보고\n운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다.";
-  const capturedIngest = await request("/api/ingest", { text: ingestText });
+  const capturedIngest = await get("/api/ingest", { text: ingestText });
   const dynamicDocId = capturedIngest.doc.id;
   const ingestStage = JSON.parse(JSON.stringify(capturedIngest).split(dynamicDocId).join("DOC-FIXTURE-001"));
+  ingestStage.triples.forEach((triple) => {
+    [triple.from, triple.to].filter((node) => node && node.type === "Document" && node.name === ingestStage.doc.title)
+      .forEach((node) => { node.id = ingestStage.doc.id; });
+  });
   const hintTriple = hintStage.triples[0];
   const hintCommit = {
     ok: true,
@@ -186,47 +226,51 @@ async function capture() {
   }
   const documentFixtures = new Map();
   for (const id of docIds) {
-    const fixture = await request(`/api/documents/${encodeURIComponent(id)}`);
+    const fixture = await get(`/api/documents/${encodeURIComponent(id)}`);
     assert(object(fixture) && object(fixture.doc) && fixture.doc.id === id && Array.isArray(fixture.edges), `document ${id} has unexpected shape`);
     documentFixtures.set(id, fixture);
   }
   const okfFixtures = new Map();
   for (const id of okfIds) {
-    const fixture = await request(`/api/okf/${encodeURIComponent(id)}`);
+    const fixture = await get(`/api/okf/${encodeURIComponent(id)}`);
     assert(object(fixture) && fixture.id === id, `OKF ${id} has unexpected shape`);
     okfFixtures.set(id, fixture);
   }
-  write("summary.json", summary);
-  write("forecast.json", forecast);
-  write("briefing.json", briefing);
-  write("graph.json", graph);
-  write("documents/index.json", documents);
-  write("ask/pump-report.json", askPump);
-  write("ask/not-found.json", askMissing);
-  for (const [stageId, draft] of Object.entries(drafts)) write(`draft/${stageId}.json`, draft);
-  write("check/pump-risky-draft.json", riskyCheck);
-  write("check/clean-draft.json", cleanCheck);
-  write("hint/stage.json", hintStage);
-  write("hint/commit.json", hintCommit);
-  write("ingest/stage.json", ingestStage);
-  write("ingest/commit.json", ingestCommit);
-  write("extract/scanned-pdf.json", extract);
-  write("documents/DOC-FIXTURE-001.json", { doc: ingestStage.doc, edges: [] });
-  for (const [id, fixture] of documentFixtures) write(`documents/${encodeURIComponent(id)}.json`, fixture);
-  for (const [id, fixture] of okfFixtures) write(`okf/${encodeURIComponent(id)}.json`, fixture);
-  write("manifest.json", {
-    contractVersion: 1,
-    fixtureVersion: summary.versionLabel,
-    generatedAt: new Date().toISOString(),
-    engine: { repository: "creationy/jikmu-memory", commit: engineCommit },
-    stats: { docCount: summary.docCount, nodes: summary.stats.nodes, edges: summary.stats.edges },
-    scenarios: { primary: "pump-maintenance", simDate: summary.simDate }
-  });
+  put("summary.json", summary);
+  put("forecast.json", forecast);
+  put("briefing.json", briefing);
+  put("graph.json", graph);
+  put("documents/index.json", documents);
+  put("ask/pump-report.json", askPump);
+  put("ask/not-found.json", askMissing);
+  for (const [stageId, draft] of Object.entries(drafts)) put(`draft/${stageId}.json`, draft);
+  put("check/pump-risky-draft.json", riskyCheck);
+  put("check/clean-draft.json", cleanCheck);
+  put("hint/stage.json", hintStage);
+  put("hint/commit.json", hintCommit);
+  put("ingest/stage.json", ingestStage);
+  put("ingest/commit.json", ingestCommit);
+  put("extract/scanned-pdf.json", extract);
+  put("documents/DOC-FIXTURE-001.json", { doc: ingestStage.doc, edges: [] });
+  for (const [id, fixture] of documentFixtures) put(`documents/${encodeURIComponent(id)}.json`, fixture);
+  for (const [id, fixture] of okfFixtures) put(`okf/${encodeURIComponent(id)}.json`, fixture);
+  put("manifest.json", buildManifest(summary, { engineCommit, generatedAt }));
   console.log(`Captured fixtures from ${baseUrl} (${summary.versionLabel}, docs=${summary.docCount})`);
 }
 
 if (require.main === module) {
-  capture().catch((error) => { console.error(error.stack || error); process.exit(1); });
+  if (process.argv.slice(2).includes("--help")) {
+    console.log(usage);
+  } else {
+    let options;
+    try {
+      options = parseCliArgs(process.argv.slice(2));
+    } catch (error) {
+      console.error(`${error.message}\n\n${usage}`);
+      process.exit(1);
+    }
+    capture(options).catch((error) => { console.error(error.stack || error); process.exit(1); });
+  }
 }
 
-module.exports = { validateResponses, collectEvidenceIds, capture };
+module.exports = { validateResponses, collectEvidenceIds, parseCliArgs, buildManifest, capture };
