@@ -28,6 +28,21 @@
     return typeof path === "string" && (path === "/api" || path.startsWith("/api/"));
   }
 
+  function safeFixtureBase(value) {
+    const base = String(value || "fixtures").replace(/\/+$/, "");
+    const segments = base.split("/");
+    let decodedSegments;
+    try {
+      decodedSegments = segments.map((segment) => decodeURIComponent(segment));
+    } catch (error) {
+      throw new Error(`Invalid fixture base: ${value}`);
+    }
+    if (!base || base.startsWith("/") || base.includes("?") || base.includes("#") || base.includes("\\") || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(base) || decodedSegments.some((segment) => !segment || segment === "." || segment === ".." || /[\\/]/.test(segment))) {
+      throw new Error(`Invalid fixture base: ${value}`);
+    }
+    return base;
+  }
+
   function connectionFailure(error, timedOut) {
     const message = timedOut ? "Request timed out" : String(error && (error.message || error) || "Connection failed");
     const failure = new Error(message);
@@ -72,7 +87,7 @@
   function createApiClient(options = {}) {
     const requestedMode = MODES.has(options.mode) ? options.mode : "auto";
     const fetchImpl = options.fetchImpl || (typeof fetch === "function" ? fetch.bind(globalThis) : null);
-    const fixtureBase = String(options.fixtureBase || "fixtures").replace(/\/$/, "");
+    const fixtureBase = safeFixtureBase(options.fixtureBase);
     const configuredTimeoutMs = Number(options.timeoutMs);
     const timeoutMs = Number.isFinite(configuredTimeoutMs) && configuredTimeoutMs > 0 ? configuredTimeoutMs : 20000;
     const onStatus = typeof options.onStatus === "function" ? options.onStatus : function () {};
@@ -100,14 +115,15 @@
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
+        const requestOptions = body ? {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        } : { signal: controller.signal };
         let response;
         try {
-          response = await fetchImpl(url, body ? {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-            signal: controller.signal
-          } : { signal: controller.signal });
+          response = await fetchImpl(url, requestOptions);
         } catch (error) {
           throw connectionFailure(error, controller.signal.aborted || (error && error.name === "AbortError"));
         }

@@ -123,5 +123,50 @@ function response(body, ok = true, status = 200) {
   }});
   await staleFixtureError.request("/api/summary");
   assert.equal(staleFixtureError.getStatus().error, null, "successful fixture response retained a stale live error");
+
+  for (const fixtureBase of [
+    "https://example.test/fixtures",
+    "//example.test/fixtures",
+    "/fixtures",
+    "fixtures?cache=1",
+    "fixtures#section",
+    "../fixtures",
+    "fixtures/../private",
+    "fixtures/%2e%2e/private"
+  ]) {
+    let calls = 0;
+    assert.throws(() => createApiClient({ mode: "fixture", fixtureBase, fetchImpl: async () => { calls += 1; return response({}); } }), /Invalid fixture base/);
+    assert.equal(calls, 0, `unsafe fixture base fetched: ${fixtureBase}`);
+  }
+
+  const cyclicBody = {};
+  cyclicBody.self = cyclicBody;
+  let cyclicCalls = 0;
+  const cyclicAuto = createApiClient({ mode: "auto", fetchImpl: async () => { cyclicCalls += 1; return response({}); } });
+  await assert.rejects(() => cyclicAuto.request("/api/ask", cyclicBody), /circular/i);
+  assert.equal(cyclicCalls, 0, "cyclic body attempted live or fixture fetch");
+  assert.equal(cyclicAuto.getStatus().activeMode, "auto");
+  assert.equal(cyclicAuto.getStatus().source, "live");
+
+  const timeoutCalls = [];
+  let timeoutSignalObserved = false;
+  const timeoutAuto = createApiClient({ mode: "auto", timeoutMs: 5, fetchImpl: async (url, options) => {
+    timeoutCalls.push(url);
+    if (url === "/api/summary") {
+      timeoutSignalObserved = Boolean(options && options.signal);
+      return new Promise((resolve, reject) => {
+        options.signal.addEventListener("abort", () => {
+          const error = new Error("aborted");
+          error.name = "AbortError";
+          reject(error);
+        }, { once: true });
+      });
+    }
+    if (url.endsWith("manifest.json")) return response({ contractVersion: 1 });
+    return response({ docCount: 19, stats: { nodes: 193, edges: 938 } });
+  }});
+  assert.deepEqual(await timeoutAuto.request("/api/summary"), { docCount: 19, stats: { nodes: 193, edges: 938 } });
+  assert(timeoutSignalObserved, "timeout fetch did not receive an abort signal");
+  assert(timeoutCalls.includes("fixtures/manifest.json") && timeoutCalls.includes("fixtures/summary.json"), "timeout did not fall back to fixtures");
   console.log("API client contract passed");
 })().catch((error) => { console.error(error.stack || error); process.exit(1); });
