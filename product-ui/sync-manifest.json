@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "entries": [
+    "index.html",
+    "style.css",
+    "app.js",
+    "api-client.js",
+    "intent.js",
+    "extract.js",
+    "fixtures",
+    "version.json"
+  ]
+}
