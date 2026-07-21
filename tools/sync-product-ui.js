@@ -9,6 +9,7 @@ const SOURCE_REPOSITORY = "sangwonMoon-kor/kdhc-ai-contest";
 const TARGET_REPOSITORY = "creationy/jikmu-memory";
 const LOCK_NAME = "jikmu-product-ui-sync.lock";
 const NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
+const GIT_READ_ENV = { ...process.env, GIT_OPTIONAL_LOCKS: "0" };
 
 function assertSafeEntry(entry) {
   const value = typeof entry === "string" ? entry : "";
@@ -70,6 +71,17 @@ function fileIdentity(stat) {
 
 function directoryIdentity(stat) {
   return { dev: stat.dev, ino: stat.ino, mode: stat.mode };
+}
+
+function installedIdentity(stat) {
+  return {
+    dev: stat.dev,
+    ino: stat.ino,
+    mode: stat.mode,
+    nlink: stat.nlink,
+    size: stat.size,
+    mtimeMs: stat.mtimeMs,
+  };
 }
 
 function identitiesEqual(left, right) {
@@ -218,7 +230,7 @@ function verifySourceAtCommit(sourceState, sourcePlan) {
       committed = execFileSync(
         "git",
         ["-C", sourceState.topLevel, "show", `${sourceState.sha}:product-ui/${relative}`],
-        { encoding: null, maxBuffer: 64 * 1024 * 1024 },
+        { encoding: null, env: GIT_READ_ENV, maxBuffer: 64 * 1024 * 1024 },
       );
     } catch (error) {
       throw new Error(`source file is not tracked at verified commit: ${relative}`);
@@ -305,16 +317,76 @@ function inspectionIdentity(state) {
 }
 
 function gitText(cwd, args) {
-  return execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" }).trim();
+  return execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8", env: GIT_READ_ENV }).trim();
 }
 
-function gitStatusClean(cwd, allowedAbsolutePaths = []) {
-  const output = execFileSync("git", ["-C", cwd, "status", "--porcelain=v1", "-z", "--untracked-files=all"], { encoding: "utf8" });
-  if (!output) return true;
+function gitOutput(cwd, args, options = {}) {
+  return execFileSync("git", ["-C", cwd, ...args], {
+    encoding: "utf8",
+    env: GIT_READ_ENV,
+    maxBuffer: 64 * 1024 * 1024,
+    ...options,
+  });
+}
+
+function parseGitEntries(output, pattern, label) {
+  const entries = new Map();
+  for (const record of output.split("\0").filter(Boolean)) {
+    const match = pattern.exec(record);
+    if (!match || entries.has(match[4])) throw new Error(`could not inspect ${label}`);
+    entries.set(match[4], { mode: match[1], oid: match[2], stage: match[3] });
+  }
+  return entries;
+}
+
+function hashWorktreeBytes(cwd, relative, bytes, filtered) {
+  return gitOutput(cwd, ["hash-object", ...(filtered ? ["--path", relative] : []), "--stdin"], {
+    input: bytes,
+  }).trim();
+}
+
+function gitWorkingTreeClean(cwd, allowedAbsolutePaths = []) {
   const topLevel = gitText(cwd, ["rev-parse", "--show-toplevel"]);
+  const fileMode = gitOutput(cwd, ["config", "--type=bool", "--default=true", "core.filemode"]).trim() !== "false";
+  const head = parseGitEntries(
+    gitOutput(cwd, ["ls-tree", "-r", "-z", "--full-tree", "HEAD"]),
+    /^([0-7]{6}) (?:blob|commit) ([0-9a-f]{40}|[0-9a-f]{64})()\t([\s\S]*)$/,
+    "HEAD tree",
+  );
+  const index = parseGitEntries(
+    gitOutput(cwd, ["ls-files", "--stage", "-z"]),
+    /^([0-7]{6}) ([0-9a-f]{40}|[0-9a-f]{64}) ([0-3])\t([\s\S]*)$/,
+    "Git index",
+  );
+  if (head.size !== index.size) return false;
+  for (const [relative, indexed] of index) {
+    const committed = head.get(relative);
+    if (!committed || indexed.stage !== "0" || committed.mode !== indexed.mode || committed.oid !== indexed.oid) return false;
+
+    const absolute = fromPosix(topLevel, relative);
+    const stat = lstatOrNull(absolute);
+    if (indexed.mode === "120000") {
+      if (!stat || !stat.isSymbolicLink()) return false;
+      const linkBytes = Buffer.from(fs.readlinkSync(absolute));
+      if (hashWorktreeBytes(cwd, relative, linkBytes, false) !== indexed.oid) return false;
+    } else if (indexed.mode === "160000") {
+      if (!stat || !stat.isDirectory()) return false;
+      try {
+        if (gitText(absolute, ["rev-parse", "HEAD"]) !== indexed.oid) return false;
+      } catch (error) {
+        return false;
+      }
+    } else {
+      if (!stat || stat.isSymbolicLink() || !stat.isFile()) return false;
+      if (fileMode && Boolean(stat.mode & 0o111) !== (indexed.mode === "100755")) return false;
+      if (hashWorktreeBytes(cwd, relative, fs.readFileSync(absolute), true) !== indexed.oid) return false;
+    }
+  }
+
+  const output = gitOutput(cwd, ["ls-files", "--others", "--exclude-standard", "-z"]);
+  if (!output) return true;
   const allowed = new Set(allowedAbsolutePaths.map((absolute) => posixRelative(topLevel, absolute)));
-  const records = output.split("\0").filter(Boolean);
-  return records.every((record) => record.startsWith("?? ") && allowed.has(record.slice(3)));
+  return output.split("\0").filter(Boolean).every((relative) => allowed.has(relative));
 }
 
 function defaultInspect(sourceRoot, targetRepo, context = {}) {
@@ -325,7 +397,7 @@ function defaultInspect(sourceRoot, targetRepo, context = {}) {
       topLevel: sourceTop,
       remote: gitText(sourceTop, ["remote", "get-url", "origin"]),
       branch: gitText(sourceTop, ["branch", "--show-current"]),
-      clean: gitStatusClean(sourceTop),
+      clean: gitWorkingTreeClean(sourceTop),
       sha: gitText(sourceTop, ["rev-parse", "HEAD"]),
     },
     target: {
@@ -333,14 +405,30 @@ function defaultInspect(sourceRoot, targetRepo, context = {}) {
       gitDir: gitText(targetTop, ["rev-parse", "--absolute-git-dir"]),
       remote: gitText(targetTop, ["remote", "get-url", "origin"]),
       branch: gitText(targetTop, ["branch", "--show-current"]),
-      clean: gitStatusClean(targetTop, context.allowedTargetPaths || []),
+      clean: gitWorkingTreeClean(targetTop, context.allowedTargetPaths || []),
     },
   };
 }
 
+function assertSupplementalInspection(expected, actual) {
+  if (expected === undefined || expected === null) return;
+  if (!expected || typeof expected !== "object") throw new Error("inspectRepo must return expected state or undefined");
+  for (const repository of ["source", "target"]) {
+    if (expected[repository] === undefined) continue;
+    if (!expected[repository] || typeof expected[repository] !== "object") throw new Error(`inspectRepo expectation mismatch: ${repository}`);
+    for (const [key, value] of Object.entries(expected[repository])) {
+      if (actual[repository][key] !== value) throw new Error(`inspectRepo expectation mismatch: ${repository}.${key}`);
+    }
+  }
+}
+
 function inspectAndValidate(inspectRepo, context, sourceInput, sourceRoot, targetInput, targetRepo) {
-  const state = inspectRepo ? inspectRepo(context) : defaultInspect(sourceRoot, targetRepo, context);
-  return validateInspection(state, sourceInput, sourceRoot, targetInput, targetRepo);
+  const actual = defaultInspect(sourceRoot, targetRepo, context);
+  if (inspectRepo) {
+    const expected = inspectRepo(JSON.parse(JSON.stringify(actual)), context);
+    assertSupplementalInspection(expected, actual);
+  }
+  return validateInspection(actual, sourceInput, sourceRoot, targetInput, targetRepo);
 }
 
 function targetPublicRoot(targetRepo) {
@@ -434,6 +522,16 @@ function parseProvenance(snapshot) {
   } catch (error) {
     return null;
   }
+}
+
+function validManagedFiles(value) {
+  if (!Array.isArray(value) || value.some((relative) => typeof relative !== "string")) return false;
+  try {
+    value.forEach(assertSafeEntry);
+  } catch (error) {
+    return false;
+  }
+  return new Set(value).size === value.length && !value.includes(".ui-source.json");
 }
 
 function randomSibling(destination, kind) {
@@ -543,19 +641,21 @@ function verifyInstalled(output, targetRoot) {
   return loaded.identity;
 }
 
-function safeUnlinkInstalled(record) {
+function safeUnlinkInstalled(record, targetRoot) {
   const stat = lstatOrNull(record.output.snapshot.destination);
   if (!stat) return;
-  if (!record.installedIdentity || !identitiesEqual(record.installedIdentity, fileIdentity(stat))) {
+  if (!record.installedIdentity || !identitiesEqual(record.installedIdentity, installedIdentity(stat))) {
     throw new Error(`cannot safely roll back changed target: ${record.output.snapshot.relative}`);
   }
+  const loaded = readStableRegularFile(targetRoot, record.output.snapshot.destination, "installed target", true);
+  if (!loaded.bytes.equals(record.output.bytes)) throw new Error(`cannot safely roll back changed target: ${record.output.snapshot.relative}`);
   fs.unlinkSync(record.output.snapshot.destination);
 }
 
 function restoreRecord(record, targetRoot) {
   const original = record.output.snapshot.final;
   if (!original.exists) {
-    safeUnlinkInstalled(record);
+    safeUnlinkInstalled(record, targetRoot);
     return;
   }
   const backupStat = record.backup ? lstatOrNull(record.backup) : null;
@@ -565,7 +665,7 @@ function restoreRecord(record, targetRoot) {
     if (backup.identity.dev !== original.identity.dev || backup.identity.ino !== original.identity.ino || !backup.bytes.equals(original.bytes)) {
       throw new Error("transaction backup changed unexpectedly");
     }
-    safeUnlinkInstalled(record);
+    safeUnlinkInstalled(record, targetRoot);
     const beforeRestore = fs.lstatSync(record.backup);
     if (beforeRestore.dev !== backup.identity.dev || beforeRestore.ino !== backup.identity.ino || beforeRestore.nlink !== 1) {
       throw new Error("transaction backup changed unexpectedly");
@@ -574,7 +674,7 @@ function restoreRecord(record, targetRoot) {
     record.backup = null;
     return;
   }
-  safeUnlinkInstalled(record);
+  safeUnlinkInstalled(record, targetRoot);
   const restored = createExclusiveFile(record.output.snapshot.destination, original.bytes, original.mode || 0o644, "restore");
   fs.renameSync(restored.path, record.output.snapshot.destination);
 }
@@ -637,9 +737,9 @@ function runWriteTransaction({ outputs, allSnapshots, targetRoot, inspectState, 
         if (lstatOrNull(record.backup)) throw new Error("transaction backup collision");
         fs.renameSync(output.snapshot.destination, record.backup);
       }
+      record.installedIdentity = installedIdentity(output.stage.identity);
       fs.renameSync(output.stage.path, output.snapshot.destination);
       output.stage.path = null;
-      record.installedIdentity = fileIdentity(fs.lstatSync(output.snapshot.destination));
       verifyInstalled(output, targetRoot);
     }
 
@@ -674,7 +774,7 @@ function syncProductUi({ sourceRoot, targetRepo, write, inspectRepo }) {
   const target = canonicalExistingPath(targetInput, "target repository");
   const initialState = inspectAndValidate(inspectRepo, { phase: "initial", allowedTargetPaths: [] }, sourceInput, source, targetInput, target);
   const sourcePlan = loadSourcePlan(source);
-  if (!inspectRepo) verifySourceAtCommit(initialState.source, sourcePlan);
+  verifySourceAtCommit(initialState.source, sourcePlan);
   const targetRoot = targetPublicRoot(target);
 
   const fileOutputs = [];
@@ -689,7 +789,13 @@ function syncProductUi({ sourceRoot, targetRepo, write, inspectRepo }) {
   const provenanceSnapshot = snapshotTarget(targetRoot, ".ui-source.json");
   allSnapshots.push(provenanceSnapshot);
   const existingProvenance = parseProvenance(provenanceSnapshot);
-  if (existingProvenance && Array.isArray(existingProvenance.managedFiles)) {
+  if (provenanceSnapshot.final.exists && (
+    !existingProvenance ||
+    !validManagedFiles(existingProvenance.managedFiles)
+  )) {
+    throw new Error("existing provenance lacks valid managedFiles; manual migration/review required");
+  }
+  if (existingProvenance) {
     const removed = existingProvenance.managedFiles.filter((relative) => typeof relative === "string" && !managedFiles.includes(relative));
     if (removed.length) throw new Error(`manifest removed previously managed files (${removed.sort().join(", ")}); manual review required`);
   }

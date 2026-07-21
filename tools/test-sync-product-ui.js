@@ -10,7 +10,6 @@ const { syncProductUi, assertSafeEntry } = require("./sync-product-ui.js");
 const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "jikmu-ui-sync-")));
 const SOURCE_REMOTE = "https://github.com/sangwonMoon-kor/kdhc-ai-contest.git";
 const TARGET_REMOTE = "https://github.com/creationy/jikmu-memory.git";
-const SOURCE_SHA = "a".repeat(40);
 
 function writeFile(file, content) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -28,7 +27,6 @@ function makeFixture(name, options = {}) {
   const targetRepo = path.join(root, "target-repo");
   const targetPublic = path.join(targetRepo, "service", "public");
   const targetSrc = path.join(targetRepo, "service", "src");
-  const targetGitDir = path.join(targetRepo, ".git-test");
   const sourceFiles = options.sourceFiles || {
     "index.html": "new ui\n",
     "fixtures/summary.json": "{}\n",
@@ -38,7 +36,6 @@ function makeFixture(name, options = {}) {
   fs.mkdirSync(sourceRoot, { recursive: true });
   fs.mkdirSync(targetPublic, { recursive: true });
   fs.mkdirSync(targetSrc, { recursive: true });
-  fs.mkdirSync(targetGitDir, { recursive: true });
   for (const [relative, content] of Object.entries(sourceFiles)) writeFile(path.join(sourceRoot, relative), content);
   writeJson(path.join(sourceRoot, "sync-manifest.json"), options.manifest || { version: 1, entries });
   writeJson(path.join(sourceRoot, "version.json"), options.version || { version: "ui-v1.0.0" });
@@ -46,25 +43,27 @@ function makeFixture(name, options = {}) {
     writeFile(path.join(targetPublic, relative), content);
   }
   writeFile(path.join(targetSrc, "sentinel.js"), "do not touch\n");
+  initializeGitRepo(sourceRepo, "feature/test", SOURCE_REMOTE);
+  initializeGitRepo(targetRepo, "ui/test", TARGET_REMOTE);
 
-  return { root, sourceRepo, sourceRoot, targetRepo, targetPublic, targetSrc, targetGitDir };
+  return { root, sourceRepo, sourceRoot, targetRepo, targetPublic, targetSrc };
 }
 
 function stateFor(fixture, overrides = {}) {
   return {
     source: {
       topLevel: fixture.sourceRepo,
-      remote: SOURCE_REMOTE,
-      branch: "feature/product-ui-source",
+      remote: git(fixture.sourceRepo, ["remote", "get-url", "origin"]),
+      branch: git(fixture.sourceRepo, ["branch", "--show-current"]),
       clean: true,
-      sha: SOURCE_SHA,
+      sha: git(fixture.sourceRepo, ["rev-parse", "HEAD"]),
       ...(overrides.source || {}),
     },
     target: {
       topLevel: fixture.targetRepo,
-      gitDir: fixture.targetGitDir,
-      remote: TARGET_REMOTE,
-      branch: "ui/test",
+      gitDir: git(fixture.targetRepo, ["rev-parse", "--absolute-git-dir"]),
+      remote: git(fixture.targetRepo, ["remote", "get-url", "origin"]),
+      branch: git(fixture.targetRepo, ["branch", "--show-current"]),
       clean: true,
       ...(overrides.target || {}),
     },
@@ -76,14 +75,14 @@ function inspector(fixture, overrides) {
   return () => JSON.parse(JSON.stringify(state));
 }
 
-function invoke(fixture, write, inspectRepo = inspector(fixture)) {
+function invoke(fixture, write, inspectRepo) {
   return syncProductUi({ sourceRoot: fixture.sourceRoot, targetRepo: fixture.targetRepo, write, inspectRepo });
 }
 
-function provenanceFor(managedFiles, overrides = {}) {
+function provenanceFor(fixture, managedFiles, overrides = {}) {
   return {
     repository: "sangwonMoon-kor/kdhc-ai-contest",
-    commit: SOURCE_SHA,
+    commit: git(fixture.sourceRepo, ["rev-parse", "HEAD"]),
     version: "ui-v1.0.0",
     managedFiles: [...managedFiles].sort(),
     syncedAt: "2026-01-01T00:00:00.000Z",
@@ -143,33 +142,40 @@ assert.throws(() => assertSafeEntry("fixtures\\..\\..\\service\\src"), /unsafe m
   assert.equal(fs.readFileSync(path.join(fixture.targetPublic, "fixtures", "summary.json"), "utf8"), "{}\n");
   const provenance = JSON.parse(fs.readFileSync(path.join(fixture.targetPublic, ".ui-source.json"), "utf8"));
   assert.equal(provenance.repository, "sangwonMoon-kor/kdhc-ai-contest");
-  assert.equal(provenance.commit, SOURCE_SHA);
+  assert.equal(provenance.commit, git(fixture.sourceRepo, ["rev-parse", "HEAD"]));
   assert.deepEqual(provenance.managedFiles, ["fixtures/summary.json", "index.html"]);
   assert.equal(new Date(provenance.syncedAt).toISOString(), provenance.syncedAt);
+  commitAll(fixture.targetRepo, "commit synchronized UI");
   assert.equal(invoke(fixture, false).changed, false, "unchanged check after write must be stable");
   assertNoTransactionArtifacts(fixture);
   assertSentinel(fixture);
 }
 
-for (const [name, overrides, pattern] of [
-  ["wrong-source-remote", { source: { remote: "https://github.com/other/kdhc-ai-contest.git" } }, /wrong source remote/],
-  ["insecure-source-remote", { source: { remote: "http://github.com/sangwonMoon-kor/kdhc-ai-contest.git" } }, /wrong source remote/],
-  ["dirty-source", { source: { clean: false } }, /source working tree must be clean/],
-  ["wrong-source-top", { source: { topLevel: tmp } }, /source top-level mismatch/],
-  ["bad-sha", { source: { sha: "abc1234" } }, /invalid source SHA/],
-  ["wrong-target-remote", { target: { remote: "https://github.com/other/jikmu-memory.git" } }, /wrong target remote/],
-  ["insecure-target-remote", { target: { remote: "git:\/\/github.com/creationy/jikmu-memory.git" } }, /wrong target remote/],
-  ["wrong-target-branch", { target: { branch: "main" } }, /target branch must start with ui\//],
-  ["dirty-target", { target: { clean: false } }, /target working tree must be clean/],
+for (const [name, mutate, pattern] of [
+  ["wrong-source-remote", (fixture) => git(fixture.sourceRepo, ["remote", "set-url", "origin", "https://github.com/other/kdhc-ai-contest.git"]), /wrong source remote/],
+  ["insecure-source-remote", (fixture) => git(fixture.sourceRepo, ["remote", "set-url", "origin", "http://github.com/sangwonMoon-kor/kdhc-ai-contest.git"]), /wrong source remote/],
+  ["dirty-source", (fixture) => fs.appendFileSync(path.join(fixture.sourceRoot, "index.html"), "dirty\n"), /source working tree must be clean/],
+  ["wrong-target-remote", (fixture) => git(fixture.targetRepo, ["remote", "set-url", "origin", "https://github.com/other/jikmu-memory.git"]), /wrong target remote/],
+  ["insecure-target-remote", (fixture) => git(fixture.targetRepo, ["remote", "set-url", "origin", "git:\/\/github.com/creationy/jikmu-memory.git"]), /wrong target remote/],
+  ["wrong-target-branch", (fixture) => git(fixture.targetRepo, ["branch", "-m", "main"]), /target branch must start with ui\//],
+  ["dirty-target", (fixture) => fs.appendFileSync(path.join(fixture.targetSrc, "sentinel.js"), "dirty\n"), /target working tree must be clean/],
 ]) {
   const fixture = makeFixture(name);
-  assert.throws(() => invoke(fixture, false, inspector(fixture, overrides)), pattern, name);
-  assertSentinel(fixture);
+  mutate(fixture);
+  assert.throws(() => invoke(fixture, false), pattern, name);
+}
+
+{
+  const fixture = makeFixture("supplemental-inspection-cannot-override");
+  const expected = inspector(fixture, { source: { sha: "abc1234" }, target: { gitDir: tmp } });
+  assert.throws(() => invoke(fixture, false, expected), /inspectRepo expectation mismatch/);
 }
 
 for (const [name, fixtureOptions, pattern] of [
   ["manifest-version", { manifest: { version: 2, entries: ["index.html"] } }, /invalid sync manifest/],
   ["manifest-entries", { manifest: { version: 1, entries: "index.html" } }, /invalid sync manifest/],
+  ["manifest-duplicate", { manifest: { version: 1, entries: ["index.html", "index.html"] } }, /duplicate entries/],
+  ["manifest-overlap", { manifest: { version: 1, entries: ["fixtures", "fixtures/summary.json"] } }, /duplicate manifest file/],
   ["manifest-reserved-provenance", {
     entries: [".ui-source.json"],
     sourceFiles: { ".ui-source.json": "{}\n" },
@@ -183,12 +189,16 @@ for (const [name, fixtureOptions, pattern] of [
 
 if (process.platform !== "win32") {
   {
-    const fixture = makeFixture("source-intermediate-symlink");
+    const fixture = makeFixture("source-intermediate-symlink", {
+      entries: ["fixtures/nested/payload.js"],
+      sourceFiles: { "fixtures/nested/payload.js": "payload\n" },
+    });
     const outside = path.join(fixture.root, "outside");
-    writeFile(path.join(outside, "summary.json"), "{}\n");
-    fs.unlinkSync(path.join(fixture.sourceRoot, "fixtures", "summary.json"));
-    fs.rmdirSync(path.join(fixture.sourceRoot, "fixtures"));
-    fs.symlinkSync(outside, path.join(fixture.sourceRoot, "fixtures"));
+    writeFile(path.join(outside, "payload.js"), "payload\n");
+    fs.unlinkSync(path.join(fixture.sourceRoot, "fixtures", "nested", "payload.js"));
+    fs.rmdirSync(path.join(fixture.sourceRoot, "fixtures", "nested"));
+    fs.symlinkSync(outside, path.join(fixture.sourceRoot, "fixtures", "nested"));
+    commitAll(fixture.sourceRepo, "commit intermediate source symlink");
     assert.throws(() => invoke(fixture, false), /unsafe source/);
   }
   {
@@ -197,16 +207,18 @@ if (process.platform !== "win32") {
     writeFile(outside, "new ui\n");
     fs.unlinkSync(path.join(fixture.sourceRoot, "index.html"));
     fs.symlinkSync(outside, path.join(fixture.sourceRoot, "index.html"));
+    commitAll(fixture.sourceRepo, "commit final source symlink");
     assert.throws(() => invoke(fixture, false), /unsafe source/);
   }
   {
     const fixture = makeFixture("source-hardlink", { entries: ["index.html"] });
-    fs.linkSync(path.join(fixture.sourceRoot, "index.html"), path.join(fixture.sourceRoot, "other.html"));
+    fs.linkSync(path.join(fixture.sourceRoot, "index.html"), path.join(fixture.root, "outside-hardlink.html"));
     assert.throws(() => invoke(fixture, false), /unsafe source.*hardlink/);
   }
   {
     const fixture = makeFixture("target-intermediate-symlink");
     fs.symlinkSync(fixture.targetSrc, path.join(fixture.targetPublic, "fixtures"));
+    commitAll(fixture.targetRepo, "commit intermediate target symlink");
     assert.throws(() => invoke(fixture, true), /unsafe target/);
     assert.equal(fs.readFileSync(path.join(fixture.targetPublic, "index.html"), "utf8"), "old ui\n");
     assertSentinel(fixture);
@@ -215,6 +227,7 @@ if (process.platform !== "win32") {
     const fixture = makeFixture("target-dangling-symlink", { entries: ["index.html"] });
     fs.unlinkSync(path.join(fixture.targetPublic, "index.html"));
     fs.symlinkSync(path.join(fixture.targetSrc, "missing.js"), path.join(fixture.targetPublic, "index.html"));
+    commitAll(fixture.targetRepo, "commit dangling target symlink");
     assert.throws(() => invoke(fixture, true), /unsafe target/);
     assertSentinel(fixture);
   }
@@ -223,6 +236,7 @@ if (process.platform !== "win32") {
     writeFile(path.join(fixture.targetSrc, "same-index.html"), "new ui\n");
     fs.unlinkSync(path.join(fixture.targetPublic, "index.html"));
     fs.linkSync(path.join(fixture.targetSrc, "same-index.html"), path.join(fixture.targetPublic, "index.html"));
+    commitAll(fixture.targetRepo, "commit same-content hardlink");
     assert.throws(() => invoke(fixture, false), /unsafe target.*hardlink/);
     assertSentinel(fixture);
   }
@@ -231,8 +245,9 @@ if (process.platform !== "win32") {
       entries: ["index.html"],
       targetFiles: { "index.html": "new ui\n" },
     });
-    writeJson(path.join(fixture.targetSrc, "provenance.json"), provenanceFor(["index.html"]));
+    writeJson(path.join(fixture.targetSrc, "provenance.json"), provenanceFor(fixture, ["index.html"]));
     fs.linkSync(path.join(fixture.targetSrc, "provenance.json"), path.join(fixture.targetPublic, ".ui-source.json"));
+    commitAll(fixture.targetRepo, "commit provenance hardlink");
     assert.throws(() => invoke(fixture, false), /unsafe target.*hardlink/);
     assertSentinel(fixture);
   }
@@ -267,6 +282,7 @@ if (process.platform !== "win32") {
     writeFile(path.join(fixture.targetSrc, "z-copy.txt"), "old z\n");
     fs.unlinkSync(path.join(fixture.targetPublic, "z.txt"));
     fs.linkSync(path.join(fixture.targetSrc, "z-copy.txt"), path.join(fixture.targetPublic, "z.txt"));
+    commitAll(fixture.targetRepo, "commit late unsafe target");
     assert.throws(() => invoke(fixture, true), /unsafe target.*hardlink/);
     assert.equal(fs.readFileSync(path.join(fixture.targetPublic, "index.html"), "utf8"), "old ui\n");
     assert.equal(fs.existsSync(path.join(fixture.targetPublic, ".ui-source.json")), false);
@@ -279,17 +295,21 @@ if (process.platform !== "win32") {
     entries: ["index.html"],
     targetFiles: { "index.html": "new ui\n" },
   });
-  writeJson(path.join(fixture.targetPublic, ".ui-source.json"), provenanceFor(["index.html"], { syncedAt: "not-a-date" }));
+  writeJson(path.join(fixture.targetPublic, ".ui-source.json"), provenanceFor(fixture, ["index.html"], { syncedAt: "not-a-date" }));
+  commitAll(fixture.targetRepo, "commit invalid timestamp");
   assert.equal(invoke(fixture, false).changed, true, "invalid timestamp must require repair");
   invoke(fixture, true);
   const repaired = JSON.parse(fs.readFileSync(path.join(fixture.targetPublic, ".ui-source.json"), "utf8"));
   assert.equal(new Date(repaired.syncedAt).toISOString(), repaired.syncedAt);
 
   const previousTimestamp = repaired.syncedAt;
+  commitAll(fixture.targetRepo, "commit repaired provenance");
   fs.writeFileSync(path.join(fixture.targetPublic, "index.html"), "old again\n");
+  commitAll(fixture.targetRepo, "commit damaged UI");
   invoke(fixture, true);
   const refreshed = JSON.parse(fs.readFileSync(path.join(fixture.targetPublic, ".ui-source.json"), "utf8"));
   assert.notEqual(refreshed.syncedAt, previousTimestamp, "actual file repair must refresh syncedAt");
+  commitAll(fixture.targetRepo, "commit refreshed UI");
   assert.equal(invoke(fixture, false).changed, false);
 }
 
@@ -298,10 +318,26 @@ if (process.platform !== "win32") {
     entries: ["index.html"],
     targetFiles: { "index.html": "new ui\n" },
   });
-  const withoutTimestamp = provenanceFor(["index.html"]);
+  const withoutTimestamp = provenanceFor(fixture, ["index.html"]);
   delete withoutTimestamp.syncedAt;
   writeJson(path.join(fixture.targetPublic, ".ui-source.json"), withoutTimestamp);
+  commitAll(fixture.targetRepo, "commit missing timestamp");
   assert.equal(invoke(fixture, false).changed, true);
+}
+
+{
+  const fixture = makeFixture("legacy-provenance", {
+    entries: ["index.html"],
+    targetFiles: { "index.html": "new ui\n" },
+  });
+  const legacy = provenanceFor(fixture, ["index.html"]);
+  delete legacy.managedFiles;
+  writeJson(path.join(fixture.targetPublic, ".ui-source.json"), legacy);
+  commitAll(fixture.targetRepo, "commit legacy provenance");
+  const before = treeSnapshot(fixture.targetRepo);
+  assert.throws(() => invoke(fixture, false), /existing provenance lacks valid managedFiles.*manual migration\/review/);
+  assert.throws(() => invoke(fixture, true), /existing provenance lacks valid managedFiles.*manual migration\/review/);
+  assert.deepEqual(treeSnapshot(fixture.targetRepo), before);
 }
 
 {
@@ -309,7 +345,8 @@ if (process.platform !== "win32") {
     entries: ["index.html"],
     targetFiles: { "index.html": "new ui\n", "obsolete.js": "old managed file\n" },
   });
-  writeJson(path.join(fixture.targetPublic, ".ui-source.json"), provenanceFor(["index.html", "obsolete.js"]));
+  writeJson(path.join(fixture.targetPublic, ".ui-source.json"), provenanceFor(fixture, ["index.html", "obsolete.js"]));
+  commitAll(fixture.targetRepo, "commit prior managed files");
   assert.throws(() => invoke(fixture, false), /manifest removed previously managed files.*manual review/);
   assert.throws(() => invoke(fixture, true), /manifest removed previously managed files.*manual review/);
   assert.equal(fs.readFileSync(path.join(fixture.targetPublic, "obsolete.js"), "utf8"), "old managed file\n");
@@ -317,20 +354,24 @@ if (process.platform !== "win32") {
 
 {
   const fixture = makeFixture("transaction-rollback");
-  writeJson(path.join(fixture.targetPublic, ".ui-source.json"), provenanceFor(["fixtures/summary.json", "index.html"]));
-  const before = treeSnapshot(fixture.targetRepo);
+  writeJson(path.join(fixture.targetPublic, ".ui-source.json"), provenanceFor(fixture, ["fixtures/summary.json", "index.html"]));
+  commitAll(fixture.targetRepo, "commit rollback baseline");
+  const before = treeSnapshot(path.join(fixture.targetRepo, "service"));
   const originalRename = fs.renameSync;
   let replacements = 0;
   fs.renameSync = function patchedRename(from, to) {
-    if (path.basename(from).startsWith(".ui-sync-tmp-") && ++replacements === 2) throw new Error("injected rename failure");
-    return originalRename.call(fs, from, to);
+    const result = originalRename.call(fs, from, to);
+    if (path.basename(from).startsWith(".ui-sync-tmp-") && ++replacements === 1) {
+      throw new Error("injected post-install rename failure");
+    }
+    return result;
   };
   try {
-    assert.throws(() => invoke(fixture, true), /injected rename failure/);
+    assert.throws(() => invoke(fixture, true), /injected post-install rename failure/);
   } finally {
     fs.renameSync = originalRename;
   }
-  assert.deepEqual(treeSnapshot(fixture.targetRepo), before, "transaction failure must restore every managed file and provenance");
+  assert.deepEqual(treeSnapshot(path.join(fixture.targetRepo, "service")), before, "transaction failure must restore every managed file and provenance");
   assertNoTransactionArtifacts(fixture);
   assertSentinel(fixture);
 }
@@ -338,15 +379,11 @@ if (process.platform !== "win32") {
 if (process.platform !== "win32") {
   const fixture = makeFixture("target-race");
   fs.mkdirSync(path.join(fixture.targetPublic, "fixtures"));
-  const state = stateFor(fixture);
-  let inspections = 0;
-  const inspectRepo = () => {
-    inspections += 1;
-    if (inspections === 2) {
+  const inspectRepo = (actual, context) => {
+    if (context.phase === "after-lock") {
       fs.rmdirSync(path.join(fixture.targetPublic, "fixtures"));
       fs.symlinkSync(fixture.targetSrc, path.join(fixture.targetPublic, "fixtures"));
     }
-    return JSON.parse(JSON.stringify(state));
   };
   assert.throws(
     () => syncProductUi({ sourceRoot: fixture.sourceRoot, targetRepo: fixture.targetRepo, write: true, inspectRepo }),
@@ -359,11 +396,9 @@ if (process.platform !== "win32") {
 
 {
   const fixture = makeFixture("secure-ssh-remotes");
-  const secureState = inspector(fixture, {
-    source: { remote: "git@github.com:sangwonMoon-kor/kdhc-ai-contest.git" },
-    target: { remote: "ssh://git@github.com/creationy/jikmu-memory.git" },
-  });
-  assert.equal(invoke(fixture, false, secureState).changed, true);
+  git(fixture.sourceRepo, ["remote", "set-url", "origin", "git@github.com:sangwonMoon-kor/kdhc-ai-contest.git"]);
+  git(fixture.targetRepo, ["remote", "set-url", "origin", "ssh://git@github.com/creationy/jikmu-memory.git"]);
+  assert.equal(invoke(fixture, false).changed, true);
 }
 
 function git(repo, args) {
@@ -377,6 +412,18 @@ function initializeGitRepo(repo, branch, remote) {
   git(repo, ["remote", "add", "origin", remote]);
   git(repo, ["add", "."]);
   git(repo, ["commit", "-q", "--allow-empty", "-m", "fixture"]);
+}
+
+function commitAll(repo, message) {
+  git(repo, ["add", "-A"]);
+  git(repo, ["commit", "-q", "--allow-empty", "-m", message]);
+}
+
+function indexSnapshot(repo) {
+  const index = git(repo, ["rev-parse", "--git-path", "index"]);
+  const absolute = path.isAbsolute(index) ? index : path.join(repo, index);
+  const stat = fs.statSync(absolute);
+  return { bytes: fs.readFileSync(absolute), mtimeMs: stat.mtimeMs, size: stat.size };
 }
 
 {
@@ -396,7 +443,32 @@ function initializeGitRepo(repo, branch, remote) {
   initializeGitRepo(sourceRepo, "feature/test", SOURCE_REMOTE);
   initializeGitRepo(targetRepo, "ui/test", TARGET_REMOTE);
 
-  const run = (args) => spawnSync(process.execPath, [tool, ...args], { encoding: "utf8" });
+  let cliEnv = { ...process.env };
+  if (process.platform !== "win32") {
+    const realGit = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
+    const shimDirectory = path.join(cliRoot, "git-shim");
+    const shim = path.join(shimDirectory, "git");
+    writeFile(shim, [
+      "#!/usr/bin/env node",
+      '"use strict";',
+      'const { spawnSync } = require("child_process");',
+      'if (process.env.GIT_OPTIONAL_LOCKS !== "0") {',
+      '  process.stderr.write("GIT_OPTIONAL_LOCKS must be 0\\n");',
+      "  process.exit(97);",
+      "}",
+      'const result = spawnSync(process.env.UI_SYNC_REAL_GIT, process.argv.slice(2), { stdio: "inherit", env: process.env });',
+      "if (result.error) throw result.error;",
+      "process.exit(result.status === null ? 1 : result.status);",
+      "",
+    ].join("\n"));
+    fs.chmodSync(shim, 0o755);
+    cliEnv = {
+      ...cliEnv,
+      PATH: `${shimDirectory}${path.delimiter}${cliEnv.PATH}`,
+      UI_SYNC_REAL_GIT: realGit,
+    };
+  }
+  const run = (args) => spawnSync(process.execPath, [tool, ...args], { encoding: "utf8", env: cliEnv });
   for (const args of [
     ["--target", targetRepo],
     ["--target", targetRepo, "--check", "--write"],
@@ -409,11 +481,20 @@ function initializeGitRepo(repo, branch, remote) {
     assert.equal(result.status, 1, `ambiguous CLI invocation unexpectedly succeeded: ${args.join(" ")}`);
   }
 
-  const beforeCheck = treeSnapshot(targetRepo);
+  const sentinel = path.join(targetRepo, "service", "src", "sentinel.js");
+  const refreshedTime = new Date(Date.now() + 2000);
+  fs.utimesSync(sentinel, refreshedTime, refreshedTime);
+  const indexBeforeCheck = indexSnapshot(targetRepo);
+  const beforeCheck = treeSnapshot(path.join(targetRepo, "service"));
   const changedCheck = run(["--target", targetRepo, "--check"]);
   assert.equal(changedCheck.status, 1);
-  assert.match(changedCheck.stdout, /changed=true/);
-  assert.deepEqual(treeSnapshot(targetRepo), beforeCheck, "CLI check must not write");
+  assert.match(changedCheck.stdout, /changed=true/, changedCheck.stderr);
+  assert.deepEqual(treeSnapshot(path.join(targetRepo, "service")), beforeCheck, "CLI check must not write");
+  assert.equal(fs.existsSync(path.join(git(targetRepo, ["rev-parse", "--absolute-git-dir"]), "jikmu-product-ui-sync.lock")), false);
+  const indexAfterCheck = indexSnapshot(targetRepo);
+  assert.equal(indexAfterCheck.mtimeMs, indexBeforeCheck.mtimeMs, "check mode must not refresh the Git index");
+  assert.equal(indexAfterCheck.size, indexBeforeCheck.size);
+  assert(indexAfterCheck.bytes.equals(indexBeforeCheck.bytes), "check mode changed Git index bytes");
 
   const write = run(["--target", targetRepo, "--write"]);
   assert.equal(write.status, 0, write.stderr);
