@@ -8,7 +8,8 @@
     "product-ui:serve": "node tools/serve-product-ui.js",
     "test:product-ui:api": "node product-ui/tests/verify-api-client.js",
     "test:product-ui:source": "node product-ui/tests/verify-source-contract.js",
-    "test:product-ui:fixtures": "node product-ui/tests/verify-fixtures.js"
+    "test:product-ui:fixtures": "node product-ui/tests/verify-fixtures.js",
+    "test:product-ui:data-mode": "node product-ui/tests/verify-app-data-mode.js"
   },
   "devDependencies": {
     "playwright": "1.61.1"

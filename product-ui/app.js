@@ -29,17 +29,21 @@ const SKEY = "jikmu.workbench.v1";
 const UKEY = "jikmu.ui.v1";
 const TKEY = "jikmu.theme";
 
-/* ---------- 엔진 API ---------- */
-async function api(path, body) {
-  const opt = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : undefined;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 20000);
-  try {
-    const r = await fetch(path, Object.assign({ signal: ctrl.signal }, opt));
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    return await r.json();
-  } finally { clearTimeout(timer); }
+/* ---------- 엔진·fixture API ---------- */
+function renderDataStatus(status) {
+  const el = document.getElementById("dataStatus");
+  if (!el) return;
+  const isLiveError = status.error && status.activeMode !== "fixture";
+  el.className = "data-status " + (isLiveError ? "error" : status.activeMode);
+  el.textContent = status.activeMode === "fixture" ? "시연용 샘플 데이터" : isLiveError ? "엔진 연결 오류" : "실제 엔진 연결";
 }
+const apiClient = window.JikmuApi.createApiClient({
+  mode: window.JikmuApi.modeFromSearch(location.search),
+  fixtureBase: "fixtures",
+  timeoutMs: 20000,
+  onStatus: renderDataStatus,
+});
+async function api(path, body) { return apiClient.request(path, body); }
 const cache = { summary: null, forecast: null, briefing: null };
 async function loadSummary() { if (!cache.summary) cache.summary = await api("/api/summary"); return cache.summary; }
 async function loadForecast() { if (!cache.forecast) cache.forecast = await api("/api/forecast"); return cache.forecast; }
@@ -421,11 +425,14 @@ function createWorkFrom(t, dueText) {
 }
 
 /* ---------- 질문(근거 답변) ---------- */
+let askSeq = 0;
 async function renderAsk(box, q, target) {
   if (!box) return;
+  const seq = ++askSeq;
   box.innerHTML = `<div class="card ask-panel"><div class="blk-k">근거를 찾는 중…</div></div>`;
   try {
     const r = await api("/api/ask", { question: q });
+    if (seq !== askSeq || !document.body.contains(box)) return;
     const ans = (r.llm && r.llm.answer) ? [r.llm.answer] : (r.answer || []); // r.llm = LLM 합성(있을 때만), 없으면 템플릿
     box.innerHTML = `<div class="card ask-panel">
       <div class="blk-k">근거 답변 ${r.grounded ? `<span class="badge grounded">근거 있음</span>` : `<span class="badge warn">근거 없음</span>`}
@@ -439,6 +446,7 @@ async function renderAsk(box, q, target) {
     bindEvidence(box);
     const g = $("#askGoWb", box); if (g) g.onclick = () => nav("#workbench/" + target.id);
   } catch (e) {
+    if (seq !== askSeq || !document.body.contains(box)) return;
     box.innerHTML = `<div class="card ask-panel"><p>답변을 가져오지 못했습니다 — 엔진 연결을 확인해 주세요.</p></div>`;
   }
 }
