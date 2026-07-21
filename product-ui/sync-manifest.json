@@ -2,6 +2,7 @@
   "version": 1,
   "entries": [
     "index.html",
+    "favicon.svg",
     "style.css",
     "app.js",
     "api-client.js",

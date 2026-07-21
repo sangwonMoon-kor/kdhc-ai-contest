@@ -83,7 +83,8 @@ async function verifyCurrentWorktree() {
 
 function observePage(page, name, errors, apiRequests) {
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(`${name} console: ${message.text()} (${message.location().url})`);
+    const locationUrl = message.location().url;
+    if (message.type() === "error") errors.push(`${name} console: ${message.text()} (${locationUrl})`);
   });
   page.on("pageerror", (error) => errors.push(`${name} pageerror: ${error.message}`));
   page.on("response", (response) => {
@@ -114,6 +115,7 @@ async function assertDataStatus(page) {
   if (mode === "fixture") assert.equal(status, "시연용 샘플 데이터");
   else if (mode === "live") assert.equal(status, "실제 엔진 연결");
   else assert(["시연용 샘플 데이터", "실제 엔진 연결"].includes(status), `auto data status was not truthful: ${status}`);
+  return status;
 }
 
 async function waitForStableUi(page) {
@@ -179,17 +181,29 @@ async function run() {
     await page.click("#goDraft");
     await page.waitForFunction(() => location.hash.startsWith("#draft/"));
     assertRouteWorkId(page, "draft", workId);
-    await page.waitForSelector('[data-testid="draft-document"]');
+    const draft = page.locator('[data-testid="draft-document"]');
+    await draft.waitFor();
+    const activeStatus = await assertDataStatus(page);
+    if (activeStatus === "실제 엔진 연결") {
+      const draftText = (await draft.innerText()).trim();
+      assert(draftText.includes("2026년 순환수 펌프 정비공사 추진 보고(안)"), "live draft missed the current generated title");
+      assert(draftText.includes("2025년 순환수 펌프 정비공사 추진 보고"), "live draft missed its current-basis title");
+      assert.equal(await draft.locator("[data-ev]").first().getAttribute("data-ev"), "APPR-2025-0409", "live draft lacked its current-basis evidence control");
+    }
     await page.click("#dCheck");
     const precheck = page.locator('[data-testid="precheck-results"]');
     await precheck.locator(".f-item").first().waitFor();
     const findings = precheck.locator(".f-item");
-    assert.equal(await findings.count(), 5, "precheck did not render all five risky fixture findings");
     const precheckText = (await precheck.innerText()).trim();
     assert(precheckText && !/불러오지 못했습니다|연결을 확인해 주세요|점검에 실패|엔진 연결 오류/.test(precheckText), `precheck rendered an error: ${precheckText}`);
-    assert(precheckText.includes("구두 지시") && precheckText.includes("산출근거"), "precheck missed required meaningful fixture risks");
-    assert((await precheck.locator("[data-ev]").count()) > 0, "precheck findings lacked evidence controls");
-    await assertDataStatus(page);
+    if (activeStatus === "시연용 샘플 데이터") {
+      assert.equal(await findings.count(), 5, "precheck did not render all five risky fixture findings");
+      assert(precheckText.includes("구두 지시") && precheckText.includes("산출근거"), "precheck missed required meaningful fixture risks");
+      assert((await precheck.locator("[data-ev]").count()) > 0, "fixture precheck findings lacked evidence controls");
+    } else {
+      assert.equal(await findings.count(), 1, "live precheck did not render the current single leftover finding");
+      assert(precheckText.includes("초안 미완성 항목 잔존"), "live precheck missed the expected leftover finding");
+    }
     await waitForStableUi(page);
 
     fs.mkdirSync(path.resolve(__dirname, "..", "screenshots"), { recursive: true });
@@ -207,7 +221,7 @@ async function run() {
 
     if (mode === "fixture") assert.deepEqual(apiRequests, [], `fixture mode requested API routes: ${apiRequests.join(" | ")}`);
     assert.deepEqual(errors, [], `browser errors: ${errors.join(" | ")}`);
-    console.log(`Showcase E2E passed (fixture API requests: ${apiRequests.length})`);
+    console.log(`Showcase E2E passed (active data: ${activeStatus}; fixture API requests: ${mode === "fixture" ? apiRequests.length : "n/a"})`);
   } finally {
     if (browser) await browser.close();
     await stopServer(server);
