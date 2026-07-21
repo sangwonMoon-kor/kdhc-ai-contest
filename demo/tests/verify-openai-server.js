@@ -2,6 +2,7 @@ const assert = require('assert');
 const {
   AI_INTENTS,
   AI_ACTIONS,
+  AI_DECISION_SCHEMA,
   normalizeAiRequest,
   validateAiDecision,
 } = require('../ai-contract.js');
@@ -42,7 +43,7 @@ assert.strictEqual(validateAiDecision({...valid.value,suggestedAction:'execute_j
 assert.throws(() => normalizeAiRequest({message:'',surface:'home',works:[]}), /message/);
 console.log('OpenAI contract verification passed.');
 
-const http = require('http');
+const fs = require('fs');
 const path = require('path');
 const {createJarvisServer} = require('../openai-server.js');
 
@@ -62,28 +63,29 @@ async function withServer(fakeClient, run, options = {}) {
   }
 }
 
-function rawGet(url, requestPath) {
-  return new Promise((resolve, reject) => {
-    http.get(url + requestPath, (response) => {
-      response.resume();
-      response.on('end', () => resolve(response));
-    }).on('error', reject);
-  });
-}
-
 const serverRequest = {
   message: 'Find the pump project progress report.',
   surface: 'home',
   selectedWorkId: null,
   works: [{
     id: 'pump-2026',
-    title: 'Circulation pump maintenance progress report',
-    status: 'in progress',
-    dueLabel: 'due April 9',
-    stage: 'reviewing materials',
-    evidence: [{id: 'pump-report', name: '2025 progress report', role: 'previous report'}],
+    title: 'PRIVATE_WORK_SUMMARY_DO_NOT_FORWARD',
+    status: 'PRIVATE_STATUS_DO_NOT_FORWARD',
+    dueLabel: 'PRIVATE_DUE_DATE_DO_NOT_FORWARD',
+    stage: 'PRIVATE_STAGE_DO_NOT_FORWARD',
+    evidence: [
+      {id: 'pump-report', name: 'PRIVATE_EVIDENCE_SUMMARY_DO_NOT_FORWARD', role: 'private role'},
+      {id: 'private-evidence', name: 'PRIVATE_UNKNOWN_EVIDENCE_DO_NOT_FORWARD', role: 'private role'},
+    ],
+  }, {
+    id: 'private-work',
+    title: 'PRIVATE_UNKNOWN_WORK_DO_NOT_FORWARD',
+    status: 'private',
+    dueLabel: 'private',
+    stage: 'private',
+    evidence: [],
   }],
-  history: [],
+  history: [{role: 'user', content: 'Earlier conversational question.'}],
 };
 
 function validModelDecision() {
@@ -101,7 +103,11 @@ function validModelDecision() {
 }
 
 async function verifyServer() {
-  await withServer({responses: {create: async () => validModelDecision()}}, async (url) => {
+  let capturedCreate;
+  await withServer({responses: {create: async (...args) => {
+    capturedCreate = args;
+    return validModelDecision();
+  }}}, async (url) => {
     const response = await fetch(`${url}/api/ai`, {
       method: 'POST',
       headers: {'content-type': 'application/json'},
@@ -109,6 +115,30 @@ async function verifyServer() {
     });
     assert.strictEqual(response.status, 200);
     assert.strictEqual((await response.json()).decision.targetWorkId, 'pump-2026');
+
+    const [openAiRequest, openAiOptions] = capturedCreate;
+    assert.strictEqual(openAiRequest.model, 'test-model');
+    assert.strictEqual(openAiRequest.input[0].role, 'system');
+    assert.match(openAiRequest.input[0].content[0].text, /한국어 업무 비서/);
+    assert.strictEqual(openAiRequest.input[1].role, 'user');
+    const modelRequest = JSON.parse(openAiRequest.input[1].content[0].text);
+    assert.strictEqual(modelRequest.message, serverRequest.message);
+    assert.deepStrictEqual(modelRequest.history, serverRequest.history);
+    assert.deepStrictEqual(modelRequest.works.map((work) => work.id), ['pump-2026']);
+    assert.strictEqual(modelRequest.works[0].title, '순환수 펌프 정비공사 추진 보고');
+    assert.deepStrictEqual(modelRequest.works[0].evidence, [{
+      id: 'pump-report',
+      name: '2025년 순환수 펌프 정비공사 추진 보고',
+      role: '작년 서식',
+    }]);
+    const outboundText = JSON.stringify(openAiRequest);
+    assert.doesNotMatch(outboundText, /PRIVATE_/);
+    assert.match(outboundText, /순환수 펌프 정비공사 추진 보고/);
+    assert.deepStrictEqual(openAiRequest.text, {
+      format: {type: 'json_schema', name: 'jarvis_decision', strict: true, schema: AI_DECISION_SCHEMA},
+    });
+    assert.strictEqual(openAiRequest.max_output_tokens, 800);
+    assert.ok(openAiOptions.signal instanceof AbortSignal);
   });
 
   await withServer({responses: {create: async () => ({output_text: '{"targetWorkId":"invented"}'})}}, async (url) => {
@@ -134,8 +164,41 @@ async function verifyServer() {
     assert.deepStrictEqual(await response.json(), {error: 'invalid_request'});
   });
 
+  let guardedCreateCalls = 0;
+  await withServer({responses: {create: async () => {
+    guardedCreateCalls += 1;
+    return validModelDecision();
+  }}}, async (url) => {
+    const wrongType = await fetch(`${url}/api/ai`, {
+      method: 'POST',
+      headers: {'content-type': 'text/plain'},
+      body: JSON.stringify(serverRequest),
+    });
+    assert.strictEqual(wrongType.status, 415);
+    assert.deepStrictEqual(await wrongType.json(), {error: 'invalid_request'});
+
+    const crossOrigin = await fetch(`${url}/api/ai`, {
+      method: 'POST',
+      headers: {'content-type': 'application/json', origin: 'http://cross-origin.example'},
+      body: JSON.stringify(serverRequest),
+    });
+    assert.strictEqual(crossOrigin.status, 403);
+    assert.deepStrictEqual(await crossOrigin.json(), {error: 'invalid_request'});
+
+    const sameOrigin = await fetch(`${url}/api/ai`, {
+      method: 'POST',
+      headers: {'content-type': 'application/json', origin: url},
+      body: JSON.stringify(serverRequest),
+    });
+    assert.strictEqual(sameOrigin.status, 200);
+    assert.strictEqual(guardedCreateCalls, 1);
+  });
+
   await withServer({responses: {create: async () => validModelDecision()}}, async (url) => {
-    const missing = await fetch(`${url}/api/ai`, {method: 'POST'});
+    const missing = await fetch(`${url}/api/ai`, {
+      method: 'POST',
+      headers: {'content-type': 'application/json'},
+    });
     assert.strictEqual(missing.status, 400);
 
     const oversized = await fetch(`${url}/api/ai`, {
@@ -159,9 +222,23 @@ async function verifyServer() {
   }, {timeoutMs: 10});
 
   await withServer({responses: {create: async () => validModelDecision()}}, async (url) => {
-    const response = await rawGet(url, '/../package.json');
-    assert.strictEqual(response.statusCode, 404);
+    const response = await fetch(`${url}/..%2fpackage.json`);
+    assert.strictEqual(response.status, 404);
   });
+
+  await withServer({responses: {create: async () => validModelDecision()}}, async (url) => {
+    const originalReadFile = fs.promises.readFile;
+    fs.promises.readFile = async () => { throw new Error('simulated static read failure'); };
+    try {
+      const response = await fetch(`${url}/app.html`);
+      assert.strictEqual(response.status, 404);
+    } finally {
+      fs.promises.readFile = originalReadFile;
+    }
+  });
+
+  const serverSource = fs.readFileSync(path.resolve(__dirname, '..', 'openai-server.js'), 'utf8');
+  assert.match(serverSource, /model: process\.env\.OPENAI_MODEL \|\| 'gpt-5\.6-sol'/);
 }
 
 verifyServer().then(() => console.log('OpenAI server verification passed.')).catch((error) => {
