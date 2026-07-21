@@ -1,0 +1,400 @@
+{
+  "doc": {
+    "id": "DOC-FIXTURE-001",
+    "kind": "전자결재",
+    "kindConfidence": 0.3,
+    "title": "2026년 순환수 펌프 정비 계획 보고",
+    "stageId": "design-and-costing",
+    "task": "설계·내역 작성",
+    "taskScore": 8,
+    "date": null,
+    "drafter": null,
+    "author": "김민준 과장",
+    "fields": {
+      "dates": [],
+      "title": "2026년 순환수 펌프 정비 계획 보고",
+      "drafter": null,
+      "sections": [],
+      "attachments": [
+        "첨부 한다"
+      ],
+      "rejected": false,
+      "rejReason": null
+    },
+    "text": "2026년 순환수 펌프 정비 계획 보고\n운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다.",
+    "entities": {
+      "actors": [
+        "지사 운영부"
+      ],
+      "assets": [
+        "순환수 펌프"
+      ],
+      "docRefs": [
+        "설계내역서",
+        "설계근거 기록"
+      ],
+      "dates": [],
+      "amounts": []
+    }
+  },
+  "trace": [
+    {
+      "stage": 1,
+      "label": "문서 종류 분류",
+      "detail": "전자결재 (신뢰 30%)",
+      "items": [
+        "뚜렷한 구조 신호 없음 — 기본값(전자결재)"
+      ]
+    },
+    {
+      "stage": 2,
+      "label": "필드 구조화",
+      "detail": "전자결재 파서 적용",
+      "items": [
+        "제목: 2026년 순환수 펌프 정비 계획 보고",
+        "붙임: 첨부 한다"
+      ]
+    },
+    {
+      "stage": 3,
+      "label": "엔티티 인식",
+      "detail": "업무단계 추정: 설계·내역 작성 (근거 설계내역×1, 내역서×1, 산출근거×1)",
+      "items": [
+        "역할/부서 1: 지사 운영부",
+        "설비 1: 순환수 펌프",
+        "문서 참조 2: 설계내역서, 설계근거 기록",
+        "날짜 0 · 수치 0"
+      ]
+    },
+    {
+      "stage": 4,
+      "label": "관계 추출 (OKF 트리플)",
+      "detail": "표준 관계 3건",
+      "items": [
+        "설계·내역 작성 ─requires_document→ 설계내역서 · “운영부와 정비 일정을 확인하고 설계내역서 산출근…” (73%)",
+        "설계·내역 작성 ─requires_document→ 설계근거 기록 · “운영부와 정비 일정을 확인하고 설계내역서 산출근…” (73%)",
+        "설계·내역 작성 ─involves_actor→ 지사 운영부 · “운영부와 정비 일정을 확인하고 설계내역서 산출근…” (70%)"
+      ]
+    },
+    {
+      "stage": 5,
+      "label": "구조 관계 도출",
+      "detail": "1건",
+      "items": [
+        "설계·내역 작성 → produces_document → 이 문서"
+      ]
+    },
+    {
+      "stage": 6,
+      "label": "사건(Case) 후보 구성",
+      "detail": "5개 링크 제안 — 검토 후 병합/신규 선택",
+      "items": [
+        "2026년 순환수 펌프 정비 계획 보고 ─has_stage→ 설계·내역 작성",
+        "2026년 순환수 펌프 정비 계획 보고 ─uses_asset→ 순환수 펌프",
+        "2026년 순환수 펌프 정비 계획 보고 ─involves_actor→ 지사 운영부",
+        "2026년 순환수 펌프 정비 계획 보고 ─requires_document→ 설계내역서",
+        "2026년 순환수 펌프 정비 계획 보고 ─requires_document→ 설계근거 기록"
+      ]
+    }
+  ],
+  "triples": [
+    {
+      "from": {
+        "type": "WorkflowStage",
+        "name": "설계·내역 작성",
+        "id": "design-and-costing"
+      },
+      "rel": "requires_document",
+      "to": {
+        "type": "Document",
+        "name": "설계내역서",
+        "id": "cost-estimate"
+      },
+      "trigger": "설계내역서",
+      "evidence": {
+        "sentence": "운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다.",
+        "span": [
+          22,
+          56
+        ]
+      },
+      "confidence": 0.73,
+      "provenance": {
+        "docId": "DOC-FIXTURE-001",
+        "label": "2026년 순환수 펌프 정비 계획 보고",
+        "kind": "전자결재",
+        "date": null,
+        "span": [
+          22,
+          56
+        ],
+        "text": "운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다."
+      },
+      "origin": "관계 추출"
+    },
+    {
+      "from": {
+        "type": "WorkflowStage",
+        "name": "설계·내역 작성",
+        "id": "design-and-costing"
+      },
+      "rel": "requires_document",
+      "to": {
+        "type": "Document",
+        "name": "설계근거 기록",
+        "id": "design-basis-record"
+      },
+      "trigger": "산출근거",
+      "evidence": {
+        "sentence": "운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다.",
+        "span": [
+          22,
+          56
+        ]
+      },
+      "confidence": 0.73,
+      "provenance": {
+        "docId": "DOC-FIXTURE-001",
+        "label": "2026년 순환수 펌프 정비 계획 보고",
+        "kind": "전자결재",
+        "date": null,
+        "span": [
+          22,
+          56
+        ],
+        "text": "운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다."
+      },
+      "origin": "관계 추출"
+    },
+    {
+      "from": {
+        "type": "WorkflowStage",
+        "name": "설계·내역 작성",
+        "id": "design-and-costing"
+      },
+      "rel": "involves_actor",
+      "to": {
+        "type": "Actor",
+        "name": "지사 운영부",
+        "id": "branch-operations"
+      },
+      "trigger": "운영부",
+      "evidence": {
+        "sentence": "운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다.",
+        "span": [
+          22,
+          56
+        ]
+      },
+      "confidence": 0.7,
+      "provenance": {
+        "docId": "DOC-FIXTURE-001",
+        "label": "2026년 순환수 펌프 정비 계획 보고",
+        "kind": "전자결재",
+        "date": null,
+        "span": [
+          22,
+          56
+        ],
+        "text": "운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다."
+      },
+      "origin": "관계 추출"
+    },
+    {
+      "from": {
+        "type": "WorkflowStage",
+        "name": "설계·내역 작성",
+        "id": "design-and-costing"
+      },
+      "rel": "produces_document",
+      "to": {
+        "type": "Document",
+        "name": "2026년 순환수 펌프 정비 계획 보고",
+        "id": "doc-1k1s2jl"
+      },
+      "confidence": 0.9,
+      "provenance": {
+        "docId": "DOC-FIXTURE-001",
+        "label": "2026년 순환수 펌프 정비 계획 보고",
+        "kind": "전자결재",
+        "date": null,
+        "span": null,
+        "text": "분류 근거: 설계내역×1, 내역서×1, 산출근거×1"
+      },
+      "origin": "문서 분류"
+    },
+    {
+      "from": {
+        "type": "Document",
+        "name": "2026년 순환수 펌프 정비 계획 보고",
+        "id": "doc-1k1s2jl"
+      },
+      "rel": "mentions",
+      "to": {
+        "type": "Actor",
+        "name": "지사 운영부",
+        "id": "branch-operations"
+      },
+      "confidence": 0.55,
+      "provenance": {
+        "docId": "DOC-FIXTURE-001",
+        "label": "2026년 순환수 펌프 정비 계획 보고",
+        "kind": "전자결재",
+        "date": null,
+        "span": [
+          22,
+          25
+        ],
+        "text": "운영부"
+      },
+      "origin": "언급"
+    },
+    {
+      "from": {
+        "type": "Document",
+        "name": "2026년 순환수 펌프 정비 계획 보고",
+        "id": "doc-1k1s2jl"
+      },
+      "rel": "mentions",
+      "to": {
+        "type": "Asset",
+        "name": "순환수 펌프",
+        "id": "circulation-water-pump"
+      },
+      "confidence": 0.55,
+      "provenance": {
+        "docId": "DOC-FIXTURE-001",
+        "label": "2026년 순환수 펌프 정비 계획 보고",
+        "kind": "전자결재",
+        "date": null,
+        "span": [
+          6,
+          12
+        ],
+        "text": "순환수 펌프"
+      },
+      "origin": "언급"
+    }
+  ],
+  "caseProposal": {
+    "case": {
+      "type": "Case",
+      "name": "2026년 순환수 펌프 정비 계획 보고",
+      "id": "case-ekprvc"
+    },
+    "assetIds": [
+      "circulation-water-pump"
+    ],
+    "riskIds": [],
+    "stageId": "design-and-costing",
+    "links": [
+      {
+        "rel": "has_stage",
+        "to": {
+          "type": "WorkflowStage",
+          "name": "설계·내역 작성",
+          "id": "design-and-costing"
+        },
+        "confidence": 0.7,
+        "provenance": {
+          "docId": "DOC-FIXTURE-001",
+          "label": "2026년 순환수 펌프 정비 계획 보고",
+          "kind": "전자결재",
+          "date": null,
+          "span": null,
+          "text": "단계: 설계·내역 작성"
+        }
+      },
+      {
+        "rel": "uses_asset",
+        "to": {
+          "type": "Asset",
+          "name": "순환수 펌프",
+          "id": "circulation-water-pump"
+        },
+        "confidence": 0.7,
+        "provenance": {
+          "docId": "DOC-FIXTURE-001",
+          "label": "2026년 순환수 펌프 정비 계획 보고",
+          "kind": "전자결재",
+          "date": null,
+          "span": null,
+          "text": "순환수 펌프"
+        }
+      },
+      {
+        "rel": "involves_actor",
+        "to": {
+          "type": "Actor",
+          "name": "지사 운영부",
+          "id": "branch-operations"
+        },
+        "confidence": 0.7,
+        "provenance": {
+          "docId": "DOC-FIXTURE-001",
+          "label": "2026년 순환수 펌프 정비 계획 보고",
+          "kind": "전자결재",
+          "date": null,
+          "span": null,
+          "text": "운영부"
+        }
+      },
+      {
+        "rel": "requires_document",
+        "to": {
+          "type": "Document",
+          "name": "설계내역서",
+          "id": "cost-estimate"
+        },
+        "confidence": 0.7,
+        "provenance": {
+          "docId": "DOC-FIXTURE-001",
+          "label": "2026년 순환수 펌프 정비 계획 보고",
+          "kind": "전자결재",
+          "date": null,
+          "span": null,
+          "text": "설계내역서"
+        }
+      },
+      {
+        "rel": "requires_document",
+        "to": {
+          "type": "Document",
+          "name": "설계근거 기록",
+          "id": "design-basis-record"
+        },
+        "confidence": 0.7,
+        "provenance": {
+          "docId": "DOC-FIXTURE-001",
+          "label": "2026년 순환수 펌프 정비 계획 보고",
+          "kind": "전자결재",
+          "date": null,
+          "span": null,
+          "text": "산출근거"
+        }
+      }
+    ]
+  },
+  "caseResolution": {
+    "mode": "merge",
+    "topScore": 0.667,
+    "matches": [
+      {
+        "caseKey": "Case:계약 체결 후 착수관리 및 과업 해석 정렬 사례",
+        "label": "계약 체결 후 착수관리 및 과업 해석 정렬 사례",
+        "score": 0.667
+      },
+      {
+        "caseKey": "Case:예방정비 예산 요청 근거화 및 예산부 협의 사례",
+        "label": "예방정비 예산 요청 근거화 및 예산부 협의 사례",
+        "score": 0.222
+      },
+      {
+        "caseKey": "Case:순환수 펌프 정비공사 설계내역 및 감사 대응 사례",
+        "label": "순환수 펌프 정비공사 설계내역 및 감사 대응 사례",
+        "score": 0.191
+      }
+    ],
+    "suggestedTitle": "2026년 순환수 펌프 정비 계획 보고"
+  }
+}

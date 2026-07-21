@@ -6,6 +6,7 @@
   "use strict";
 
   const MODES = new Set(["fixture", "live", "auto"]);
+  const FIXTURE_DRAFT_STAGES = new Set(["design-and-costing", "problem-recognition"]);
 
   function modeFromSearch(search) {
     const mode = new URLSearchParams(String(search || "")).get("data") || "auto";
@@ -62,12 +63,22 @@
     if (!value || typeof value !== "object" || Array.isArray(value)) {
       throw new Error(`response contract mismatch for ${path}`);
     }
+    if (path.startsWith("/api/documents/") && !(value.doc && typeof value.doc.id === "string" && Array.isArray(value.edges))) throw new Error("document detail contract mismatch");
+    if (path.startsWith("/api/okf/") && typeof value.id !== "string") throw new Error("OKF detail contract mismatch");
     if (path === "/api/summary" && !(Number.isInteger(value.docCount) && value.stats && Number.isInteger(value.stats.nodes) && Number.isInteger(value.stats.edges))) throw new Error("summary contract mismatch");
     if (path === "/api/forecast" && !Array.isArray(value.items)) throw new Error("forecast contract mismatch");
     if (path === "/api/briefing" && !(Array.isArray(value.stages) && Array.isArray(value.cautions))) throw new Error("briefing contract mismatch");
+    if (path === "/api/graph" && !(Array.isArray(value.nodes) && Array.isArray(value.edges))) throw new Error("graph contract mismatch");
     if (path === "/api/ask" && !(typeof value.grounded === "boolean" && Array.isArray(value.answer) && Array.isArray(value.docs))) throw new Error("ask contract mismatch");
-    if (path === "/api/draft" && typeof value.ok !== "boolean") throw new Error("draft contract mismatch");
+    if (path === "/api/draft" && !(typeof value.ok === "boolean" && (value.ok
+      ? typeof value.stageId === "string" && typeof value.baseDocId === "string" && typeof value.title === "string" && Array.isArray(value.sections) && Array.isArray(value.checklist)
+      : typeof value.reason === "string"))) throw new Error("draft contract mismatch");
     if (path === "/api/check" && !(Number.isInteger(value.count) && Array.isArray(value.findings))) throw new Error("check contract mismatch");
+    if (path === "/api/hint/stage" && !(value.guard && typeof value.guard.flagged === "boolean" && Array.isArray(value.triples))) throw new Error("hint stage contract mismatch");
+    if (path === "/api/hint/commit" && !(typeof value.ok === "boolean" && (value.ok ? value.hint && typeof value.hint === "object" : typeof value.reason === "string"))) throw new Error("hint commit contract mismatch");
+    if (path === "/api/ingest" && !(value.doc && typeof value.doc.id === "string" && Array.isArray(value.triples) && (value.caseProposal == null || typeof value.caseProposal === "object"))) throw new Error("ingest contract mismatch");
+    if (path === "/api/ingest/commit" && !(typeof value.ok === "boolean" && (value.ok ? value.doc && typeof value.doc.id === "string" : typeof value.reason === "string"))) throw new Error("ingest commit contract mismatch");
+    if (path === "/api/extract" && !(typeof value.ok === "boolean" && (value.ok ? typeof value.text === "string" : typeof value.reason === "string"))) throw new Error("extract contract mismatch");
     return value;
   }
 
@@ -75,12 +86,18 @@
     if (path === "/api/summary") return "summary.json";
     if (path === "/api/forecast") return "forecast.json";
     if (path === "/api/briefing") return "briefing.json";
+    if (path === "/api/graph") return "graph.json";
     if (path === "/api/documents") return "documents/index.json";
     if (path.startsWith("/api/documents/")) return `documents/${fixtureId(path, "/api/documents/")}.json`;
     if (path.startsWith("/api/okf/")) return `okf/${fixtureId(path, "/api/okf/")}.json`;
     if (path === "/api/ask") return /펌프|정비|추진\s*보고/.test(String(body && body.question || "")) ? "ask/pump-report.json" : "ask/not-found.json";
-    if (path === "/api/draft" && body && body.task === "design-and-costing") return "draft/design-and-costing.json";
+    if (path === "/api/draft" && body && FIXTURE_DRAFT_STAGES.has(body.task)) return `draft/${body.task}.json`;
     if (path === "/api/check") return /확인\s*필요|그대로\s*준용|특정\s*모델|구두\s*지시|검수\s*전/.test(String(body && body.text || "")) ? "check/pump-risky-draft.json" : "check/clean-draft.json";
+    if (path === "/api/hint/stage") return "hint/stage.json";
+    if (path === "/api/hint/commit") return "hint/commit.json";
+    if (path === "/api/ingest") return "ingest/stage.json";
+    if (path === "/api/ingest/commit") return "ingest/commit.json";
+    if (path === "/api/extract") return "extract/scanned-pdf.json";
     return null;
   }
 

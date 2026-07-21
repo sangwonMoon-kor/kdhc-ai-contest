@@ -39,7 +39,7 @@ function fields(value, message, required) {
   assert(object(value), `${message} must be an object`);
   Object.entries(required).forEach(([key, predicate]) => assert(predicate(value[key]), `${message}.${key} has an unexpected type`));
 }
-function validateResponses({ summary, forecast, briefing, documents, askPump, askMissing, draft, riskyCheck, cleanCheck }) {
+function validateResponses({ summary, forecast, briefing, graph, documents, askPump, askMissing, drafts, riskyCheck, cleanCheck, hintStage, hintCommit, ingestStage, ingestCommit, extract }) {
   assert(object(summary), "summary must be an object");
   assert(summary.version === 24 && summary.versionLabel === "v2.4", "summary must be v2.4");
   assert(summary.docCount === 19 && string(summary.simDate), "summary docCount must be 19 with a simulation date");
@@ -67,6 +67,10 @@ function validateResponses({ summary, forecast, briefing, documents, askPump, as
   collection(briefing.cases, 8, "briefing.cases", (item, message) => fields(item, message, { label: string, okfId: string, desc: string }));
   collection(briefing.calendar, 12, "briefing.calendar", (item, message) => fields(item, message, { month: Number.isInteger, labels: (value) => Array.isArray(value) && value.every((label) => object(label) && string(label.title) && string(label.task) && string(label.stageId)) }));
   fields(briefing.knownGap, "briefing.knownGap", { text: string, status: string });
+  fields(graph, "graph", { nodes: Array.isArray, edges: Array.isArray });
+  assert(graph.nodes.length === 193 && graph.edges.length === 938, "graph must match the captured 193-node/938-edge baseline");
+  graph.nodes.forEach((node, index) => fields(node, `graph.nodes[${index}]`, { key: string, type: string, name: string }));
+  graph.edges.forEach((edge, index) => fields(edge, `graph.edges[${index}]`, { from: string, to: string, rel: string }));
   collection(documents, 19, "documents", (doc, message) => fields(doc, message, { id: string, kind: string, title: string, date: string, task: (value) => value === null || string(value), author: string }));
   const validateAsk = (value, message, expected) => {
     fields(value, message, { question: string, intent: string, answer: Array.isArray, knowledge: Array.isArray, docs: Array.isArray, forecast: Array.isArray, entities: object, followups: Array.isArray, grounded: (item) => typeof item === "boolean", disclaimer: string });
@@ -80,9 +84,16 @@ function validateResponses({ summary, forecast, briefing, documents, askPump, as
   };
   validateAsk(askPump, "askPump", { grounded: true, knowledge: 3, docs: 3, forecast: 0, followups: 2 });
   validateAsk(askMissing, "askMissing", { grounded: false, knowledge: 0, docs: 0, forecast: 0, followups: 3 });
-  fields(draft, "draft", { ok: (value) => value === true, task: string, stageId: (value) => value === "design-and-costing", baseDocId: string, baseTitle: string, baseDate: string, title: string });
-  collection(draft.sections, 5, "draft.sections", (item, message) => fields(item, message, { h: string, tokens: (value) => Array.isArray(value) && value.length > 0 && value.every((token) => object(token) && (string(token.text) || string(token.ph))) }));
-  collection(draft.checklist, 4, "draft.checklist", (item, message) => fields(item, message, { text: string }));
+  const forecastStages = [...new Set(forecast.items.map((item) => item.stageId))].sort();
+  assert(object(drafts) && JSON.stringify(Object.keys(drafts).sort()) === JSON.stringify(forecastStages), "draft fixtures must cover every forecast stage exactly");
+  for (const stageId of forecastStages) {
+    const draft = drafts[stageId];
+    fields(draft, `drafts.${stageId}`, { ok: (value) => value === true, task: string, stageId: (value) => value === stageId, baseDocId: string, baseTitle: string, baseDate: string, title: string });
+    assert(Array.isArray(draft.sections) && draft.sections.length > 0, `drafts.${stageId}.sections must not be empty`);
+    draft.sections.forEach((item, index) => fields(item, `drafts.${stageId}.sections[${index}]`, { h: string, tokens: (value) => Array.isArray(value) && value.length > 0 && value.every((token) => object(token) && (string(token.text) || string(token.ph))) }));
+    collection(draft.checklist, 4, `drafts.${stageId}.checklist`, (item, message) => fields(item, message, { text: string }));
+  }
+  assert(drafts["design-and-costing"].sections.length === 5, "design-and-costing draft must retain five sections");
   fields(riskyCheck, "riskyCheck", { count: (value) => value === 5, findings: Array.isArray });
   collection(riskyCheck.findings, 5, "riskyCheck.findings", (item, message) => fields(item, message, {
     id: string, level: string, cls: string, name: string, desc: string, fix: string, riskName: string,
@@ -91,6 +102,15 @@ function validateResponses({ summary, forecast, briefing, documents, askPump, as
   }));
   fields(cleanCheck, "cleanCheck", { count: (value) => value === 0, findings: Array.isArray });
   collection(cleanCheck.findings, 0, "cleanCheck.findings", () => {});
+  fields(hintStage, "hintStage", { guard: (value) => object(value) && value.flagged === false, triples: (value) => Array.isArray(value) && value.length > 0 });
+  hintStage.triples.forEach((triple, index) => fields(triple, `hintStage.triples[${index}]`, { from: object, rel: string, to: object, confidence: (value) => typeof value === "number" }));
+  fields(hintCommit, "hintCommit", { ok: (value) => value === true, hint: object });
+  fields(hintCommit.hint, "hintCommit.hint", { id: string, text: string, from: object, to: object, rel: string });
+  fields(ingestStage, "ingestStage", { doc: object, triples: (value) => Array.isArray(value) && value.length > 0, caseProposal: object });
+  assert(ingestStage.doc.id === "DOC-FIXTURE-001", "ingestStage.doc.id must be stable");
+  fields(ingestCommit, "ingestCommit", { ok: (value) => value === true, merged: Number.isInteger, doc: object });
+  assert(ingestCommit.doc.id === ingestStage.doc.id, "ingest commit must return the staged fixture document");
+  fields(extract, "extract", { ok: (value) => value === true, text: string, model: string });
 }
 function collectEvidenceIds(value, docs, okf) {
   if (!value || typeof value !== "object") return;
@@ -119,18 +139,48 @@ async function capture() {
   const summary = await request("/api/summary");
   const forecast = await request("/api/forecast");
   const briefing = await request("/api/briefing");
+  const graph = await request("/api/graph");
   const documents = await request("/api/documents");
   const askPump = await request("/api/ask", { question: "작년 펌프 정비 추진 보고 찾아줘" });
   const askMissing = await request("/api/ask", { question: "점심 뭐 먹지?" });
-  const draft = await request("/api/draft", { task: "design-and-costing" });
+  const drafts = {};
+  for (const stageId of [...new Set(forecast.items.map((item) => item.stageId))].sort()) drafts[stageId] = await request("/api/draft", { task: stageId });
   const riskyText = "작년 내역을 그대로 준용하고 특정 모델로 지정한다. 산출근거 없이 구두 지시로 먼저 시공하고 검수 전 대금을 지급한다.";
   const riskyCheck = await request("/api/check", { text: riskyText });
   const cleanCheck = await request("/api/check", { text: "올해 산출근거와 동등 이상 판단 기준을 첨부하고 검수 완료 후 지급한다." });
-  validateResponses({ summary, forecast, briefing, documents, askPump, askMissing, draft, riskyCheck, cleanCheck });
+  const hintText = "운영부 일정은 5월 둘째 주로 확정";
+  const hintStage = await request("/api/hint/stage", { text: hintText, stageId: "design-and-costing" });
+  const ingestText = "2026년 순환수 펌프 정비 계획 보고\n운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다.";
+  const capturedIngest = await request("/api/ingest", { text: ingestText });
+  const dynamicDocId = capturedIngest.doc.id;
+  const ingestStage = JSON.parse(JSON.stringify(capturedIngest).split(dynamicDocId).join("DOC-FIXTURE-001"));
+  const hintTriple = hintStage.triples[0];
+  const hintCommit = {
+    ok: true,
+    hint: {
+      id: "HINT-FIXTURE-001", text: hintText, task: hintTriple.from.name,
+      from: hintTriple.from, to: hintTriple.to, rel: hintTriple.rel,
+      date: String(summary.simDate).slice(0, 7), status: "작성자확인", createdBy: summary.persona.name
+    },
+    version: summary.version + 1,
+    versionLabel: `v${Math.floor((summary.version + 1) / 10)}.${(summary.version + 1) % 10}`
+  };
+  const ingestCommit = {
+    ok: true, merged: ingestStage.triples.length, case: null, doc: ingestStage.doc,
+    version: summary.version + 1,
+    versionLabel: `v${Math.floor((summary.version + 1) / 10)}.${(summary.version + 1) % 10}`
+  };
+  const extract = {
+    ok: true,
+    text: "시연용 스캔 PDF에서 추출한 고정 텍스트입니다. 원본 파일은 서버나 외부 모델로 전송하지 않습니다.",
+    model: "fixture"
+  };
+  validateResponses({ summary, forecast, briefing, graph, documents, askPump, askMissing, drafts, riskyCheck, cleanCheck, hintStage, hintCommit, ingestStage, ingestCommit, extract });
 
   const docIds = new Set();
   const okfIds = new Set();
-  [forecast, briefing, askPump, askMissing, draft, riskyCheck, cleanCheck].forEach((value) => collectEvidenceIds(value, docIds, okfIds));
+  [forecast, briefing, askPump, askMissing, ...Object.values(drafts), riskyCheck, cleanCheck].forEach((value) => collectEvidenceIds(value, docIds, okfIds));
+  forecast.items.forEach((item) => okfIds.add(item.stageId));
   for (const id of docIds) {
     assert(documents.some((doc) => doc.id === id), `referenced document ${id} is absent from /api/documents`);
   }
@@ -149,12 +199,19 @@ async function capture() {
   write("summary.json", summary);
   write("forecast.json", forecast);
   write("briefing.json", briefing);
+  write("graph.json", graph);
   write("documents/index.json", documents);
   write("ask/pump-report.json", askPump);
   write("ask/not-found.json", askMissing);
-  write("draft/design-and-costing.json", draft);
+  for (const [stageId, draft] of Object.entries(drafts)) write(`draft/${stageId}.json`, draft);
   write("check/pump-risky-draft.json", riskyCheck);
   write("check/clean-draft.json", cleanCheck);
+  write("hint/stage.json", hintStage);
+  write("hint/commit.json", hintCommit);
+  write("ingest/stage.json", ingestStage);
+  write("ingest/commit.json", ingestCommit);
+  write("extract/scanned-pdf.json", extract);
+  write("documents/DOC-FIXTURE-001.json", { doc: ingestStage.doc, edges: [] });
   for (const [id, fixture] of documentFixtures) write(`documents/${encodeURIComponent(id)}.json`, fixture);
   for (const [id, fixture] of okfFixtures) write(`okf/${encodeURIComponent(id)}.json`, fixture);
   write("manifest.json", {

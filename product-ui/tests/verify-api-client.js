@@ -1,6 +1,6 @@
 "use strict";
 const assert = require("assert");
-const { createApiClient, modeFromSearch } = require("../api-client.js");
+const { createApiClient, fixturePath, modeFromSearch, normalizeResponse } = require("../api-client.js");
 
 function response(body, ok = true, status = 200) {
   return { ok, status, json: async () => body };
@@ -10,6 +10,47 @@ function response(body, ok = true, status = 200) {
   assert.equal(modeFromSearch("?data=fixture"), "fixture");
   assert.equal(modeFromSearch("?data=live"), "live");
   assert.equal(modeFromSearch(""), "auto");
+
+  const reachableFixtureRoutes = [
+    ["/api/graph", null, "graph.json"],
+    ["/api/draft", { task: "design-and-costing" }, "draft/design-and-costing.json"],
+    ["/api/draft", { task: "problem-recognition" }, "draft/problem-recognition.json"],
+    ["/api/hint/stage", { text: "운영부 일정 확인", stageId: "design-and-costing" }, "hint/stage.json"],
+    ["/api/hint/commit", { triple: {}, text: "운영부 일정 확인" }, "hint/commit.json"],
+    ["/api/ingest", { text: "순환수 펌프 정비 계획 보고와 산출근거" }, "ingest/stage.json"],
+    ["/api/ingest/commit", { doc: {}, triples: [] }, "ingest/commit.json"],
+    ["/api/extract", { filename: "scan.pdf", mime: "application/pdf", dataB64: "AA==" }, "extract/scanned-pdf.json"]
+  ];
+  for (const [apiPath, body, expected] of reachableFixtureRoutes) {
+    assert.equal(fixturePath(apiPath, body), expected, `fixture route missing for ${apiPath}`);
+  }
+  assert.equal(fixturePath("/api/draft", { task: "unknown-stage" }), null, "unknown draft stage used an unrelated fixture");
+
+  const validShapes = [
+    ["/api/graph", { nodes: [], edges: [] }],
+    ["/api/draft", { ok: true, stageId: "problem-recognition", baseDocId: "DOC-1", title: "초안", sections: [], checklist: [] }],
+    ["/api/hint/stage", { guard: { flagged: false }, triples: [] }],
+    ["/api/hint/commit", { ok: true, hint: {} }],
+    ["/api/ingest", { doc: { id: "DOC-1" }, triples: [], caseProposal: null }],
+    ["/api/ingest/commit", { ok: true, doc: { id: "DOC-1" } }],
+    ["/api/extract", { ok: true, text: "추출된 고정 텍스트" }],
+    ["/api/documents/DOC-1", { doc: { id: "DOC-1" }, edges: [] }],
+    ["/api/okf/problem-recognition", { id: "problem-recognition" }]
+  ];
+  for (const [apiPath, value] of validShapes) assert.equal(normalizeResponse(apiPath, value), value);
+
+  const invalidShapes = [
+    ["/api/graph", { nodes: [] }, /graph contract mismatch/],
+    ["/api/draft", { ok: true }, /draft contract mismatch/],
+    ["/api/hint/stage", { triples: [] }, /hint stage contract mismatch/],
+    ["/api/hint/commit", { ok: true }, /hint commit contract mismatch/],
+    ["/api/ingest", { doc: {}, triples: "not-an-array" }, /ingest contract mismatch/],
+    ["/api/ingest/commit", { ok: true }, /ingest commit contract mismatch/],
+    ["/api/extract", { ok: true }, /extract contract mismatch/],
+    ["/api/documents/DOC-1", { doc: {}, edges: [] }, /document detail contract mismatch/],
+    ["/api/okf/problem-recognition", { label: "문제 인식" }, /OKF detail contract mismatch/]
+  ];
+  for (const [apiPath, value, message] of invalidShapes) assert.throws(() => normalizeResponse(apiPath, value), message);
 
   const fixtureCalls = [];
   const fixture = createApiClient({ mode: "fixture", fetchImpl: async (url) => {

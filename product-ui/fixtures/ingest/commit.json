@@ -1,0 +1,45 @@
+{
+  "ok": true,
+  "merged": 6,
+  "case": null,
+  "doc": {
+    "id": "DOC-FIXTURE-001",
+    "kind": "전자결재",
+    "kindConfidence": 0.3,
+    "title": "2026년 순환수 펌프 정비 계획 보고",
+    "stageId": "design-and-costing",
+    "task": "설계·내역 작성",
+    "taskScore": 8,
+    "date": null,
+    "drafter": null,
+    "author": "김민준 과장",
+    "fields": {
+      "dates": [],
+      "title": "2026년 순환수 펌프 정비 계획 보고",
+      "drafter": null,
+      "sections": [],
+      "attachments": [
+        "첨부 한다"
+      ],
+      "rejected": false,
+      "rejReason": null
+    },
+    "text": "2026년 순환수 펌프 정비 계획 보고\n운영부와 정비 일정을 확인하고 설계내역서 산출근거를 첨부한다.",
+    "entities": {
+      "actors": [
+        "지사 운영부"
+      ],
+      "assets": [
+        "순환수 펌프"
+      ],
+      "docRefs": [
+        "설계내역서",
+        "설계근거 기록"
+      ],
+      "dates": [],
+      "amounts": []
+    }
+  },
+  "version": 25,
+  "versionLabel": "v2.5"
+}

@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "hint": {
+    "id": "HINT-FIXTURE-001",
+    "text": "운영부 일정은 5월 둘째 주로 확정",
+    "task": "설계·내역 작성",
+    "from": {
+      "type": "WorkflowStage",
+      "name": "설계·내역 작성",
+      "id": "design-and-costing"
+    },
+    "to": {
+      "type": "TacitKnowledge",
+      "name": "운영부 일정은 5월 둘째 주로 확정",
+      "id": "tacit-q33oor"
+    },
+    "rel": "has_tacit_knowledge",
+    "date": "2026-01",
+    "status": "작성자확인",
+    "createdBy": "김민준 과장"
+  },
+  "version": 25,
+  "versionLabel": "v2.5"
+}
