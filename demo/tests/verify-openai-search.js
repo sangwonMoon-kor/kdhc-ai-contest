@@ -18,6 +18,12 @@ assert(html.includes('업무 맥락을 확인하고 있습니다…'));
 assert(html.includes('AI 응답 · 시연용 샘플 데이터 기반'));
 assert(html.includes('샘플 응답'));
 
+const pendingCleanup = html.match(/function setAiPending\([\s\S]*?(?=\n\s*function rememberAiExchange\()/);
+assert(pendingCleanup, 'missing setAiPending body');
+assert(pendingCleanup[0].includes('document.activeElement'), 'pending cleanup must inspect current focus');
+assert(/const focusIsLost=!activeElement\|\|activeElement===document\.body\|\|activeElement===document\.documentElement/.test(pendingCleanup[0]), 'pending cleanup must define the lost-focus guard');
+assert(/if\(focusIsLost&&input&&/.test(pendingCleanup[0]), 'pending cleanup must not steal action-established focus');
+
 const buildRequest = html.match(/function buildAiRequest\([\s\S]*?(?=\n\s*async function requestAiDecision\()/);
 assert(buildRequest, 'missing buildAiRequest body');
 assert(buildRequest[0].includes('WORK_SEED'), 'AI context must come from immutable WORK_SEED');

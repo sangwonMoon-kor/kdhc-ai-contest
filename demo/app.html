@@ -866,7 +866,9 @@
     if(!pending){
       aiPendingSeq[key]=0;
       const input=$(key==='workbench'?'contextInput':'homeInput');
-      if(input&&((key==='home'&&currentView==='home')||(key==='workbench'&&currentView==='workbench')))input.focus({preventScroll:true});
+      const activeElement=document.activeElement;
+      const focusIsLost=!activeElement||activeElement===document.body||activeElement===document.documentElement;
+      if(focusIsLost&&input&&((key==='home'&&currentView==='home')||(key==='workbench'&&currentView==='workbench')))input.focus({preventScroll:true});
     }
   }
 
