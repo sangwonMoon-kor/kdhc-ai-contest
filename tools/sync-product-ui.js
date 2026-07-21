@@ -1,11 +1,17 @@
 "use strict";
 
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
 
+const SOURCE_REPOSITORY = "sangwonMoon-kor/kdhc-ai-contest";
+const TARGET_REPOSITORY = "creationy/jikmu-memory";
+const LOCK_NAME = "jikmu-product-ui-sync.lock";
+const NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
+
 function assertSafeEntry(entry) {
-  const value = String(entry || "");
+  const value = typeof entry === "string" ? entry : "";
   const parts = value.split("/");
   if (
     !value ||
@@ -13,11 +19,20 @@ function assertSafeEntry(entry) {
     value.includes("\0") ||
     path.isAbsolute(value) ||
     path.posix.isAbsolute(value) ||
-    parts.some((part) => part === "." || part === "..")
+    parts.some((part) => !part || part === "." || part === "..")
   ) {
     throw new Error(`unsafe manifest entry: ${value}`);
   }
   return value;
+}
+
+function lstatOrNull(absolute) {
+  try {
+    return fs.lstatSync(absolute);
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
 }
 
 function assertWithin(root, candidate, label) {
@@ -29,165 +44,726 @@ function assertWithin(root, candidate, label) {
   return resolvedCandidate;
 }
 
-function assertDirectory(abs, label) {
-  const stat = fs.lstatSync(abs);
-  if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(`unsafe ${label}`);
+function posixRelative(root, absolute) {
+  return path.relative(root, absolute).split(path.sep).join("/");
 }
 
-function lstatOrNull(abs) {
-  try {
-    return fs.lstatSync(abs);
-  } catch (error) {
-    if (error.code === "ENOENT") return null;
-    throw error;
-  }
+function fromPosix(root, relative) {
+  return path.join(root, ...relative.split("/"));
 }
 
-function filesUnder(root, entry) {
-  const sourceRoot = fs.realpathSync(root);
-  const start = assertWithin(sourceRoot, path.join(sourceRoot, entry), "source entry");
-  if (!lstatOrNull(start)) throw new Error(`missing source entry: ${entry}`);
-  const out = [];
-
-  function walk(abs) {
-    const stat = fs.lstatSync(abs);
-    if (stat.isSymbolicLink() || (!stat.isDirectory() && !stat.isFile())) {
-      throw new Error(`unsafe source entry: ${path.relative(sourceRoot, abs)}`);
-    }
-    if (stat.isFile()) {
-      out.push(path.relative(sourceRoot, abs));
-      return;
-    }
-    for (const name of fs.readdirSync(abs).sort()) walk(path.join(abs, name));
-  }
-
-  walk(start);
-  return out;
+function compareStrings(left, right) {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
-function same(source, destination) {
-  const stat = lstatOrNull(destination);
-  if (!stat) return false;
-  return stat.isFile() && !stat.isSymbolicLink() && fs.readFileSync(source).equals(fs.readFileSync(destination));
-}
-
-function defaultInspect(sourceRepo, targetRepo) {
-  const git = (cwd, args) => execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" }).trim();
+function fileIdentity(stat) {
   return {
-    remote: git(targetRepo, ["remote", "get-url", "origin"]),
-    branch: git(targetRepo, ["branch", "--show-current"]),
-    clean: git(targetRepo, ["status", "--porcelain"]) === "",
-    sourceSha: git(sourceRepo, ["rev-parse", "--short=12", "HEAD"]),
+    dev: stat.dev,
+    ino: stat.ino,
+    mode: stat.mode,
+    nlink: stat.nlink,
+    size: stat.size,
+    mtimeMs: stat.mtimeMs,
+    ctimeMs: stat.ctimeMs,
   };
 }
 
-function isExpectedRemote(remote) {
-  return /^(?:(?:https?|git):\/\/github\.com\/creationy\/jikmu-memory|git@github\.com:creationy\/jikmu-memory)(?:\.git)?\/?$/.test(String(remote).trim());
+function directoryIdentity(stat) {
+  return { dev: stat.dev, ino: stat.ino, mode: stat.mode };
+}
+
+function identitiesEqual(left, right) {
+  return Object.keys(left).every((key) => left[key] === right[key]);
+}
+
+function assertCanonicalDirectory(absolute, label) {
+  const stat = fs.lstatSync(absolute);
+  if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(`unsafe ${label}`);
+  if (fs.realpathSync(absolute) !== absolute) throw new Error(`unsafe ${label}`);
+  return stat;
+}
+
+function validateDirectoryComponents(root, directory, label) {
+  assertWithin(root, directory, label);
+  assertCanonicalDirectory(root, label);
+  const relative = path.relative(root, directory);
+  let current = root;
+  if (!relative) return;
+  for (const part of relative.split(path.sep)) {
+    current = path.join(current, part);
+    const stat = lstatOrNull(current);
+    if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(`unsafe ${label}: ${posixRelative(root, current)}`);
+    if (fs.realpathSync(current) !== current) throw new Error(`unsafe ${label}: ${posixRelative(root, current)}`);
+  }
+}
+
+function readStableRegularFile(root, absolute, label, rejectHardlinks) {
+  const candidate = assertWithin(root, absolute, label);
+  validateDirectoryComponents(root, path.dirname(candidate), label);
+  const before = lstatOrNull(candidate);
+  if (!before || before.isSymbolicLink() || !before.isFile()) throw new Error(`unsafe ${label}: ${posixRelative(root, candidate)}`);
+  if (rejectHardlinks && before.nlink !== 1) throw new Error(`unsafe ${label} hardlink: ${posixRelative(root, candidate)}`);
+  if (fs.realpathSync(candidate) !== candidate) throw new Error(`unsafe ${label}: ${posixRelative(root, candidate)}`);
+
+  let descriptor;
+  let bytes;
+  let descriptorBefore;
+  let descriptorAfter;
+  try {
+    descriptor = fs.openSync(candidate, fs.constants.O_RDONLY | NOFOLLOW);
+    descriptorBefore = fs.fstatSync(descriptor);
+    if (!descriptorBefore.isFile() || (rejectHardlinks && descriptorBefore.nlink !== 1)) {
+      throw new Error(`unsafe ${label} hardlink: ${posixRelative(root, candidate)}`);
+    }
+    if (!identitiesEqual(fileIdentity(before), fileIdentity(descriptorBefore))) throw new Error(`${label} changed during read: ${posixRelative(root, candidate)}`);
+    bytes = fs.readFileSync(descriptor);
+    descriptorAfter = fs.fstatSync(descriptor);
+  } finally {
+    if (descriptor !== undefined) fs.closeSync(descriptor);
+  }
+
+  const after = lstatOrNull(candidate);
+  if (
+    !after ||
+    after.isSymbolicLink() ||
+    !after.isFile() ||
+    !identitiesEqual(fileIdentity(descriptorBefore), fileIdentity(descriptorAfter)) ||
+    !identitiesEqual(fileIdentity(descriptorAfter), fileIdentity(after)) ||
+    fs.realpathSync(candidate) !== candidate
+  ) {
+    throw new Error(`${label} changed during read: ${posixRelative(root, candidate)}`);
+  }
+  return { bytes, stat: after, identity: fileIdentity(after) };
+}
+
+function readSourceFile(sourceRoot, relative) {
+  return readStableRegularFile(sourceRoot, fromPosix(sourceRoot, relative), "source", true);
+}
+
+function collectSourceEntry(sourceRoot, entry, files, preloaded) {
+  const absolute = fromPosix(sourceRoot, entry);
+  assertWithin(sourceRoot, absolute, "source entry");
+  validateDirectoryComponents(sourceRoot, path.dirname(absolute), "source entry");
+  const stat = lstatOrNull(absolute);
+  if (!stat || stat.isSymbolicLink()) throw new Error(`unsafe source entry: ${entry}`);
+  if (stat.isFile()) {
+    if (stat.nlink !== 1) throw new Error(`unsafe source hardlink: ${entry}`);
+    if (files.has(entry)) throw new Error(`duplicate manifest file: ${entry}`);
+    files.set(entry, preloaded.has(entry) ? preloaded.get(entry).bytes : readSourceFile(sourceRoot, entry).bytes);
+    return;
+  }
+  if (!stat.isDirectory() || fs.realpathSync(absolute) !== absolute) throw new Error(`unsafe source entry: ${entry}`);
+
+  const before = { ...directoryIdentity(stat), mtimeMs: stat.mtimeMs, ctimeMs: stat.ctimeMs };
+  const names = fs.readdirSync(absolute).sort();
+  const after = fs.lstatSync(absolute);
+  const afterIdentity = { ...directoryIdentity(after), mtimeMs: after.mtimeMs, ctimeMs: after.ctimeMs };
+  if (after.isSymbolicLink() || !after.isDirectory() || !identitiesEqual(before, afterIdentity) || fs.realpathSync(absolute) !== absolute) {
+    throw new Error(`source changed during read: ${entry}`);
+  }
+  for (const name of names) collectSourceEntry(sourceRoot, `${entry}/${name}`, files, preloaded);
+}
+
+function loadSourcePlan(sourceRoot) {
+  const manifestLoaded = readSourceFile(sourceRoot, "sync-manifest.json");
+  const versionLoaded = readSourceFile(sourceRoot, "version.json");
+  const manifestBytes = manifestLoaded.bytes;
+  const versionBytes = versionLoaded.bytes;
+  let manifest;
+  let version;
+  try {
+    manifest = JSON.parse(manifestBytes.toString("utf8"));
+  } catch (error) {
+    throw new Error("invalid sync manifest");
+  }
+  if (
+    !manifest ||
+    manifest.version !== 1 ||
+    !Array.isArray(manifest.entries) ||
+    manifest.entries.length === 0 ||
+    manifest.entries.some((entry) => typeof entry !== "string")
+  ) {
+    throw new Error("invalid sync manifest");
+  }
+  const entries = manifest.entries.map(assertSafeEntry);
+  if (new Set(entries).size !== entries.length) throw new Error("invalid sync manifest: duplicate entries");
+  if (entries.some((entry) => entry === ".ui-source.json" || entry.startsWith(".ui-source.json/"))) {
+    throw new Error("invalid sync manifest: .ui-source.json is reserved");
+  }
+  try {
+    version = JSON.parse(versionBytes.toString("utf8"));
+  } catch (error) {
+    throw new Error("invalid UI version");
+  }
+  if (!version || typeof version.version !== "string" || !/^ui-v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version.version)) {
+    throw new Error("invalid UI version");
+  }
+
+  const files = new Map();
+  const preloaded = new Map([["version.json", versionLoaded]]);
+  for (const entry of entries) collectSourceEntry(sourceRoot, entry, files, preloaded);
+  const sortedFiles = new Map([...files.entries()].sort(([left], [right]) => compareStrings(left, right)));
+  const verificationFiles = new Map([
+    ["sync-manifest.json", manifestBytes],
+    ["version.json", versionBytes],
+    ...sortedFiles,
+  ]);
+  return { files: sortedFiles, verificationFiles, version: version.version };
+}
+
+function verifySourceAtCommit(sourceState, sourcePlan) {
+  for (const [relative, bytes] of sourcePlan.verificationFiles) {
+    let committed;
+    try {
+      committed = execFileSync(
+        "git",
+        ["-C", sourceState.topLevel, "show", `${sourceState.sha}:product-ui/${relative}`],
+        { encoding: null, maxBuffer: 64 * 1024 * 1024 },
+      );
+    } catch (error) {
+      throw new Error(`source file is not tracked at verified commit: ${relative}`);
+    }
+    if (!committed.equals(bytes)) throw new Error(`source file does not match verified commit: ${relative}`);
+  }
+}
+
+function secureRemote(remote, repository, label) {
+  const value = String(remote || "").trim();
+  const allowed = new Set([
+    `https://github.com/${repository}`,
+    `https://github.com/${repository}.git`,
+    `git@github.com:${repository}`,
+    `git@github.com:${repository}.git`,
+    `ssh://git@github.com/${repository}`,
+    `ssh://git@github.com/${repository}.git`,
+  ]);
+  if (!allowed.has(value)) throw new Error(`wrong ${label} remote`);
+  return repository;
+}
+
+function validTargetBranch(branch) {
+  const value = String(branch || "");
+  const tail = value.slice(3);
+  return value.startsWith("ui/") && tail.length > 0 && /^[A-Za-z0-9._/-]+$/.test(tail) && !tail.includes("//") && !tail.includes("..") && !tail.endsWith("/");
+}
+
+function canonicalExistingPath(value, label) {
+  try {
+    return fs.realpathSync(String(value || ""));
+  } catch (error) {
+    throw new Error(`invalid ${label}`);
+  }
+}
+
+function validateInspection(state, sourceInput, sourceRoot, targetInput, targetRepo) {
+  if (!state || !state.source || !state.target) throw new Error("invalid repository inspection");
+  const sourceTop = canonicalExistingPath(state.source.topLevel, "source top-level");
+  const expectedSourceRoot = path.join(sourceTop, "product-ui");
+  if (
+    sourceTop !== path.dirname(sourceRoot) ||
+    sourceRoot !== expectedSourceRoot ||
+    path.resolve(sourceInput) !== expectedSourceRoot
+  ) {
+    throw new Error("source top-level mismatch");
+  }
+  assertCanonicalDirectory(sourceTop, "source repository");
+  assertCanonicalDirectory(sourceRoot, "source root");
+  const sourceRepository = secureRemote(state.source.remote, SOURCE_REPOSITORY, "source");
+  if (!String(state.source.branch || "").trim() || state.source.branch === "HEAD") throw new Error("source branch is required");
+  if (state.source.clean !== true) throw new Error("source working tree must be clean");
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(String(state.source.sha || ""))) throw new Error("invalid source SHA");
+
+  const targetTop = canonicalExistingPath(state.target.topLevel, "target top-level");
+  if (targetTop !== targetRepo || path.resolve(targetInput) !== targetRepo) throw new Error("target top-level mismatch");
+  assertCanonicalDirectory(targetTop, "target repository");
+  const targetRepository = secureRemote(state.target.remote, TARGET_REPOSITORY, "target");
+  if (!validTargetBranch(state.target.branch)) throw new Error("target branch must start with ui/");
+  if (state.target.clean !== true) throw new Error("target working tree must be clean");
+  const targetGitDir = canonicalExistingPath(state.target.gitDir, "target git directory");
+  assertCanonicalDirectory(targetGitDir, "target git directory");
+
+  return {
+    source: {
+      topLevel: sourceTop,
+      repository: sourceRepository,
+      remote: String(state.source.remote).trim(),
+      branch: String(state.source.branch),
+      sha: String(state.source.sha),
+    },
+    target: {
+      topLevel: targetTop,
+      gitDir: targetGitDir,
+      repository: targetRepository,
+      remote: String(state.target.remote).trim(),
+      branch: String(state.target.branch),
+    },
+  };
+}
+
+function inspectionIdentity(state) {
+  return JSON.stringify(state);
+}
+
+function gitText(cwd, args) {
+  return execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" }).trim();
+}
+
+function gitStatusClean(cwd, allowedAbsolutePaths = []) {
+  const output = execFileSync("git", ["-C", cwd, "status", "--porcelain=v1", "-z", "--untracked-files=all"], { encoding: "utf8" });
+  if (!output) return true;
+  const topLevel = gitText(cwd, ["rev-parse", "--show-toplevel"]);
+  const allowed = new Set(allowedAbsolutePaths.map((absolute) => posixRelative(topLevel, absolute)));
+  const records = output.split("\0").filter(Boolean);
+  return records.every((record) => record.startsWith("?? ") && allowed.has(record.slice(3)));
+}
+
+function defaultInspect(sourceRoot, targetRepo, context = {}) {
+  const sourceTop = gitText(sourceRoot, ["rev-parse", "--show-toplevel"]);
+  const targetTop = gitText(targetRepo, ["rev-parse", "--show-toplevel"]);
+  return {
+    source: {
+      topLevel: sourceTop,
+      remote: gitText(sourceTop, ["remote", "get-url", "origin"]),
+      branch: gitText(sourceTop, ["branch", "--show-current"]),
+      clean: gitStatusClean(sourceTop),
+      sha: gitText(sourceTop, ["rev-parse", "HEAD"]),
+    },
+    target: {
+      topLevel: targetTop,
+      gitDir: gitText(targetTop, ["rev-parse", "--absolute-git-dir"]),
+      remote: gitText(targetTop, ["remote", "get-url", "origin"]),
+      branch: gitText(targetTop, ["branch", "--show-current"]),
+      clean: gitStatusClean(targetTop, context.allowedTargetPaths || []),
+    },
+  };
+}
+
+function inspectAndValidate(inspectRepo, context, sourceInput, sourceRoot, targetInput, targetRepo) {
+  const state = inspectRepo ? inspectRepo(context) : defaultInspect(sourceRoot, targetRepo, context);
+  return validateInspection(state, sourceInput, sourceRoot, targetInput, targetRepo);
 }
 
 function targetPublicRoot(targetRepo) {
-  const repo = fs.realpathSync(targetRepo);
-  assertDirectory(repo, "target repository");
-  const service = assertWithin(repo, path.join(repo, "service"), "target service directory");
-  const publicDir = assertWithin(service, path.join(service, "public"), "target public directory");
-  assertDirectory(service, "target service directory");
-  assertDirectory(publicDir, "target public directory");
-  return fs.realpathSync(publicDir);
+  const service = path.join(targetRepo, "service");
+  const publicRoot = path.join(service, "public");
+  assertCanonicalDirectory(service, "target service directory");
+  assertCanonicalDirectory(publicRoot, "target public directory");
+  if (fs.realpathSync(service) !== service || fs.realpathSync(publicRoot) !== publicRoot) throw new Error("unsafe target public directory");
+  return publicRoot;
 }
 
-function assertWritableDestination(target, relativePath) {
-  const destination = assertWithin(target, path.join(target, relativePath), "destination");
-  const relativeParent = path.dirname(relativePath);
-  let current = target;
-  if (relativeParent !== ".") {
-    for (const part of relativeParent.split(path.sep)) {
-      current = path.join(current, part);
-      if (lstatOrNull(current)) {
-        assertDirectory(current, "destination directory");
-      } else {
-        fs.mkdirSync(current);
+function snapshotTarget(targetRoot, relative) {
+  const destination = assertWithin(targetRoot, fromPosix(targetRoot, relative), "target destination");
+  const parts = relative.split("/");
+  const directories = [];
+  let current = targetRoot;
+  for (const part of parts.slice(0, -1)) {
+    current = path.join(current, part);
+    const stat = lstatOrNull(current);
+    if (!stat) {
+      directories.push({ absolute: current, exists: false });
+      continue;
+    }
+    if (stat.isSymbolicLink() || !stat.isDirectory() || fs.realpathSync(current) !== current) {
+      throw new Error(`unsafe target directory: ${posixRelative(targetRoot, current)}`);
+    }
+    directories.push({ absolute: current, exists: true, identity: directoryIdentity(stat) });
+  }
+
+  const stat = lstatOrNull(destination);
+  let final;
+  if (!stat) {
+    final = { exists: false };
+  } else {
+    if (stat.isSymbolicLink() || !stat.isFile()) throw new Error(`unsafe target file: ${relative}`);
+    if (stat.nlink !== 1) throw new Error(`unsafe target hardlink: ${relative}`);
+    const loaded = readStableRegularFile(targetRoot, destination, "target", true);
+    final = { exists: true, identity: loaded.identity, bytes: loaded.bytes, mode: stat.mode & 0o777 };
+  }
+  return { relative, destination, directories, final };
+}
+
+function revalidateTarget(snapshot, targetRoot, createdDirectories = new Set()) {
+  for (const directory of snapshot.directories) {
+    const stat = lstatOrNull(directory.absolute);
+    if (directory.exists) {
+      if (!stat || stat.isSymbolicLink() || !stat.isDirectory() || !identitiesEqual(directory.identity, directoryIdentity(stat)) || fs.realpathSync(directory.absolute) !== directory.absolute) {
+        throw new Error(`target changed during sync: ${posixRelative(targetRoot, directory.absolute)}`);
       }
+    } else if (createdDirectories.has(directory.absolute)) {
+      if (!stat || stat.isSymbolicLink() || !stat.isDirectory() || fs.realpathSync(directory.absolute) !== directory.absolute) {
+        throw new Error(`unsafe target directory: ${posixRelative(targetRoot, directory.absolute)}`);
+      }
+    } else if (stat) {
+      throw new Error(`target changed during sync: ${posixRelative(targetRoot, directory.absolute)}`);
     }
   }
-  const destinationStat = lstatOrNull(destination);
-  if (destinationStat && (destinationStat.isSymbolicLink() || !destinationStat.isFile() || destinationStat.nlink !== 1)) {
-    throw new Error(`unsafe destination: ${relativePath}`);
+
+  const stat = lstatOrNull(snapshot.destination);
+  if (!snapshot.final.exists) {
+    if (stat) throw new Error(`target changed during sync: ${snapshot.relative}`);
+    return;
   }
-  return destination;
+  if (!stat || stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1 || !identitiesEqual(snapshot.final.identity, fileIdentity(stat))) {
+    throw new Error(`target changed during sync: ${snapshot.relative}`);
+  }
+  const loaded = readStableRegularFile(targetRoot, snapshot.destination, "target", true);
+  if (!loaded.bytes.equals(snapshot.final.bytes)) throw new Error(`target changed during sync: ${snapshot.relative}`);
 }
 
-function readProvenance(file) {
+function validIsoTimestamp(value) {
+  if (typeof value !== "string") return false;
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime()) && date.toISOString() === value;
+}
+
+function freshIsoTimestamp(previous) {
+  const now = new Date();
+  if (validIsoTimestamp(previous) && now.toISOString() === previous) now.setTime(now.getTime() + 1);
+  return now.toISOString();
+}
+
+function arraysEqual(left, right) {
+  return Array.isArray(left) && left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function parseProvenance(snapshot) {
+  if (!snapshot.final.exists) return null;
   try {
-    const stat = fs.lstatSync(file);
-    if (stat.isSymbolicLink() || !stat.isFile()) return null;
-    return JSON.parse(fs.readFileSync(file, "utf8"));
+    return JSON.parse(snapshot.final.bytes.toString("utf8"));
   } catch (error) {
     return null;
   }
 }
 
+function randomSibling(destination, kind) {
+  const name = `.ui-sync-${kind}-${process.pid}-${crypto.randomBytes(12).toString("hex")}`;
+  return path.join(path.dirname(destination), name);
+}
+
+function createExclusiveFile(destination, bytes, mode, kind = "tmp") {
+  let temporary;
+  let descriptor;
+  let createdNode;
+  for (let attempts = 0; attempts < 10; attempts += 1) {
+    temporary = randomSibling(destination, kind);
+    try {
+      descriptor = fs.openSync(temporary, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | NOFOLLOW, mode);
+      const opened = fs.fstatSync(descriptor);
+      createdNode = { dev: opened.dev, ino: opened.ino };
+      break;
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+    }
+  }
+  if (descriptor === undefined) throw new Error("could not allocate sync temporary file");
+  try {
+    fs.writeFileSync(descriptor, bytes);
+    fs.fchmodSync(descriptor, mode);
+    fs.fsyncSync(descriptor);
+  } catch (error) {
+    fs.closeSync(descriptor);
+    try {
+      const stat = lstatOrNull(temporary);
+      if (stat && !stat.isSymbolicLink() && stat.dev === createdNode.dev && stat.ino === createdNode.ino && stat.nlink === 1) fs.unlinkSync(temporary);
+    } catch (cleanupError) {}
+    throw error;
+  }
+  fs.closeSync(descriptor);
+  const stat = fs.lstatSync(temporary);
+  if (stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1) {
+    try {
+      if (!stat.isSymbolicLink() && stat.dev === createdNode.dev && stat.ino === createdNode.ino) fs.unlinkSync(temporary);
+    } catch (cleanupError) {}
+    throw new Error("unsafe sync temporary file");
+  }
+  return { path: temporary, identity: fileIdentity(stat) };
+}
+
+function acquireLock(gitDir) {
+  const lockPath = path.join(gitDir, LOCK_NAME);
+  let descriptor;
+  let created = false;
+  let createdNode;
+  try {
+    descriptor = fs.openSync(lockPath, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | NOFOLLOW, 0o600);
+    created = true;
+    const opened = fs.fstatSync(descriptor);
+    createdNode = { dev: opened.dev, ino: opened.ino };
+    fs.writeFileSync(descriptor, `${process.pid}\n`);
+    fs.fsyncSync(descriptor);
+    const identity = fileIdentity(fs.fstatSync(descriptor));
+    fs.closeSync(descriptor);
+    return { path: lockPath, identity };
+  } catch (error) {
+    if (descriptor !== undefined) fs.closeSync(descriptor);
+    if (created) {
+      try {
+        const stat = lstatOrNull(lockPath);
+        if (stat && !stat.isSymbolicLink() && stat.isFile() && stat.dev === createdNode.dev && stat.ino === createdNode.ino && stat.nlink === 1) fs.unlinkSync(lockPath);
+      } catch (cleanupError) {}
+    }
+    if (error.code === "EEXIST") throw new Error("UI sync lock is already held");
+    throw error;
+  }
+}
+
+function releaseLock(lock) {
+  if (!lock) return;
+  const stat = lstatOrNull(lock.path);
+  if (!stat) return;
+  if (stat.isSymbolicLink() || !stat.isFile() || !identitiesEqual(lock.identity, fileIdentity(stat))) {
+    throw new Error("sync lock changed unexpectedly");
+  }
+  fs.unlinkSync(lock.path);
+}
+
+function createMissingDirectories(outputs, targetRoot, created) {
+  const missing = new Set();
+  for (const output of outputs) {
+    for (const directory of output.snapshot.directories) if (!directory.exists) missing.add(directory.absolute);
+  }
+  const ordered = [...missing].sort((left, right) => left.split(path.sep).length - right.split(path.sep).length || left.localeCompare(right));
+  for (const directory of ordered) {
+    const parent = path.dirname(directory);
+    const parentStat = fs.lstatSync(parent);
+    if (parentStat.isSymbolicLink() || !parentStat.isDirectory() || fs.realpathSync(parent) !== parent) throw new Error(`unsafe target directory: ${posixRelative(targetRoot, parent)}`);
+    if (lstatOrNull(directory)) throw new Error(`target changed during sync: ${posixRelative(targetRoot, directory)}`);
+    fs.mkdirSync(directory, { mode: 0o755 });
+    created.push(directory);
+    assertCanonicalDirectory(directory, "target directory");
+  }
+}
+
+function verifyInstalled(output, targetRoot) {
+  const stat = fs.lstatSync(output.snapshot.destination);
+  if (stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1) throw new Error(`unsafe installed target: ${output.snapshot.relative}`);
+  const loaded = readStableRegularFile(targetRoot, output.snapshot.destination, "target", true);
+  if (!loaded.bytes.equals(output.bytes)) throw new Error(`installed target verification failed: ${output.snapshot.relative}`);
+  return loaded.identity;
+}
+
+function safeUnlinkInstalled(record) {
+  const stat = lstatOrNull(record.output.snapshot.destination);
+  if (!stat) return;
+  if (!record.installedIdentity || !identitiesEqual(record.installedIdentity, fileIdentity(stat))) {
+    throw new Error(`cannot safely roll back changed target: ${record.output.snapshot.relative}`);
+  }
+  fs.unlinkSync(record.output.snapshot.destination);
+}
+
+function restoreRecord(record, targetRoot) {
+  const original = record.output.snapshot.final;
+  if (!original.exists) {
+    safeUnlinkInstalled(record);
+    return;
+  }
+  const backupStat = record.backup ? lstatOrNull(record.backup) : null;
+  if (backupStat) {
+    if (backupStat.isSymbolicLink() || !backupStat.isFile() || backupStat.nlink !== 1) throw new Error("unsafe transaction backup");
+    const backup = readStableRegularFile(targetRoot, record.backup, "transaction backup", true);
+    if (backup.identity.dev !== original.identity.dev || backup.identity.ino !== original.identity.ino || !backup.bytes.equals(original.bytes)) {
+      throw new Error("transaction backup changed unexpectedly");
+    }
+    safeUnlinkInstalled(record);
+    const beforeRestore = fs.lstatSync(record.backup);
+    if (beforeRestore.dev !== backup.identity.dev || beforeRestore.ino !== backup.identity.ino || beforeRestore.nlink !== 1) {
+      throw new Error("transaction backup changed unexpectedly");
+    }
+    fs.renameSync(record.backup, record.output.snapshot.destination);
+    record.backup = null;
+    return;
+  }
+  safeUnlinkInstalled(record);
+  const restored = createExclusiveFile(record.output.snapshot.destination, original.bytes, original.mode || 0o644, "restore");
+  fs.renameSync(restored.path, record.output.snapshot.destination);
+}
+
+function rollbackTransaction(records, staged, createdDirectories, targetRoot) {
+  const failures = [];
+  for (const record of [...records].reverse()) {
+    try { restoreRecord(record, targetRoot); } catch (error) { failures.push(error.message); }
+  }
+  for (const stage of staged) {
+    if (!stage.path) continue;
+    try {
+      const stat = lstatOrNull(stage.path);
+      if (stat && identitiesEqual(stage.identity, fileIdentity(stat))) fs.unlinkSync(stage.path);
+    } catch (error) { failures.push(error.message); }
+  }
+  for (const directory of [...createdDirectories].reverse()) {
+    try { fs.rmdirSync(directory); } catch (error) { failures.push(error.message); }
+  }
+  if (failures.length) throw new Error(`transaction rollback failed: ${failures.join("; ")}`);
+}
+
+function runWriteTransaction({ outputs, allSnapshots, targetRoot, inspectState, inspectRepo, sourceInput, sourceRoot, targetInput, targetRepo }) {
+  let lock;
+  let createdDirectories = [];
+  const staged = [];
+  const records = [];
+  try {
+    lock = acquireLock(inspectState.target.gitDir);
+    const afterLock = inspectAndValidate(inspectRepo, { phase: "after-lock", allowedTargetPaths: [] }, sourceInput, sourceRoot, targetInput, targetRepo);
+    if (inspectionIdentity(afterLock) !== inspectionIdentity(inspectState)) throw new Error("repository state changed during sync");
+    for (const snapshot of allSnapshots) revalidateTarget(snapshot, targetRoot);
+
+    createMissingDirectories(outputs, targetRoot, createdDirectories);
+    const createdSet = new Set(createdDirectories);
+    for (const output of outputs) {
+      const mode = output.snapshot.final.exists ? output.snapshot.final.mode : 0o644;
+      const stage = createExclusiveFile(output.snapshot.destination, output.bytes, mode);
+      output.stage = stage;
+      staged.push(stage);
+    }
+
+    const beforeCommit = inspectAndValidate(
+      inspectRepo,
+      { phase: "before-commit", allowedTargetPaths: staged.map((stage) => stage.path) },
+      sourceInput,
+      sourceRoot,
+      targetInput,
+      targetRepo,
+    );
+    if (inspectionIdentity(beforeCommit) !== inspectionIdentity(inspectState)) throw new Error("repository state changed during sync");
+    for (const snapshot of allSnapshots) revalidateTarget(snapshot, targetRoot, createdSet);
+
+    for (const output of outputs) {
+      revalidateTarget(output.snapshot, targetRoot, createdSet);
+      const record = { output, backup: null, installedIdentity: null };
+      records.push(record);
+      if (output.snapshot.final.exists) {
+        record.backup = randomSibling(output.snapshot.destination, "backup");
+        if (lstatOrNull(record.backup)) throw new Error("transaction backup collision");
+        fs.renameSync(output.snapshot.destination, record.backup);
+      }
+      fs.renameSync(output.stage.path, output.snapshot.destination);
+      output.stage.path = null;
+      record.installedIdentity = fileIdentity(fs.lstatSync(output.snapshot.destination));
+      verifyInstalled(output, targetRoot);
+    }
+
+    for (const record of records) {
+      if (!record.backup) continue;
+      const stat = fs.lstatSync(record.backup);
+      if (stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1) throw new Error("unsafe transaction backup");
+      const backup = readStableRegularFile(targetRoot, record.backup, "transaction backup", true);
+      if (backup.identity.dev !== record.output.snapshot.final.identity.dev || backup.identity.ino !== record.output.snapshot.final.identity.ino || !backup.bytes.equals(record.output.snapshot.final.bytes)) {
+        throw new Error("transaction backup changed unexpectedly");
+      }
+      fs.unlinkSync(record.backup);
+      record.backup = null;
+    }
+  } catch (error) {
+    try {
+      rollbackTransaction(records, staged, createdDirectories, targetRoot);
+    } catch (rollbackError) {
+      throw new Error(`${error.message}; ${rollbackError.message}`);
+    }
+    throw error;
+  } finally {
+    releaseLock(lock);
+  }
+}
+
 function syncProductUi({ sourceRoot, targetRepo, write, inspectRepo }) {
-  const source = fs.realpathSync(sourceRoot);
-  assertDirectory(source, "source root");
-  const sourceRepo = path.resolve(source, "..");
-  const inspect = inspectRepo || (() => defaultInspect(sourceRepo, targetRepo));
-  const state = inspect();
-  if (!isExpectedRemote(state.remote)) throw new Error("wrong target remote");
-  if (!/^ui\/.+/.test(String(state.branch))) throw new Error("target branch must start with ui/");
-  if (!state.clean) throw new Error("target working tree must be clean");
+  if (typeof write !== "boolean") throw new Error("write must be a boolean");
+  const sourceInput = path.resolve(sourceRoot);
+  const targetInput = path.resolve(targetRepo);
+  const source = canonicalExistingPath(sourceInput, "source root");
+  const target = canonicalExistingPath(targetInput, "target repository");
+  const initialState = inspectAndValidate(inspectRepo, { phase: "initial", allowedTargetPaths: [] }, sourceInput, source, targetInput, target);
+  const sourcePlan = loadSourcePlan(source);
+  if (!inspectRepo) verifySourceAtCommit(initialState.source, sourcePlan);
+  const targetRoot = targetPublicRoot(target);
 
-  const manifest = JSON.parse(fs.readFileSync(path.join(source, "sync-manifest.json"), "utf8"));
-  if (!manifest || !Array.isArray(manifest.entries)) throw new Error("invalid sync manifest");
-  const version = JSON.parse(fs.readFileSync(path.join(source, "version.json"), "utf8"));
-  const target = targetPublicRoot(targetRepo);
-  const relFiles = [...new Set(manifest.entries.flatMap((entry) => filesUnder(source, assertSafeEntry(entry))))].sort();
-  let changed = false;
-
-  for (const rel of relFiles) {
-    const from = assertWithin(source, path.join(source, rel), "source file");
-    const to = assertWithin(target, path.join(target, rel), "destination");
-    if (!same(from, to)) {
-      changed = true;
-      if (write) fs.copyFileSync(from, assertWritableDestination(target, rel));
-    }
+  const fileOutputs = [];
+  const allSnapshots = [];
+  for (const [relative, bytes] of sourcePlan.files) {
+    const snapshot = snapshotTarget(targetRoot, relative);
+    allSnapshots.push(snapshot);
+    if (!snapshot.final.exists || !snapshot.final.bytes.equals(bytes)) fileOutputs.push({ snapshot, bytes });
   }
 
+  const managedFiles = [...sourcePlan.files.keys()];
+  const provenanceSnapshot = snapshotTarget(targetRoot, ".ui-source.json");
+  allSnapshots.push(provenanceSnapshot);
+  const existingProvenance = parseProvenance(provenanceSnapshot);
+  if (existingProvenance && Array.isArray(existingProvenance.managedFiles)) {
+    const removed = existingProvenance.managedFiles.filter((relative) => typeof relative === "string" && !managedFiles.includes(relative));
+    if (removed.length) throw new Error(`manifest removed previously managed files (${removed.sort().join(", ")}); manual review required`);
+  }
   const expectedProvenance = {
-    repository: "sangwonMoon-kor/kdhc-ai-contest",
-    commit: state.sourceSha,
-    version: version.version,
+    repository: initialState.source.repository,
+    commit: initialState.source.sha,
+    version: sourcePlan.version,
+    managedFiles,
   };
-  const provenanceFile = path.join(target, ".ui-source.json");
-  const provenance = readProvenance(provenanceFile);
-  const provenanceMatches = provenance && ["repository", "commit", "version"].every((key) => provenance[key] === expectedProvenance[key]);
-  if (!provenanceMatches) {
-    changed = true;
-    if (write) {
-      const destination = assertWritableDestination(target, ".ui-source.json");
-      fs.writeFileSync(destination, `${JSON.stringify({ ...expectedProvenance, syncedAt: new Date().toISOString() }, null, 2)}\n`);
-    }
+  const provenanceMatches = Boolean(
+    existingProvenance &&
+    existingProvenance.repository === expectedProvenance.repository &&
+    existingProvenance.commit === expectedProvenance.commit &&
+    existingProvenance.version === expectedProvenance.version &&
+    arraysEqual(existingProvenance.managedFiles, expectedProvenance.managedFiles) &&
+    validIsoTimestamp(existingProvenance.syncedAt)
+  );
+  const changed = fileOutputs.length > 0 || !provenanceMatches;
+  if (!changed || !write) {
+    return {
+      changed,
+      files: managedFiles.length,
+      provenance: provenanceMatches ? existingProvenance : expectedProvenance,
+    };
   }
-  return { changed, files: relFiles.length, provenance: provenanceMatches ? provenance : expectedProvenance };
+
+  const writtenProvenance = { ...expectedProvenance, syncedAt: freshIsoTimestamp(existingProvenance && existingProvenance.syncedAt) };
+  const provenanceOutput = {
+    snapshot: provenanceSnapshot,
+    bytes: Buffer.from(`${JSON.stringify(writtenProvenance, null, 2)}\n`),
+  };
+  runWriteTransaction({
+    outputs: [...fileOutputs, provenanceOutput],
+    allSnapshots,
+    targetRoot,
+    inspectState: initialState,
+    inspectRepo,
+    sourceInput,
+    sourceRoot: source,
+    targetInput,
+    targetRepo: target,
+  });
+  return { changed: true, files: managedFiles.length, provenance: writtenProvenance };
 }
 
 function parseArgs(argv) {
-  const out = {};
+  let target;
+  let mode;
   for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index] === "--target") out.target = argv[++index];
-    else if (argv[index] === "--write") out.write = true;
-    else if (argv[index] === "--check") out.write = false;
+    const argument = argv[index];
+    if (argument === "--target") {
+      if (target !== undefined) throw new Error("--target may only be provided once");
+      const value = argv[++index];
+      if (!value || value.startsWith("--")) throw new Error("--target requires a path");
+      target = value;
+    } else if (argument === "--check" || argument === "--write") {
+      if (mode !== undefined) throw new Error("exactly one of --check or --write is required");
+      mode = argument;
+    } else {
+      throw new Error(`unknown argument: ${argument}`);
+    }
   }
-  return out;
+  if (target === undefined) throw new Error("--target is required");
+  if (mode === undefined) throw new Error("exactly one of --check or --write is required");
+  return { target, write: mode === "--write" };
 }
 
 if (require.main === module) {
   try {
     const args = parseArgs(process.argv.slice(2));
-    if (!args.target) throw new Error("--target is required");
     const result = syncProductUi({
       sourceRoot: path.resolve(__dirname, "..", "product-ui"),
       targetRepo: path.resolve(args.target),
-      write: Boolean(args.write),
+      write: args.write,
     });
     console.log(`${args.write ? "synced" : "checked"} ${result.files} files; changed=${result.changed}; source=${result.provenance.commit}`);
     if (!args.write && result.changed) process.exitCode = 1;
@@ -197,4 +773,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { syncProductUi, assertSafeEntry };
+module.exports = { syncProductUi, assertSafeEntry, parseArgs };
