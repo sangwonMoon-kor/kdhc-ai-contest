@@ -287,7 +287,7 @@ async function verifyServer() {
   });
 
   const serverSource = fs.readFileSync(path.resolve(__dirname, '..', 'openai-server.js'), 'utf8');
-  assert.match(serverSource, /model: process\.env\.OPENAI_MODEL \|\| 'gpt-5\.6-sol'/);
+  assert.match(serverSource, /model: process\.env\.OPENAI_MODEL \|\| 'gpt-5\.4-mini'/);
 }
 
 verifyServer().then(() => console.log('OpenAI server verification passed.')).catch((error) => {

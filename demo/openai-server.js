@@ -267,7 +267,7 @@ if (require.main === module) {
   }
   const server = createJarvisServer({
     openaiClient: new OpenAI({apiKey: process.env.OPENAI_API_KEY}),
-    model: process.env.OPENAI_MODEL || 'gpt-5.6-sol',
+    model: process.env.OPENAI_MODEL || 'gpt-5.4-mini',
     demoRoot: __dirname,
   });
   server.listen(Number(process.env.PORT) || 3000, HOST);
