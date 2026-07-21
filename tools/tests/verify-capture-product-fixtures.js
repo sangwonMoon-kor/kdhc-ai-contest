@@ -1,0 +1,24 @@
+"use strict";
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+const { validateResponses } = require("../capture-product-fixtures");
+
+const fixtureRoot = path.resolve(__dirname, "..", "..", "product-ui", "fixtures");
+const read = (rel) => JSON.parse(fs.readFileSync(path.join(fixtureRoot, rel), "utf8"));
+const payloads = () => ({
+  summary: read("summary.json"),
+  forecast: read("forecast.json"),
+  briefing: read("briefing.json"),
+  documents: read("documents/index.json"),
+  askPump: read("ask/pump-report.json"),
+  askMissing: read("ask/not-found.json"),
+  draft: read("draft/design-and-costing.json"),
+  riskyCheck: read("check/pump-risky-draft.json"),
+  cleanCheck: read("check/clean-draft.json")
+});
+
+assert.doesNotThrow(() => validateResponses(payloads()));
+assert.throws(() => validateResponses({ ...payloads(), forecast: { simDate: "2026-01-02", items: [{ name: "순환수 펌프" }], recurrences: [] } }));
+assert.throws(() => validateResponses({ ...payloads(), briefing: { generatedFrom: { docs: 19, edges: 938, version: 24 }, stages: [], cautions: [] } }));
+console.log("Capture response validation passed");
