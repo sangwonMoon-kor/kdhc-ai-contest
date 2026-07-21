@@ -268,7 +268,7 @@ async function vHome(main) {
     <div class="hero">
       <h1 id="heroLine" aria-label="${esc(persona ? persona + "님, 오늘 할 일부터 챙겨드릴게요." : "무엇부터 할까요?")}"></h1>
       <p class="tag">일한 만큼, 준비됩니다 — 지시·질문·메모를 그대로 적어 보세요.</p>
-      <form class="omni" id="omni">
+      <form class="omni" id="omni" data-testid="home-omni">
         <input id="omniIn" type="text" autocomplete="off" placeholder="예: 팀장님이 다음 주까지 펌프 정비계획 올리래" aria-label="만능 입력">
         <button class="btn" type="submit">말하기</button>
       </form>
@@ -429,12 +429,12 @@ let askSeq = 0;
 async function renderAsk(box, q, target) {
   if (!box) return;
   const seq = ++askSeq;
-  box.innerHTML = `<div class="card ask-panel"><div class="blk-k">근거를 찾는 중…</div></div>`;
+  box.innerHTML = `<div class="card ask-panel" data-testid="grounded-answer"><div class="blk-k">근거를 찾는 중…</div></div>`;
   try {
     const r = await api("/api/ask", { question: q });
     if (seq !== askSeq || !document.body.contains(box)) return;
     const ans = (r.llm && r.llm.answer) ? [r.llm.answer] : (r.answer || []); // r.llm = LLM 합성(있을 때만), 없으면 템플릿
-    box.innerHTML = `<div class="card ask-panel">
+    box.innerHTML = `<div class="card ask-panel" data-testid="grounded-answer">
       <div class="blk-k">근거 답변 ${r.grounded ? `<span class="badge grounded">근거 있음</span>` : `<span class="badge warn">근거 없음</span>`}
         ${target ? `<span class="sub"> · 관련 업무: ${esc(target.title)}</span>` : ""}</div>
       <div class="ans">${ans.map((a) => `<p>${esc(a)}</p>`).join("") || "<p>답을 찾지 못했습니다.</p>"}</div>
@@ -447,7 +447,7 @@ async function renderAsk(box, q, target) {
     const g = $("#askGoWb", box); if (g) g.onclick = () => nav("#workbench/" + target.id);
   } catch (e) {
     if (seq !== askSeq || !document.body.contains(box)) return;
-    box.innerHTML = `<div class="card ask-panel"><p>답변을 가져오지 못했습니다 — 엔진 연결을 확인해 주세요.</p></div>`;
+    box.innerHTML = `<div class="card ask-panel" data-testid="grounded-answer"><p>답변을 가져오지 못했습니다 — 엔진 연결을 확인해 주세요.</p></div>`;
   }
 }
 
@@ -566,7 +566,7 @@ async function vWorkbench(main, id) {
   const nt = nextTodo(w);
   const cautions = bf ? bf.cautions.slice(0, 2) : [];
 
-  main.innerHTML = `<div class="view">
+  main.innerHTML = `<div class="view" data-testid="workbench">
     <a class="wb-back" href="#work/list">← 내 업무</a>
     <section class="card wb-context">
       <h1 tabindex="-1" class="pg" style="margin:0 0 4px">${esc(w.title)}
@@ -798,7 +798,7 @@ async function vDraft(main, id) {
       <p class="sub" style="margin-top:6px">아래에 초안을 직접 쓰고 제출 전 점검만 활용할 수 있습니다.</p>
       <textarea id="freeDraft" rows="8" style="width:100%;margin-top:10px;border:1px solid var(--line-strong);border-radius:10px;padding:12px;font-family:inherit;background:var(--surface);color:var(--ink)">${esc((w.draft && w.draft.freeText) || "")}</textarea>
       <div class="draft-tools"><button class="btn ghost" id="dSave">임시 저장</button><button class="btn" id="dCheck">제출 전 점검</button></div>
-      <div id="checkOut"></div></div>`;
+      <div id="checkOut" data-testid="precheck-results"></div></div>`;
     $("#dSave").onclick = () => { w.draft = { savedAt: Date.now(), freeText: $("#freeDraft").value }; saveState(); toast("임시 저장했습니다."); };
     $("#dCheck").onclick = () => runCheck($("#freeDraft").value, $("#checkOut"));
     return;
@@ -808,7 +808,7 @@ async function vDraft(main, id) {
     if (!r.ok) { body.innerHTML = `<div class="card"><p>${esc(r.reason || "초안을 만들 수 없습니다.")}</p></div>`; return; }
     const vals = (w.draft && w.draft.values) || {};
     let phIdx = 0;
-    body.innerHTML = `<div class="draft-doc">
+    body.innerHTML = `<div class="draft-doc" data-testid="draft-document">
       <h2>${esc(r.title)}</h2>
       <p class="sub" style="text-align:center;margin-bottom:14px">작년 문서(${esc(r.baseTitle)} · ${esc(r.baseDate)}) 구조 기준
         <button class="ev-btn" data-ev="${esc(r.baseDocId)}">근거 · 작년 원문</button></p>
@@ -827,7 +827,7 @@ async function vDraft(main, id) {
         <button class="btn" id="dCheck">제출 전 점검</button>
         <span class="sub" id="saveStamp">${w.draft && w.draft.savedAt ? "저장됨 " + fmtTs(w.draft.savedAt) : ""}</span>
       </div>
-      <div id="checkOut"></div>
+      <div id="checkOut" data-testid="precheck-results"></div>
     </div>`;
     bindEvidence(body);
     const collectValues = () => { const o = {}; $$("[data-ph]", body).forEach((i) => { if (i.value.trim()) o[i.dataset.ph] = i.value.trim(); }); return o; };
