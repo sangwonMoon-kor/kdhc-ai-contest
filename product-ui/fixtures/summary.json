@@ -1,0 +1,331 @@
+{
+  "persona": {
+    "name": "김민준 과장",
+    "assignedDate": "2026-01-02",
+    "department": "○○지사 공무부",
+    "role": "발전설비 유지보수 담당(공사·용역·구매)"
+  },
+  "successor": {
+    "name": "박서연 과장",
+    "date": "2027-01-02"
+  },
+  "predecessor": "이지훈 과장(전임, 現 본사 유지보수총괄)",
+  "simDate": "2026-01-02",
+  "version": 24,
+  "versionLabel": "v2.4",
+  "docCount": 19,
+  "hintCount": 0,
+  "persistence": "file",
+  "stats": {
+    "nodes": 193,
+    "edges": 938,
+    "nodeByType": {
+      "Case": 8,
+      "WorkflowStage": 11,
+      "Actor": 12,
+      "Asset": 12,
+      "ContractType": 5,
+      "Document": 70,
+      "Risk": 28,
+      "Constraint": 18,
+      "TacitKnowledge": 12,
+      "LanguageLens": 8,
+      "DecisionCriterion": 8,
+      "ContextReference": 1
+    },
+    "edgeByRel": {
+      "precedes": 18,
+      "requires_document": 149,
+      "involves_actor": 146,
+      "causes_risk": 51,
+      "is_controlled_by": 59,
+      "has_tacit_knowledge": 64,
+      "uses_asset": 17,
+      "has_stage": 33,
+      "references_contract_type": 22,
+      "has_risk": 47,
+      "translates_to_language": 83,
+      "mitigated_by": 46,
+      "controls_risk": 42,
+      "uses_language_lens": 39,
+      "cross_checks": 23,
+      "has_decision_criterion": 30,
+      "produces_document": 17,
+      "mentions": 52
+    },
+    "edgeByStatus": {
+      "업무오너승인": 845,
+      "작성자확인": 93
+    }
+  },
+  "meta": {
+    "rels": {
+      "has_case": {
+        "ko": "사례 포함",
+        "hue": "#8a6d3b",
+        "std": true
+      },
+      "has_stage": {
+        "ko": "단계 포함",
+        "hue": "#8a6d3b",
+        "std": true
+      },
+      "precedes": {
+        "ko": "선후 관계",
+        "hue": "#2f6bff",
+        "std": true
+      },
+      "involves_actor": {
+        "ko": "역할 관여",
+        "hue": "#0f8a55",
+        "std": true
+      },
+      "uses_asset": {
+        "ko": "설비 대상",
+        "hue": "#b0812a",
+        "std": true
+      },
+      "references_contract_type": {
+        "ko": "계약유형",
+        "hue": "#4d7fd6",
+        "std": true
+      },
+      "requires_document": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "produces_document": {
+        "ko": "산출 문서",
+        "hue": "#7d8db0",
+        "std": true
+      },
+      "has_risk": {
+        "ko": "내재 위험",
+        "hue": "#c0392b",
+        "std": true
+      },
+      "causes_risk": {
+        "ko": "위험 유발",
+        "hue": "#e0620d",
+        "std": true
+      },
+      "mitigated_by": {
+        "ko": "완화 규칙",
+        "hue": "#0aa8cf",
+        "std": true
+      },
+      "is_controlled_by": {
+        "ko": "통제 규칙",
+        "hue": "#0a8fc9",
+        "std": true
+      },
+      "has_tacit_knowledge": {
+        "ko": "암묵지",
+        "hue": "#6d3cd6",
+        "std": true
+      },
+      "translates_to_language": {
+        "ko": "언어 번역",
+        "hue": "#c26aa6",
+        "std": true
+      },
+      "cross_checks": {
+        "ko": "교차 확인",
+        "hue": "#b0640b",
+        "std": true
+      },
+      "records_as_history": {
+        "ko": "이력화",
+        "hue": "#3f8f8f",
+        "std": true
+      },
+      "has_decision_criterion": {
+        "ko": "판단 기준",
+        "hue": "#3f8f8f",
+        "std": true
+      },
+      "source_section": {
+        "ko": "원문 근거",
+        "hue": "#8894ad",
+        "std": true
+      },
+      "controls_risk": {
+        "ko": "위험 통제",
+        "hue": "#0aa8cf",
+        "std": true
+      },
+      "uses_language_lens": {
+        "ko": "언어 렌즈",
+        "hue": "#c26aa6",
+        "std": true
+      },
+      "has_workflow_stage": {
+        "ko": "단계 보유",
+        "hue": "#2f6bff",
+        "std": true
+      },
+      "mentions": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      }
+    },
+    "nodes": {
+      "Case": {
+        "ko": "사례",
+        "color": "#8a6d3b",
+        "icon": "📁"
+      },
+      "WorkflowStage": {
+        "ko": "업무단계",
+        "color": "#2f6bff",
+        "icon": "🗂"
+      },
+      "Actor": {
+        "ko": "역할/부서",
+        "color": "#0f8a55",
+        "icon": "🏢"
+      },
+      "Asset": {
+        "ko": "설비/부품",
+        "color": "#b0812a",
+        "icon": "⚙"
+      },
+      "ContractType": {
+        "ko": "계약유형",
+        "color": "#4d7fd6",
+        "icon": "📑"
+      },
+      "Document": {
+        "ko": "문서/증빙",
+        "color": "#5d6b8c",
+        "icon": "📄"
+      },
+      "Risk": {
+        "ko": "위험",
+        "color": "#c0392b",
+        "icon": "⚠"
+      },
+      "Constraint": {
+        "ko": "제약규칙",
+        "color": "#0aa8cf",
+        "icon": "🛡"
+      },
+      "TacitKnowledge": {
+        "ko": "암묵지",
+        "color": "#6d3cd6",
+        "icon": "💡"
+      },
+      "LanguageLens": {
+        "ko": "언어 렌즈",
+        "color": "#c26aa6",
+        "icon": "🗣"
+      },
+      "DecisionCriterion": {
+        "ko": "판단 기준",
+        "color": "#3f8f8f",
+        "icon": "⚖"
+      },
+      "ContextReference": {
+        "ko": "참조 맥락",
+        "color": "#8894ad",
+        "icon": "🔗"
+      }
+    },
+    "status": {
+      "후보": {
+        "rank": 0,
+        "color": "#8a6d3b",
+        "trust": "AI 추출 · 미확인"
+      },
+      "작성자확인": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "동료확인": {
+        "rank": 2,
+        "color": "#0aa8cf",
+        "trust": "동료 교차확인"
+      },
+      "업무오너승인": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "만료필요": {
+        "rank": -1,
+        "color": "#c0392b",
+        "trust": "재확인 필요"
+      },
+      "폐기": {
+        "rank": -2,
+        "color": "#c0392b",
+        "trust": "무효"
+      }
+    },
+    "kinds": {
+      "APPROVAL": "전자결재",
+      "EMAIL": "이메일",
+      "MEETING": "회의록",
+      "REPORT": "보고서",
+      "AUDIT": "감사문서",
+      "RULE": "사규·지침",
+      "WORKLOG": "작업일보",
+      "SPEC": "규격서",
+      "HINT": "업무 힌트"
+    },
+    "okfBundle": "public-maintenance-rewritten",
+    "stages": [
+      {
+        "id": "problem-recognition",
+        "label": "문제 인식"
+      },
+      {
+        "id": "maintenance-type-decision",
+        "label": "유지보수 방식 결정"
+      },
+      {
+        "id": "design-and-costing",
+        "label": "설계·내역 작성"
+      },
+      {
+        "id": "department-consultation",
+        "label": "부서 협의"
+      },
+      {
+        "id": "contracting",
+        "label": "계약"
+      },
+      {
+        "id": "contractor-management",
+        "label": "업체 관리"
+      },
+      {
+        "id": "field-change-response",
+        "label": "현장 변수 대응"
+      },
+      {
+        "id": "procurement",
+        "label": "물품구매"
+      },
+      {
+        "id": "completion-settlement",
+        "label": "준공·정산"
+      },
+      {
+        "id": "post-management",
+        "label": "사후관리·이력화"
+      },
+      {
+        "id": "budget-persuasion",
+        "label": "예산 설득"
+      }
+    ],
+    "llm": {
+      "enabled": false,
+      "model": null
+    }
+  }
+}

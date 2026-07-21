@@ -1,0 +1,8 @@
+{
+  "id": "old-estimate-copy",
+  "type": "Risk",
+  "label": "과거 내역서 단순 복사 위험",
+  "description": "기존 내역을 편의상 복사해 최신 기준, 실제 작업, 중복·누락 여부를 확인하지 못하는 위험이다.",
+  "resource": null,
+  "body": "---\r\ntype: Risk\r\ntitle: 과거 내역서 단순 복사 위험\r\ndescription: 기존 내역을 편의상 복사해 최신 기준, 실제 작업, 중복·누락 여부를 확인하지 못하는 위험이다.\r\nresource: okf://public-maintenance-rewritten/risks/old-estimate-copy.md\r\ntags:\r\n- 위험\r\n- 반복실수\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 과거 내역서 단순 복사 위험\r\n\r\n## 정의\r\n기존 내역을 편의상 복사해 최신 기준, 실제 작업, 중복·누락 여부를 확인하지 못하는 위험이다.\r\n\r\n## 완화 제약\r\n- [[../constraints/basis-per-cost-line.md|내역서 행별 근거 원칙]]\r\n- [[../constraints/no-copy-without-current-basis.md|기존 내역 최신성 검토 원칙]]"
+}

@@ -1,0 +1,768 @@
+{
+  "persona": {
+    "name": "김민준 과장",
+    "assignedDate": "2026-01-02",
+    "department": "○○지사 공무부",
+    "role": "발전설비 유지보수 담당(공사·용역·구매)"
+  },
+  "generatedFrom": {
+    "docs": 19,
+    "edges": 938,
+    "version": 24
+  },
+  "stages": [
+    {
+      "id": "problem-recognition",
+      "name": "문제 인식",
+      "desc": "운영부 요청, 고객 민원, 점검 결과, 고장 이력, 운전데이터로 정비 필요성을 인식하는 단계다.",
+      "docCount": 2,
+      "contextCount": 21
+    },
+    {
+      "id": "maintenance-type-decision",
+      "name": "유지보수 방식 결정",
+      "desc": "공사, 정비용역, 물품구매, 제조사 기술지원, 물품구매 포함 공사 중 적정 계약유형을 판단하는 단계다.",
+      "docCount": 0,
+      "contextCount": 19
+    },
+    {
+      "id": "design-and-costing",
+      "name": "설계·내역 작성",
+      "desc": "작업 항목, 산출물, 완료 기준, 검수 기준, 노임단가, 품셈, 견적, 간접비를 반영해 설계 문서를 만드는 단계다.",
+      "docCount": 3,
+      "contextCount": 27
+    },
+    {
+      "id": "department-consultation",
+      "name": "부서 협의",
+      "desc": "예산, 계약, 안전, 품질, 운영, 본사 기준을 병렬로 조정하는 단계다.",
+      "docCount": 0,
+      "contextCount": 26
+    },
+    {
+      "id": "contracting",
+      "name": "계약",
+      "desc": "입찰, 계약조건, 과업범위, 착수 조건, 하자와 변경 가능성을 확정하는 단계다.",
+      "docCount": 0,
+      "contextCount": 19
+    },
+    {
+      "id": "contractor-management",
+      "name": "업체 관리",
+      "desc": "착수회의, 작업감독, 안전관리, 품질확인, 투입인력 검증을 통해 계약 이행을 관리하는 단계다.",
+      "docCount": 3,
+      "contextCount": 33
+    },
+    {
+      "id": "field-change-response",
+      "name": "현장 변수 대응",
+      "desc": "도면과 다른 조건, 우회배관, 지지대 등 현장 변수를 설계변경·계약변경·예산변경·안전검토로 전환하는 단계다.",
+      "docCount": 1,
+      "contextCount": 39
+    },
+    {
+      "id": "procurement",
+      "name": "물품구매",
+      "desc": "규격서, 납기, 검수, 호환성, 보관관리를 통해 필요한 물품을 공정하고 사용 가능하게 확보하는 단계다.",
+      "docCount": 5,
+      "contextCount": 32
+    },
+    {
+      "id": "completion-settlement",
+      "name": "준공·정산",
+      "desc": "준공계, 감독조서, 검수조서, 작업일보, 출입기록, 사진, 자재, 시험값을 교차확인하고 증액·감액과 대금 지급을 판단하는 단계다.",
+      "docCount": 2,
+      "contextCount": 33
+    },
+    {
+      "id": "post-management",
+      "name": "사후관리·이력화",
+      "desc": "하자관리, 정비 이력, 고장 원인, 변경 사유, 성능확인 결과를 차기 설계와 예산 요구에 반영하는 단계다.",
+      "docCount": 0,
+      "contextCount": 21
+    },
+    {
+      "id": "budget-persuasion",
+      "name": "예산 설득",
+      "desc": "예방정비 필요성을 고장전조, 손실비용, 납기, 운영영향, 안전위험, 올해 시행 사유로 번역해 예산부와 협의하는 단계다.",
+      "docCount": 2,
+      "contextCount": 26
+    }
+  ],
+  "cautions": [
+    {
+      "rel": "is_controlled_by",
+      "text": "내역서 행별 근거 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "과거 내역서 단순 복사 위험 → mitigated_by → 내역서 행별 근거 원칙",
+      "risks": [
+        "과거 내역서 단순 복사 위험",
+        "내역 중복·누락 위험",
+        "노임단가·요율 오류 위험",
+        "감사 지적 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:basis-per-cost-line",
+          "label": "내역서 행별 근거 원칙"
+        },
+        {
+          "docId": "okf:old-estimate-copy",
+          "label": "과거 내역서 단순 복사 위험"
+        },
+        {
+          "docId": "okf:basis-per-cost-line",
+          "label": "내역서 행별 근거 원칙"
+        }
+      ],
+      "okfId": "basis-per-cost-line"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "업체 수행능력·투입인력 검증 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "실제 투입인력 불일치 위험 → mitigated_by → 업체 수행능력·투입인력 검증 원칙",
+      "risks": [
+        "실제 투입인력 불일치 위험",
+        "품질증빙 불일치 위험",
+        "안전수칙 미준수 위험",
+        "하도급성 운영 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:verify-contractor-capability",
+          "label": "업체 수행능력·투입인력 검증 원칙"
+        },
+        {
+          "docId": "okf:actual-input-mismatch",
+          "label": "실제 투입인력 불일치 위험"
+        },
+        {
+          "docId": "okf:verify-contractor-capability",
+          "label": "업체 수행능력·투입인력 검증 원칙"
+        }
+      ],
+      "okfId": "verify-contractor-capability"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "변경승인 선행 원칙",
+      "status": "작성자확인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "선시공 후 계약변경 위험 → mitigated_by → 변경승인 선행 원칙",
+      "risks": [
+        "선시공 후 계약변경 위험",
+        "정지기간·공정 압박 위험",
+        "증빙누락 위험",
+        "구두 설계변경 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:change-approval-before-execution",
+          "label": "변경승인 선행 원칙"
+        },
+        {
+          "docId": "okf:prior-construction",
+          "label": "선시공 후 계약변경 위험"
+        },
+        {
+          "docId": "okf:change-approval-before-execution",
+          "label": "변경승인 선행 원칙"
+        }
+      ],
+      "okfId": "change-approval-before-execution"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "현장 변수 발견 시 정지 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.96,
+      "confirmed": true,
+      "relation": "현장 변수 미관리 위험 → mitigated_by → 현장 변수 발견 시 정지 원칙",
+      "risks": [
+        "현장 변수 미관리 위험",
+        "구두 설계변경 위험",
+        "선시공 후 계약변경 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:stop-on-field-variance",
+          "label": "현장 변수 발견 시 정지 원칙"
+        },
+        {
+          "docId": "okf:field-variance-unmanaged",
+          "label": "현장 변수 미관리 위험"
+        },
+        {
+          "docId": "okf:stop-on-field-variance",
+          "label": "현장 변수 발견 시 정지 원칙"
+        }
+      ],
+      "okfId": "stop-on-field-variance"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "과업범위·완료기준 명시 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "시방서 모호성 위험 → mitigated_by → 과업범위·완료기준 명시 원칙",
+      "risks": [
+        "시방서 모호성 위험",
+        "부당 추가요구 위험",
+        "책임소재 불명확 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:explicit-scope-and-completion",
+          "label": "과업범위·완료기준 명시 원칙"
+        },
+        {
+          "docId": "okf:ambiguous-specification",
+          "label": "시방서 모호성 위험"
+        },
+        {
+          "docId": "okf:explicit-scope-and-completion",
+          "label": "과업범위·완료기준 명시 원칙"
+        }
+      ],
+      "okfId": "explicit-scope-and-completion"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "물품 규격 삼분리 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "물품 규격 오류 위험 → mitigated_by → 물품 규격 삼분리 원칙",
+      "risks": [
+        "물품 규격 오류 위험",
+        "호환 불량 물품 납품 위험",
+        "특정업체 유리 조건 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:procurement-spec-separation",
+          "label": "물품 규격 삼분리 원칙"
+        },
+        {
+          "docId": "okf:procurement-spec-error",
+          "label": "물품 규격 오류 위험"
+        },
+        {
+          "docId": "okf:procurement-spec-separation",
+          "label": "물품 규격 삼분리 원칙"
+        }
+      ],
+      "okfId": "procurement-spec-separation"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "준공 증빙 교차확인 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "증빙누락 위험 → mitigated_by → 준공 증빙 교차확인 원칙",
+      "risks": [
+        "증빙누락 위험",
+        "품질증빙 불일치 위험",
+        "서류와 실제 수행 불일치 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:evidence-cross-check",
+          "label": "준공 증빙 교차확인 원칙"
+        },
+        {
+          "docId": "okf:evidence-omission",
+          "label": "증빙누락 위험"
+        },
+        {
+          "docId": "okf:evidence-cross-check",
+          "label": "준공 증빙 교차확인 원칙"
+        }
+      ],
+      "okfId": "evidence-cross-check"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "임시조치·본복구 분리 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "구두 설계변경 위험 → mitigated_by → 임시조치·본복구 분리 원칙",
+      "risks": [
+        "구두 설계변경 위험",
+        "선시공 후 계약변경 위험",
+        "증빙누락 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:emergency-temporary-permanent-separation",
+          "label": "임시조치·본복구 분리 원칙"
+        },
+        {
+          "docId": "okf:verbal-change-order",
+          "label": "구두 설계변경 위험"
+        },
+        {
+          "docId": "okf:prior-construction",
+          "label": "선시공 후 계약변경 위험"
+        }
+      ],
+      "okfId": "emergency-temporary-permanent-separation"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "구두 변경 금지 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.97,
+      "confirmed": true,
+      "relation": "구두 설계변경 위험 → mitigated_by → 구두 변경 금지 원칙",
+      "risks": [
+        "구두 설계변경 위험",
+        "책임소재 불명확 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:no-verbal-change-order",
+          "label": "구두 변경 금지 원칙"
+        },
+        {
+          "docId": "okf:verbal-change-order",
+          "label": "구두 설계변경 위험"
+        },
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의"
+        }
+      ],
+      "okfId": "no-verbal-change-order"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "기존 내역 최신성 검토 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.96,
+      "confirmed": true,
+      "relation": "과거 내역서 단순 복사 위험 → mitigated_by → 기존 내역 최신성 검토 원칙",
+      "risks": [
+        "과거 내역서 단순 복사 위험",
+        "내역 중복·누락 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:no-copy-without-current-basis",
+          "label": "기존 내역 최신성 검토 원칙"
+        },
+        {
+          "docId": "okf:old-estimate-copy",
+          "label": "과거 내역서 단순 복사 위험"
+        },
+        {
+          "docId": "APPR-2025-1014",
+          "label": "2025년 4분기 노후설비 정비 내역 보고"
+        }
+      ],
+      "okfId": "no-copy-without-current-basis"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "검수 선행 지급 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.96,
+      "confirmed": true,
+      "relation": "검수 전 지급 압박 위험 → mitigated_by → 검수 선행 지급 원칙",
+      "risks": [
+        "검수 전 지급 압박 위험",
+        "서류와 실제 수행 불일치 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:inspection-before-payment",
+          "label": "검수 선행 지급 원칙"
+        },
+        {
+          "docId": "okf:payment-before-inspection",
+          "label": "검수 전 지급 압박 위험"
+        },
+        {
+          "docId": "RULE-2026-0401",
+          "label": "계약·조달 운영지침(비식별 합성 재구성본 V2026.04-R03)"
+        }
+      ],
+      "okfId": "inspection-before-payment"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "계약유형 선판단 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "계약유형 오분류 위험 → mitigated_by → 계약유형 선판단 원칙",
+      "risks": [
+        "계약유형 오분류 위험",
+        "노임단가·요율 오류 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:contract-type-before-costing",
+          "label": "계약유형 선판단 원칙"
+        },
+        {
+          "docId": "okf:contract-type-error",
+          "label": "계약유형 오분류 위험"
+        },
+        {
+          "docId": "okf:contract-type-before-costing",
+          "label": "계약유형 선판단 원칙"
+        }
+      ],
+      "okfId": "contract-type-before-costing"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "착수회의 과업 해석 정렬 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "업체 관리 느슨함 위험 → mitigated_by → 착수회의 과업 해석 정렬 원칙",
+      "risks": [
+        "업체 관리 느슨함 위험",
+        "실제 투입인력 불일치 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:kickoff-interpretation-alignment",
+          "label": "착수회의 과업 해석 정렬 원칙"
+        },
+        {
+          "docId": "okf:loose-contractor-management",
+          "label": "업체 관리 느슨함 위험"
+        },
+        {
+          "docId": "okf:kickoff-interpretation-alignment",
+          "label": "착수회의 과업 해석 정렬 원칙"
+        }
+      ],
+      "okfId": "kickoff-interpretation-alignment"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "작업허가·격리 선행 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "안전수칙 미준수 위험 → mitigated_by → 작업허가·격리 선행 원칙",
+      "risks": [
+        "안전수칙 미준수 위험",
+        "안전비용 축소 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:safety-permit-before-work",
+          "label": "작업허가·격리 선행 원칙"
+        },
+        {
+          "docId": "okf:safety-noncompliance",
+          "label": "안전수칙 미준수 위험"
+        },
+        {
+          "docId": "okf:safety-permit-before-work",
+          "label": "작업허가·격리 선행 원칙"
+        }
+      ],
+      "okfId": "safety-permit-before-work"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "동등품 판단기준 명시 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "특정업체 유리 조건 위험 → mitigated_by → 동등품 판단기준 명시 원칙",
+      "risks": [
+        "특정업체 유리 조건 위험",
+        "호환 불량 물품 납품 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:equivalence-criteria-required",
+          "label": "동등품 판단기준 명시 원칙"
+        },
+        {
+          "docId": "okf:vendor-lock-in",
+          "label": "특정업체 유리 조건 위험"
+        },
+        {
+          "docId": "okf:equivalence-criteria-required",
+          "label": "동등품 판단기준 명시 원칙"
+        }
+      ],
+      "okfId": "equivalence-criteria-required"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "정비 이력화 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "정비 경험 유실 위험 → mitigated_by → 정비 이력화 원칙",
+      "risks": [
+        "정비 경험 유실 위험",
+        "예산 설득 실패 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:history-reuse",
+          "label": "정비 이력화 원칙"
+        },
+        {
+          "docId": "okf:knowledge-loss",
+          "label": "정비 경험 유실 위험"
+        },
+        {
+          "docId": "okf:history-reuse",
+          "label": "정비 이력화 원칙"
+        }
+      ],
+      "okfId": "history-reuse"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "예산 언어 번역 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "예산 설득 실패 위험 → mitigated_by → 예산 언어 번역 원칙",
+      "risks": [
+        "예산 설득 실패 위험",
+        "예방정비 근거 부족 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:budget-language-translation",
+          "label": "예산 언어 번역 원칙"
+        },
+        {
+          "docId": "okf:budget-persuasion-failure",
+          "label": "예산 설득 실패 위험"
+        },
+        {
+          "docId": "okf:budget-language-translation",
+          "label": "예산 언어 번역 원칙"
+        }
+      ],
+      "okfId": "budget-language-translation"
+    },
+    {
+      "rel": "is_controlled_by",
+      "text": "고객 민원 전조데이터화 원칙",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "confirmed": true,
+      "relation": "고객 신호 소실 위험 → mitigated_by → 고객 민원 전조데이터화 원칙",
+      "risks": [
+        "고객 신호 소실 위험"
+      ],
+      "evidence": [
+        {
+          "docId": "okf:customer-signal-enrichment",
+          "label": "고객 민원 전조데이터화 원칙"
+        },
+        {
+          "docId": "okf:customer-signal-loss",
+          "label": "고객 신호 소실 위험"
+        },
+        {
+          "docId": "okf:customer-signal-enrichment",
+          "label": "고객 민원 전조데이터화 원칙"
+        }
+      ],
+      "okfId": "customer-signal-enrichment"
+    }
+  ],
+  "contacts": [
+    {
+      "name": "지사 계약부(고객지원부)",
+      "score": 18
+    },
+    {
+      "name": "지사 운영부",
+      "score": 16
+    },
+    {
+      "name": "본사 유지보수 총괄",
+      "score": 16
+    },
+    {
+      "name": "본사 예산부",
+      "score": 16
+    },
+    {
+      "name": "지사 품질관리부",
+      "score": 15
+    },
+    {
+      "name": "지사 안전관리관",
+      "score": 15
+    }
+  ],
+  "issues": [
+    {
+      "date": "2026-04-01",
+      "title": "계약·조달 운영지침(비식별 합성 재구성본 V2026.04-R03)",
+      "kind": "사규·지침",
+      "docId": "RULE-2026-0401"
+    },
+    {
+      "date": "2025-11-21",
+      "title": "노후 배관 교체공사 현장 변수 대응 회의",
+      "kind": "회의록",
+      "docId": "MTG-2025-1121"
+    },
+    {
+      "date": "2025-10-15",
+      "title": "동계 대비 차단기 예비부품 구매 품의",
+      "kind": "전자결재",
+      "docId": "APPR-2025-1015"
+    },
+    {
+      "date": "2025-10-14",
+      "title": "2025년 4분기 노후설비 정비 내역 보고",
+      "kind": "전자결재",
+      "docId": "APPR-2025-1014"
+    },
+    {
+      "date": "2025-06-20",
+      "title": "2025년 상반기 자체감사 결과 통보",
+      "kind": "감사문서",
+      "docId": "AUDIT-2025-0620"
+    }
+  ],
+  "cases": [
+    {
+      "label": "순환수 펌프 정비공사 설계내역 및 감사 대응 사례",
+      "okfId": "case-01-circulation-pump-estimate-audit",
+      "desc": "15년 이상 사용된 순환수 펌프의 진동 증가와 여름 피크 전 예방정비 필요성을 바탕으로, 정비공사 설계내역의 계약유형·노임단가·요율·검수 기준·"
+    },
+    {
+      "label": "계약 체결 후 착수관리 및 과업 해석 정렬 사례",
+      "okfId": "case-02-post-contract-kickoff-alignment",
+      "desc": "계약 체결 이후 착수회의에서 계약업체의 발전소 정지정비 경험, 과업 해석, 투입인력, 안전·품질 기준을 확인해야 했던 사례다."
+    },
+    {
+      "label": "노후 배관 교체공사 현장 변수 및 설계변경 대응 사례",
+      "okfId": "case-03-aged-piping-field-change",
+      "desc": "노후 배관 교체 중 도면과 다른 우회배관과 지지대가 발견되어 설계변경, 계약변경, 예산변경, 안전검토가 필요해진 사례다."
+    },
+    {
+      "label": "차단기 예비부품 구매 규격 및 호환성 검토 사례",
+      "okfId": "case-04-circuit-breaker-spare-procurement",
+      "desc": "노후 차단기 예비부품 구매에서 특정업체 유리 조건을 피하면서 기존 설비와의 실제 호환성을 확보해야 했던 사례다."
+    },
+    {
+      "label": "냉각수 계통 정비용역 준공검수 및 증빙 교차확인 사례",
+      "okfId": "case-05-cooling-water-completion-evidence",
+      "desc": "대형 냉각수 계통 정비용역 준공에서 작업일보, 출입기록, 자재 사용, 사진, 시험값을 교차확인해야 했던 사례다."
+    },
+    {
+      "label": "고객 민원 기반 제어밸브 포지셔너 이상 대응 및 계약변경 사례",
+      "okfId": "case-06-customer-complaint-positioner-change",
+      "desc": "고객사의 열교환기 출구 온도 흔들림 민원이 제어밸브 포지셔너 응답 지연과 연결되어 유지보수, 물품구매, 현장 변수, 계약변경으로 이어진 사례다."
+    },
+    {
+      "label": "예방정비 예산 요청 근거화 및 예산부 협의 사례",
+      "okfId": "case-07-preventive-maintenance-budget",
+      "desc": "다음 연도 예방정비 예산 요청에서 현장 불안감을 고장전조, 손실비용, 납기, 운영영향, 안전위험, 올해 시행 사유로 번역해야 했던 사례다."
+    },
+    {
+      "label": "동절기 한파 옥외 배관 동파 긴급 대응 및 임시조치·본복구 분리 사례",
+      "okfId": "case-08-winter-freeze-emergency-response",
+      "desc": "1월 동계 전력피크 중 한파로 옥외 소화수 배관이 동파되어, 설비 정지가 불가능한 조건에서 긴급 임시조치와 본 복구 공사를 분리해 처리해야 했던"
+    }
+  ],
+  "calendar": [
+    {
+      "month": 1,
+      "labels": [
+        {
+          "title": "동절기 옥외 설비 동파 방지 점검 결과 보고",
+          "task": "문제 인식",
+          "stageId": "problem-recognition"
+        }
+      ]
+    },
+    {
+      "month": 2,
+      "labels": []
+    },
+    {
+      "month": 3,
+      "labels": []
+    },
+    {
+      "month": 4,
+      "labels": [
+        {
+          "title": "순환수 펌프 정비공사 추진 보고",
+          "task": "설계·내역 작성",
+          "stageId": "design-and-costing"
+        }
+      ]
+    },
+    {
+      "month": 5,
+      "labels": []
+    },
+    {
+      "month": 6,
+      "labels": []
+    },
+    {
+      "month": 7,
+      "labels": []
+    },
+    {
+      "month": 8,
+      "labels": []
+    },
+    {
+      "month": 9,
+      "labels": [
+        {
+          "title": "유지보수 예산 요구서",
+          "task": "예산 설득",
+          "stageId": "budget-persuasion"
+        }
+      ]
+    },
+    {
+      "month": 10,
+      "labels": [
+        {
+          "title": "동계 대비 차단기 예비부품 구매 품의",
+          "task": "물품구매",
+          "stageId": "procurement"
+        }
+      ]
+    },
+    {
+      "month": 11,
+      "labels": []
+    },
+    {
+      "month": 12,
+      "labels": []
+    }
+  ],
+  "knownGap": {
+    "text": "구형 제어설비 수기 보정 절차 — 상세 기준 미기록",
+    "status": "문서 근거 없음"
+  }
+}

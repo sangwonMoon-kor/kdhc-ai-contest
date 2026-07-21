@@ -1,0 +1,8 @@
+{
+  "id": "procurement-spec-separation",
+  "type": "Constraint",
+  "label": "물품 규격 삼분리 원칙",
+  "description": "규격서는 필수 성능조건, 기존 설비 호환조건, 납품 후 검수조건을 분리한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 물품 규격 삼분리 원칙\r\ndescription: 규격서는 필수 성능조건, 기존 설비 호환조건, 납품 후 검수조건을 분리한다.\r\nresource: okf://public-maintenance-rewritten/constraints/procurement-spec-separation.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 물품 규격 삼분리 원칙\r\n\r\n## 규칙\r\n규격서는 필수 성능조건, 기존 설비 호환조건, 납품 후 검수조건을 분리한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/procurement-spec-error.md|물품 규격 오류 위험]]\r\n- [[../risks/incompatible-procurement.md|호환 불량 물품 납품 위험]]\r\n- [[../risks/vendor-lock-in.md|특정업체 유리 조건 위험]]"
+}

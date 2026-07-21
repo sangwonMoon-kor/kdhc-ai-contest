@@ -1,0 +1,8 @@
+{
+  "id": "evidence-cross-check",
+  "type": "Constraint",
+  "label": "준공 증빙 교차확인 원칙",
+  "description": "작업일보, 출입기록, 사진, 자재 사용내역, 시험값, 운영부 체감 상태를 교차확인한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 준공 증빙 교차확인 원칙\r\ndescription: 작업일보, 출입기록, 사진, 자재 사용내역, 시험값, 운영부 체감 상태를 교차확인한다.\r\nresource: okf://public-maintenance-rewritten/constraints/evidence-cross-check.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 준공 증빙 교차확인 원칙\r\n\r\n## 규칙\r\n작업일보, 출입기록, 사진, 자재 사용내역, 시험값, 운영부 체감 상태를 교차확인한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/evidence-omission.md|증빙누락 위험]]\r\n- [[../risks/quality-evidence-mismatch.md|품질증빙 불일치 위험]]\r\n- [[../risks/document-reality-mismatch.md|서류와 실제 수행 불일치 위험]]"
+}

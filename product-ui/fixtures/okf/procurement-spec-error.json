@@ -1,0 +1,8 @@
+{
+  "id": "procurement-spec-error",
+  "type": "Risk",
+  "label": "물품 규격 오류 위험",
+  "description": "필수 성능, 호환조건, 검수조건을 분리하지 않아 규격이 모호하거나 과도하게 제한되는 위험이다.",
+  "resource": null,
+  "body": "---\r\ntype: Risk\r\ntitle: 물품 규격 오류 위험\r\ndescription: 필수 성능, 호환조건, 검수조건을 분리하지 않아 규격이 모호하거나 과도하게 제한되는 위험이다.\r\nresource: okf://public-maintenance-rewritten/risks/procurement-spec-error.md\r\ntags:\r\n- 위험\r\n- 반복실수\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 물품 규격 오류 위험\r\n\r\n## 정의\r\n필수 성능, 호환조건, 검수조건을 분리하지 않아 규격이 모호하거나 과도하게 제한되는 위험이다.\r\n\r\n## 완화 제약\r\n- [[../constraints/procurement-spec-separation.md|물품 규격 삼분리 원칙]]"
+}

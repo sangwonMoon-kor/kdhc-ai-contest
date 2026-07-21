@@ -1,0 +1,8 @@
+{
+  "id": "explicit-scope-and-completion",
+  "type": "Constraint",
+  "label": "과업범위·완료기준 명시 원칙",
+  "description": "시방서에는 수행 범위, 완료 기준, 검수 기준, 사진 기준, 성능확인 방법을 명시한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 과업범위·완료기준 명시 원칙\r\ndescription: 시방서에는 수행 범위, 완료 기준, 검수 기준, 사진 기준, 성능확인 방법을 명시한다.\r\nresource: okf://public-maintenance-rewritten/constraints/explicit-scope-and-completion.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 과업범위·완료기준 명시 원칙\r\n\r\n## 규칙\r\n시방서에는 수행 범위, 완료 기준, 검수 기준, 사진 기준, 성능확인 방법을 명시한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/ambiguous-specification.md|시방서 모호성 위험]]\r\n- [[../risks/unjustified-additional-request.md|부당 추가요구 위험]]\r\n- [[../risks/liability-ambiguity.md|책임소재 불명확 위험]]"
+}

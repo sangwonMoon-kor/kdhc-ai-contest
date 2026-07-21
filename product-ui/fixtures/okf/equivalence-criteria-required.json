@@ -1,0 +1,8 @@
+{
+  "id": "equivalence-criteria-required",
+  "type": "Constraint",
+  "label": "동등품 판단기준 명시 원칙",
+  "description": "특정 제품을 지정하지 않더라도 동등 이상의 성능, 호환성, 검수 기준을 명시해야 한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 동등품 판단기준 명시 원칙\r\ndescription: 특정 제품을 지정하지 않더라도 동등 이상의 성능, 호환성, 검수 기준을 명시해야 한다.\r\nresource: okf://public-maintenance-rewritten/constraints/equivalence-criteria-required.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 동등품 판단기준 명시 원칙\r\n\r\n## 규칙\r\n특정 제품을 지정하지 않더라도 동등 이상의 성능, 호환성, 검수 기준을 명시해야 한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/vendor-lock-in.md|특정업체 유리 조건 위험]]\r\n- [[../risks/incompatible-procurement.md|호환 불량 물품 납품 위험]]"
+}

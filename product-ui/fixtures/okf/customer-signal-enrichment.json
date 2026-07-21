@@ -1,0 +1,8 @@
+{
+  "id": "customer-signal-enrichment",
+  "type": "Constraint",
+  "label": "고객 민원 전조데이터화 원칙",
+  "description": "고객 민원은 단순 불만이 아니라 운전데이터, 설비상태, 계약조건과 연결해 이상 전조 신호로 분류한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 고객 민원 전조데이터화 원칙\r\ndescription: 고객 민원은 단순 불만이 아니라 운전데이터, 설비상태, 계약조건과 연결해 이상 전조 신호로 분류한다.\r\nresource: okf://public-maintenance-rewritten/constraints/customer-signal-enrichment.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 고객 민원 전조데이터화 원칙\r\n\r\n## 규칙\r\n고객 민원은 단순 불만이 아니라 운전데이터, 설비상태, 계약조건과 연결해 이상 전조 신호로 분류한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/customer-signal-loss.md|고객 신호 소실 위험]]"
+}

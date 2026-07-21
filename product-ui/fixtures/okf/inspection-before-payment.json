@@ -1,0 +1,8 @@
+{
+  "id": "inspection-before-payment",
+  "type": "Constraint",
+  "label": "검수 선행 지급 원칙",
+  "description": "대금 지급은 검수조서, 작업일보, 출입기록, 사진대지, 자재 사용내역, 시험값의 확인 이후 진행한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 검수 선행 지급 원칙\r\ndescription: 대금 지급은 검수조서, 작업일보, 출입기록, 사진대지, 자재 사용내역, 시험값의 확인 이후 진행한다.\r\nresource: okf://public-maintenance-rewritten/constraints/inspection-before-payment.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 검수 선행 지급 원칙\r\n\r\n## 규칙\r\n대금 지급은 검수조서, 작업일보, 출입기록, 사진대지, 자재 사용내역, 시험값의 확인 이후 진행한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/payment-before-inspection.md|검수 전 지급 압박 위험]]\r\n- [[../risks/document-reality-mismatch.md|서류와 실제 수행 불일치 위험]]"
+}

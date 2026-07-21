@@ -1,0 +1,8 @@
+{
+  "id": "payment-before-inspection",
+  "type": "Risk",
+  "label": "검수 전 지급 압박 위험",
+  "description": "서류상 준공 또는 납품만으로 충분한 교차확인 없이 대금을 지급하는 위험이다.",
+  "resource": null,
+  "body": "---\r\ntype: Risk\r\ntitle: 검수 전 지급 압박 위험\r\ndescription: 서류상 준공 또는 납품만으로 충분한 교차확인 없이 대금을 지급하는 위험이다.\r\nresource: okf://public-maintenance-rewritten/risks/payment-before-inspection.md\r\ntags:\r\n- 위험\r\n- 반복실수\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 검수 전 지급 압박 위험\r\n\r\n## 정의\r\n서류상 준공 또는 납품만으로 충분한 교차확인 없이 대금을 지급하는 위험이다.\r\n\r\n## 완화 제약\r\n- [[../constraints/inspection-before-payment.md|검수 선행 지급 원칙]]"
+}

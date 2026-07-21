@@ -1,0 +1,18 @@
+{
+  "contractVersion": 1,
+  "fixtureVersion": "v2.4",
+  "generatedAt": "2026-07-21T12:05:04.632Z",
+  "engine": {
+    "repository": "creationy/jikmu-memory",
+    "commit": "13e232e"
+  },
+  "stats": {
+    "docCount": 19,
+    "nodes": 193,
+    "edges": 938
+  },
+  "scenarios": {
+    "primary": "pump-maintenance",
+    "simDate": "2026-01-02"
+  }
+}

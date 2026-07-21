@@ -1,0 +1,8 @@
+{
+  "id": "budget-persuasion-failure",
+  "type": "Risk",
+  "label": "예산 설득 실패 위험",
+  "description": "기술 필요성을 고장손실, 납기, 운영영향, 안전위험으로 번역하지 못해 예산이 삭감되는 위험이다.",
+  "resource": null,
+  "body": "---\r\ntype: Risk\r\ntitle: 예산 설득 실패 위험\r\ndescription: 기술 필요성을 고장손실, 납기, 운영영향, 안전위험으로 번역하지 못해 예산이 삭감되는 위험이다.\r\nresource: okf://public-maintenance-rewritten/risks/budget-persuasion-failure.md\r\ntags:\r\n- 위험\r\n- 반복실수\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 예산 설득 실패 위험\r\n\r\n## 정의\r\n기술 필요성을 고장손실, 납기, 운영영향, 안전위험으로 번역하지 못해 예산이 삭감되는 위험이다.\r\n\r\n## 완화 제약\r\n- [[../constraints/history-reuse.md|정비 이력화 원칙]]\r\n- [[../constraints/budget-language-translation.md|예산 언어 번역 원칙]]"
+}

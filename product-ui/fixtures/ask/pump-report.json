@@ -1,0 +1,93 @@
+{
+  "question": "작년 펌프 정비 추진 보고 찾아줘",
+  "intent": "entity_lookup",
+  "cueType": null,
+  "answer": [
+    "‘순환수 펌프’은(는) 3개 업무 관계에 등장합니다."
+  ],
+  "knowledge": [
+    {
+      "rel": "uses_asset",
+      "fromName": "순환수 펌프 정비공사 설계내역 및 감사 대응 사례",
+      "toName": "순환수 펌프",
+      "text": "‘순환수 펌프 정비공사 설계내역 및 감사 대응 사례’은(는) ‘순환수 펌프’ 설비를 다룹니다.",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "docId": "okf:case-01-circulation-pump-estimate-audit",
+          "label": "순환수 펌프 정비공사 설계내역 및 감사 대응 사례",
+          "text": ""
+        }
+      ]
+    },
+    {
+      "rel": "uses_asset",
+      "fromName": "계약 체결 후 착수관리 및 과업 해석 정렬 사례",
+      "toName": "순환수 펌프",
+      "text": "‘계약 체결 후 착수관리 및 과업 해석 정렬 사례’은(는) ‘순환수 펌프’ 설비를 다룹니다.",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "docId": "okf:case-02-post-contract-kickoff-alignment",
+          "label": "계약 체결 후 착수관리 및 과업 해석 정렬 사례",
+          "text": ""
+        }
+      ]
+    },
+    {
+      "rel": "uses_asset",
+      "fromName": "예방정비 예산 요청 근거화 및 예산부 협의 사례",
+      "toName": "순환수 펌프",
+      "text": "‘예방정비 예산 요청 근거화 및 예산부 협의 사례’은(는) ‘순환수 펌프’ 설비를 다룹니다.",
+      "status": "업무오너승인",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "docId": "okf:case-07-preventive-maintenance-budget",
+          "label": "예방정비 예산 요청 근거화 및 예산부 협의 사례",
+          "text": ""
+        }
+      ]
+    }
+  ],
+  "docs": [
+    {
+      "id": "APPR-2024-0408",
+      "title": "2024년 순환수 펌프 정비공사 추진 보고",
+      "kind": "전자결재",
+      "date": "2024-04-08",
+      "snippet": "제목: 2024년 순환수 펌프 정비공사 추진 보고"
+    },
+    {
+      "id": "APPR-2025-0409",
+      "title": "2025년 순환수 펌프 정비공사 추진 보고",
+      "kind": "전자결재",
+      "date": "2025-04-09",
+      "snippet": "제목: 2025년 순환수 펌프 정비공사 추진 보고"
+    },
+    {
+      "id": "MTG-2025-0505",
+      "title": "순환수 펌프 정비공사 착수회의",
+      "kind": "회의록",
+      "date": "2025-05-05",
+      "snippet": "제목: 순환수 펌프 정비공사 착수회의"
+    }
+  ],
+  "forecast": [],
+  "entities": {
+    "stages": [],
+    "actors": [],
+    "assets": [
+      "순환수 펌프"
+    ],
+    "risks": []
+  },
+  "followups": [
+    "이번 달 도래하는 업무 있어?",
+    "설계·내역 작성에서 조심할 위험은?"
+  ],
+  "grounded": true,
+  "disclaimer": "이 답변은 OKF 온톨로지와 축적 문서에서 근거를 찾아 구성했습니다. ‘문제 없음’을 보장하지 않으며 최종 판단은 담당자에게 있습니다."
+}

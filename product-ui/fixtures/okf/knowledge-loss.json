@@ -1,0 +1,8 @@
+{
+  "id": "knowledge-loss",
+  "type": "Risk",
+  "label": "정비 경험 유실 위험",
+  "description": "경험이 개인 기억으로만 남아 다음 담당자가 재사용할 수 없는 위험이다.",
+  "resource": null,
+  "body": "---\r\ntype: Risk\r\ntitle: 정비 경험 유실 위험\r\ndescription: 경험이 개인 기억으로만 남아 다음 담당자가 재사용할 수 없는 위험이다.\r\nresource: okf://public-maintenance-rewritten/risks/knowledge-loss.md\r\ntags:\r\n- 위험\r\n- 반복실수\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 정비 경험 유실 위험\r\n\r\n## 정의\r\n경험이 개인 기억으로만 남아 다음 담당자가 재사용할 수 없는 위험이다.\r\n\r\n## 완화 제약\r\n- [[../constraints/history-reuse.md|정비 이력화 원칙]]"
+}
