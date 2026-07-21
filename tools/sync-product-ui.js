@@ -345,6 +345,20 @@ function hashWorktreeBytes(cwd, relative, bytes, filtered) {
   }).trim();
 }
 
+function hashWorktreeFile(cwd, relative, absolute, before) {
+  const oid = gitOutput(cwd, ["hash-object", "--path", relative, "--", absolute]).trim();
+  const after = lstatOrNull(absolute);
+  if (
+    !after ||
+    after.isSymbolicLink() ||
+    !after.isFile() ||
+    !identitiesEqual(fileIdentity(before), fileIdentity(after))
+  ) {
+    return null;
+  }
+  return oid;
+}
+
 function gitWorkingTreeClean(cwd, allowedAbsolutePaths = []) {
   const topLevel = gitText(cwd, ["rev-parse", "--show-toplevel"]);
   const fileMode = gitOutput(cwd, ["config", "--type=bool", "--default=true", "core.filemode"]).trim() !== "false";
@@ -379,7 +393,7 @@ function gitWorkingTreeClean(cwd, allowedAbsolutePaths = []) {
     } else {
       if (!stat || stat.isSymbolicLink() || !stat.isFile()) return false;
       if (fileMode && Boolean(stat.mode & 0o111) !== (indexed.mode === "100755")) return false;
-      if (hashWorktreeBytes(cwd, relative, fs.readFileSync(absolute), true) !== indexed.oid) return false;
+      if (hashWorktreeFile(cwd, relative, absolute, stat) !== indexed.oid) return false;
     }
   }
 

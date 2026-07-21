@@ -473,6 +473,7 @@ function indexSnapshot(repo) {
   writeFile(path.join(sourceRoot, "index.html"), "cli ui\n");
   writeJson(path.join(sourceRoot, "sync-manifest.json"), { version: 1, entries: ["index.html", "version.json"] });
   writeJson(path.join(sourceRoot, "version.json"), { version: "ui-v1.0.0" });
+  writeFile(path.join(sourceRepo, "large-unrelated.bin"), Buffer.alloc(256 * 1024, 0x61));
   fs.mkdirSync(path.join(targetRepo, "service", "public"), { recursive: true });
   fs.mkdirSync(path.join(targetRepo, "service", "src"), { recursive: true });
   writeFile(path.join(targetRepo, "service", "src", "sentinel.js"), "do not touch\n");
@@ -504,7 +505,7 @@ function indexSnapshot(repo) {
       UI_SYNC_REAL_GIT: realGit,
     };
   }
-  const run = (args) => spawnSync(process.execPath, [tool, ...args], { encoding: "utf8", env: cliEnv });
+  const run = (args, timeout = 60_000) => spawnSync(process.execPath, [tool, ...args], { encoding: "utf8", env: cliEnv, timeout });
   for (const args of [
     ["--target", targetRepo],
     ["--target", targetRepo, "--check", "--write"],
@@ -522,7 +523,8 @@ function indexSnapshot(repo) {
   fs.utimesSync(sentinel, refreshedTime, refreshedTime);
   const indexBeforeCheck = indexSnapshot(targetRepo);
   const beforeCheck = treeSnapshot(path.join(targetRepo, "service"));
-  const changedCheck = run(["--target", targetRepo, "--check"]);
+  const changedCheck = run(["--target", targetRepo, "--check"], 15_000);
+  assert.notEqual(changedCheck.error && changedCheck.error.code, "ETIMEDOUT", "large tracked files must not deadlock Git worktree hashing");
   assert.equal(changedCheck.status, 1);
   assert.match(changedCheck.stdout, /changed=true/, changedCheck.stderr);
   assert.deepEqual(treeSnapshot(path.join(targetRepo, "service")), beforeCheck, "CLI check must not write");
