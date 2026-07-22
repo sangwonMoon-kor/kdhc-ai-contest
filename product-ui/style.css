@@ -137,6 +137,8 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-feedback{min-height:38px;padding:0 54px;display:flex;align-items:center;gap:14px;color:#252a33;font-size:.92rem}
 .home-feedback.is-empty{color:var(--home-muted);font-size:.82rem}
 .home-feedback-check{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#16b635;color:#fff;font-weight:800;flex:none}
+.home-feedback-attachment{display:grid;place-items:center;width:24px;height:24px;color:#687083;flex:none}
+.home-feedback-attachment svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .home-feedback-divider{width:1px;height:15px;background:#cfd3da}
 .home-feedback button{color:var(--home-red);font-weight:700;transition:transform 140ms cubic-bezier(.23,1,.32,1),color 160ms ease}
 .home-calendar-panel{border-radius:44px;padding:25px 24px 19px;min-width:0}

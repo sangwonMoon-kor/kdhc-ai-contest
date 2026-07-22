@@ -55,6 +55,8 @@ let UI = null;             // {calYM, listFilter}
 let lastAction = null;     // 메모리 한정 undo (마지막 1건)
 let lastActionMessage = "";
 let homeCalendarOffsetWeeks = 0;
+let homeAttachmentFile = null;
+let homeAttachmentMessage = "";
 let engineDown = false;
 
 function blankState() { return { v: 1, works: [], selectedWorkId: null }; }
@@ -66,6 +68,8 @@ function normalizeRecord(record) {
   if (!record || typeof record !== "object") return record;
   const normalized = Object.assign({}, record);
   if ("dateISO" in normalized && typeof normalized.dateISO !== "string") delete normalized.dateISO;
+  if ("startISO" in normalized && typeof normalized.startISO !== "string") delete normalized.startISO;
+  if ("endISO" in normalized && typeof normalized.endISO !== "string") delete normalized.endISO;
   if ("calendarStatus" in normalized && typeof normalized.calendarStatus !== "string") delete normalized.calendarStatus;
   return normalized;
 }
@@ -349,8 +353,23 @@ async function vHome(main) {
     </div>
   </div>`;
 
-  $("#homeAttachBtn").onclick = () => $("#homeAttachment").click();
-  $("#omni").onsubmit = (e) => { e.preventDefault(); handleOmni($("#omniIn").value, null, $("#homeResult"), sim); };
+  const homeAttachment = $("#homeAttachment");
+  $("#homeAttachBtn").onclick = () => homeAttachment.click();
+  homeAttachment.onchange = () => {
+    homeAttachmentFile = homeAttachment.files && homeAttachment.files[0] ? homeAttachment.files[0] : null;
+    homeAttachmentMessage = homeAttachmentFile ? `첨부 파일 선택: ‘${homeAttachmentFile.name}’. 처리할 지시를 함께 입력해 주세요.` : "";
+    refreshHomeFeedback();
+  };
+  $("#omni").onsubmit = (e) => {
+    e.preventDefault();
+    const text = $("#omniIn").value;
+    if (!String(text || "").trim() && homeAttachmentFile) {
+      homeAttachmentMessage = `첨부 파일 ‘${homeAttachmentFile.name}’을 선택했습니다. 로컬 시연에서는 첨부 파일만 처리하지 않습니다. 처리할 지시를 함께 입력해 주세요.`;
+      refreshHomeFeedback();
+      return;
+    }
+    handleOmni(text, null, $("#homeResult"), sim);
+  };
   const undo = $("#homeUndo"); if (undo) undo.onclick = undoLast;
   $("#homeCalPrev").onclick = () => { homeCalendarOffsetWeeks -= 2; route(); };
   $("#homeCalNext").onclick = () => { homeCalendarOffsetWeeks += 2; route(); };
@@ -403,15 +422,28 @@ function homeRangeLabel(window2) {
 }
 
 function renderHomeFeedback() {
-  if (!lastAction || !lastActionMessage) {
-    return `<div class="home-feedback is-empty" id="homeFeedback" role="status" aria-live="polite">입력 결과를 확인하고 필요하면 되돌릴 수 있습니다.</div>`;
+  if (lastAction && lastActionMessage) {
+    return `<div class="home-feedback" id="homeFeedback" role="status" aria-live="polite">
+      <span class="home-feedback-check" aria-hidden="true">✓</span>
+      <span>${esc(lastActionMessage)}</span>
+      <span class="home-feedback-divider" aria-hidden="true"></span>
+      <button id="homeUndo" type="button">되돌리기</button>
+    </div>`;
   }
-  return `<div class="home-feedback" id="homeFeedback" role="status" aria-live="polite">
-    <span class="home-feedback-check" aria-hidden="true">✓</span>
-    <span>${esc(lastActionMessage)}</span>
-    <span class="home-feedback-divider" aria-hidden="true"></span>
-    <button id="homeUndo" type="button">되돌리기</button>
-  </div>`;
+  if (homeAttachmentMessage) {
+    return `<div class="home-feedback" id="homeFeedback" role="status" aria-live="polite">
+      <span class="home-feedback-attachment" aria-hidden="true">${homeIcon("attach")}</span>
+      <span>${esc(homeAttachmentMessage)}</span>
+    </div>`;
+  }
+  return `<div class="home-feedback is-empty" id="homeFeedback" role="status" aria-live="polite">입력 결과를 확인하고 필요하면 되돌릴 수 있습니다.</div>`;
+}
+
+function refreshHomeFeedback() {
+  const feedback = $("#homeFeedback");
+  if (!feedback) return;
+  feedback.outerHTML = renderHomeFeedback();
+  const undo = $("#homeUndo"); if (undo) undo.onclick = undoLast;
 }
 
 function homeEventClass(event2) {
@@ -428,11 +460,12 @@ function homeEventLabel(event2) {
 }
 
 function renderHomeEvent(event2, column, span, row) {
-  const status = event2.kind === "candidate" ? '<span class="home-event-status">미확인</span>' : "";
+  const status = event2.kind === "candidate" ? '<span class="home-event-status">후보 · 미확인</span>' : "";
   const icon = event2.kind === "memo" ? '<span class="home-event-symbol" aria-hidden="true">▤</span>' : '<span class="home-event-dot" aria-hidden="true"></span>';
   return `<button type="button" class="home-calendar-event home-event--${esc(event2.kind)}${homeEventClass(event2)}"
     style="grid-column:${column} / span ${span};grid-row:${row}"
     data-calendar-kind="${esc(event2.kind)}" data-work-id="${esc(event2.workId)}" data-event-id="${esc(event2.id)}"
+    data-event-start="${esc(event2.startISO)}" data-event-end="${esc(event2.endISO)}"
     aria-label="${esc(homeEventLabel(event2))}">${event2.kind === "work" ? "" : icon}<span class="home-event-text">${esc(event2.label)}</span>${status}</button>`;
 }
 
@@ -557,11 +590,13 @@ function confirmScheduleCandidate(workId, candidateId) {
     kind: "schedule",
     text: candidate.label,
     dateISO: candidate.startISO,
+    startISO: candidate.startISO,
+    endISO: candidate.endISO,
     calendarStatus: "confirmed",
   };
   work.records.push(record);
   saveState();
-  setAction({ type: "confirmScheduleCandidate", workId, candidateId, prevConfirmed: false, recId: record.id }, `${work.title} schedule confirmed.`);
+  setAction({ type: "confirmScheduleCandidate", workId, candidateId, prevConfirmed: false, recId: record.id }, `${work.title} 일정을 확정했습니다.`);
   route();
 }
 function confirmTarget(t, c, resultBox, sim) {

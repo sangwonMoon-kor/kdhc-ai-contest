@@ -34,10 +34,10 @@ const seededState = {
     }],
     scheduleCandidates: [{
       id: "schedule-candidate",
-      kind: "date",
-      label: "업체 서류 확인",
-      startISO: "2026-01-03",
-      endISO: "2026-01-03",
+      kind: "range",
+      label: "다음 주 업체 서류 확인",
+      startISO: "2026-01-04",
+      endISO: "2026-01-10",
       confirmed: false
     }],
     sources: [],
@@ -130,6 +130,13 @@ async function run() {
     assert.equal((await page.locator("body").innerText()).includes("오늘 할 일부터 챙겨드릴게요"), false, "legacy welcome copy remains visible");
     assert.equal(await page.locator("#simDate").isVisible(), false, "separate simulation date remains visible on home");
     assert.equal(await page.locator("#omniIn").getAttribute("placeholder"), "지금 어떤 생각을 하시나요?", "home placeholder changed");
+    const attachment = page.locator("#homeAttachment");
+    await attachment.setInputFiles({ name: "정비 점검표.pdf", mimeType: "application/pdf", buffer: Buffer.from("fixture") });
+    assert((await page.locator("#homeFeedback").innerText()).includes("첨부 파일 선택: ‘정비 점검표.pdf’"), "selected attachment feedback is missing");
+    await page.locator("#omni").evaluate(function (form) { form.requestSubmit(); });
+    const fileOnlyFeedback = await page.locator("#homeFeedback").innerText();
+    assert(fileOnlyFeedback.includes("로컬 시연") && fileOnlyFeedback.includes("지시를 함께 입력"), "file-only submit guidance is not truthful or actionable");
+    assert.equal(await attachment.evaluate(function (input) { return input.files[0] && input.files[0].name; }), "정비 점검표.pdf", "selected filename was not retained for submit");
     assert.equal(await page.getByRole("heading", { name: "내 업무 일정" }).count(), 1, "calendar heading missing");
     assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home calendar must render exactly 14 dates");
     assert.equal(await page.locator("[data-calendar-date]").first().getAttribute("data-calendar-date"), "2025-12-28", "calendar does not start from summary.simDate week");
@@ -139,13 +146,22 @@ async function run() {
     assert.equal(await page.locator('[data-calendar-kind="memo"]').count(), 1, "confirmed memo missing");
     const candidate = page.locator('[data-calendar-kind="candidate"]');
     assert.equal(await candidate.count(), 1, "schedule candidate chip missing");
+    assert((await candidate.innerText()).includes("후보"), "candidate does not expose the visible Korean candidate label");
     assert((await candidate.innerText()).includes("미확인"), "candidate does not expose visible status text");
     assert((await candidate.getAttribute("aria-label")).includes("일정 후보 미확인"), "candidate status is missing from its accessible name");
+    await candidate.click();
+    await page.waitForFunction(function () { return !document.querySelector('[data-calendar-kind="candidate"]'); });
+    const confirmationFeedback = await page.locator("#homeFeedback").innerText();
+    assert(confirmationFeedback.includes("냉각수 펌프 정비공사 일정을 확정했습니다."), "schedule confirmation feedback is not cohesive Korean copy");
+    assert.equal(confirmationFeedback.includes("schedule confirmed"), false, "English schedule confirmation feedback remains");
+    const confirmedRange = page.locator('[data-calendar-kind="memo"][data-event-start="2026-01-04"][data-event-end="2026-01-10"]');
+    assert.equal(await confirmedRange.count(), 1, "confirmed range collapsed instead of retaining both dates");
 
     const deadline = page.locator(`[data-calendar-kind="deadline"][data-work-id="${forecastWorkId}"]`);
     assert.equal(await deadline.count(), 1, "forecast deadline event missing");
     await deadline.click();
     await page.waitForFunction(function (expected) { return location.hash === `#workbench/${expected}`; }, forecastWorkId);
+    await page.locator("header.top").waitFor({ state: "visible" });
     assert.equal(new URL(page.url()).hash, `#workbench/${forecastWorkId}`, "forecast deadline changed work identity");
     assert.equal(await page.locator("header.top").isVisible(), true, "non-home route lost the existing header");
     assert.equal(await page.locator("footer.foot").isVisible(), true, "non-home route lost the existing footer");

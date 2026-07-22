@@ -95,8 +95,10 @@
         events.push(event("deadline", work, work.due, work.due, work));
       }
       for (const memo of Array.isArray(work.records) ? work.records : []) {
-        if (memo && memo.dateISO && overlaps(memo.dateISO, memo.dateISO, window)) {
-          events.push(event("memo", memo, memo.dateISO, memo.dateISO, work));
+        const startISO = memo && (memo.startISO || memo.dateISO);
+        const endISO = memo && (memo.endISO || startISO);
+        if (startISO && endISO && overlaps(startISO, endISO, window)) {
+          events.push(event("memo", memo, startISO, endISO, work));
         }
       }
       for (const candidate of Array.isArray(work.scheduleCandidates) ? work.scheduleCandidates : []) {

@@ -30,6 +30,7 @@ const events = buildCalendarEvents([
     due: "2026-01-09",
     records: [
       { id: "memo-with-date", text: "업체 방문", dateISO: "2026-01-07" },
+      { id: "memo-with-range", text: "다음 주 현장 대응", startISO: "2026-01-04", endISO: "2026-01-10", calendarStatus: "confirmed" },
       { id: "memo-without-date", text: "현장에 문의" }
     ],
     scheduleCandidates: [
@@ -41,6 +42,7 @@ const events = buildCalendarEvents([
 assert(events.some((event) => event.kind === "deadline" && event.workId === "forecast" && event.startISO === "2026-01-06"), "forecast due creates a deadline event");
 assert(events.some((event) => event.kind === "work" && event.workId === "multi-day" && event.startISO === "2026-01-05" && event.endISO === "2026-01-09"), "dated work creates a multi-day work event");
 assert(events.some((event) => event.kind === "memo" && event.id === "memo-with-date" && event.startISO === "2026-01-07"), "dated memo creates a memo event");
+assert(events.some((event) => event.kind === "memo" && event.id === "memo-with-range" && event.startISO === "2026-01-04" && event.endISO === "2026-01-10"), "confirmed range memo retains both dates");
 assert(events.some((event) => event.kind === "candidate" && event.id === "candidate" && event.startISO === "2026-01-08"), "schedule candidate creates a candidate event");
 assert(!events.some((event) => event.id === "memo-without-date"), "undated memo does not create a calendar event");
 

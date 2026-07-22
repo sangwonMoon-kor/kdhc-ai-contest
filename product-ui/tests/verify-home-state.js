@@ -91,7 +91,7 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
 
 {
   const work = legacyWork({ scheduleCandidates: [{
-    id: "candidate-1", kind: "date", label: "2026-02-03 운영부 일정 확정", startISO: "2026-02-03", endISO: "2026-02-03", confirmed: false,
+    id: "candidate-1", kind: "range", label: "다음 주 운영부 일정 확정", startISO: "2026-02-08", endISO: "2026-02-14", confirmed: false,
   }] });
   const homeState = loadHomeState();
   homeState.setState({ v: 1, works: [work], selectedWorkId: work.id });
@@ -99,9 +99,9 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
   const confirmed = homeState.getState().works[0];
   assert.equal(confirmed.scheduleCandidates[0].confirmed, true, "confirmation marks the candidate as confirmed");
   assert.deepStrictEqual(
-    plain(confirmed.records.map(({ id, ts, kind, text, dateISO, calendarStatus }) => ({ kind, text, dateISO, calendarStatus }))),
-    [{ kind: "schedule", text: "2026-02-03 운영부 일정 확정", dateISO: "2026-02-03", calendarStatus: "confirmed" }],
-    "confirmation adds a dated execution record"
+    plain(confirmed.records.map(({ id, ts, kind, text, dateISO, startISO, endISO, calendarStatus }) => ({ kind, text, dateISO, startISO, endISO, calendarStatus }))),
+    [{ kind: "schedule", text: "다음 주 운영부 일정 확정", dateISO: "2026-02-08", startISO: "2026-02-08", endISO: "2026-02-14", calendarStatus: "confirmed" }],
+    "confirmation preserves the candidate range on its execution record"
   );
   homeState.undoLast();
   assert.equal(confirmed.scheduleCandidates[0].confirmed, false, "undo restores the candidate confirmation state");
