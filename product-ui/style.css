@@ -93,7 +93,7 @@ h1.pg{font-size:1.5rem;letter-spacing:-.02em;margin:6px 0 18px;outline:none}
 
 /* ---- 홈 ---- */
 body.is-home{
-  --home-red:#f20d18;--home-red-deep:#d80712;--home-red-soft:#ffe8e6;--home-green:#139728;
+  --home-red:#f20d18;--home-red-deep:#c60712;--home-red-soft:#ffe8e6;--home-green:#139728;
   --home-green-soft:#eaf8e9;--home-purple-soft:#efefff;--home-ink:#12151c;--home-muted:#687083;
   --home-line:rgba(33,43,64,.09);--home-panel:rgba(255,255,255,.77);
   background:
@@ -173,7 +173,7 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
   overflow:hidden;transition:transform 140ms cubic-bezier(.23,1,.32,1),border-color 160ms ease,box-shadow 160ms ease,background-color 160ms ease}
 .home-event-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .home-event--work{border-color:transparent;background:var(--home-purple-soft);font-weight:600}
-.home-event--work.is-construction{background:linear-gradient(90deg,#ffe8e5,#ffdcd9);color:#d30b14}
+.home-event--work.is-construction{background:linear-gradient(90deg,#ffe8e5,#ffdcd9);color:var(--home-red-deep)}
 .home-event--work.is-service{background:linear-gradient(90deg,#efefff,#e9e8fb)}
 .home-event--deadline{color:#22252b}
 .home-event--memo{background:var(--home-green-soft);border-color:rgba(19,151,40,.09);color:#117f25}
@@ -191,7 +191,7 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-calendar-all:active,.home-calendar-event:active{transform:scale(.97)}
 
 @media (hover:hover) and (pointer:fine){
-  .home-rail nav a:hover{color:var(--home-red);background:rgba(255,255,255,.72);transform:translateY(-1px)}
+  .home-rail nav a:hover{color:var(--home-red-deep);background:rgba(255,255,255,.72);transform:translateY(-1px)}
   .home-attach:hover{color:var(--home-red);background:rgba(242,13,24,.05)}
   .home-send:hover{color:var(--home-red-deep)}
   .home-calendar-controls button:hover{border-color:rgba(242,13,24,.24);background:#fff}

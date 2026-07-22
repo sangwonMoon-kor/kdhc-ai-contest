@@ -162,6 +162,32 @@ async function run() {
       assert(contrastRatio(textColor, [255, 255, 255]) >= 4.5, `${selector} text misses WCAG AA contrast on white`);
       assert(contrastRatio(textColor, [251, 250, 249]) >= 4.5, `${selector} text misses WCAG AA contrast on the home background`);
     }
+    const currentRail = page.locator(".home-rail a.is-current");
+    await currentRail.hover();
+    const hoveredRailColor = cssRgb(await currentRail.evaluate(function (element) { return getComputedStyle(element).color; }));
+    assert(contrastRatio(hoveredRailColor, [255, 255, 255]) >= 4.5, "hovered current rail text misses WCAG AA contrast on white");
+    assert(contrastRatio(hoveredRailColor, [251, 250, 249]) >= 4.5, "hovered current rail text misses WCAG AA contrast on the home background");
+    const railHoverRule = await page.evaluate(function () {
+      const selectors = [];
+      function find(rules) {
+        for (const rule of Array.from(rules || [])) {
+          if (rule.selectorText) selectors.push(rule.selectorText);
+          if (rule.selectorText && rule.selectorText.split(",").map(function (value) { return value.trim(); }).includes(".home-rail nav a:hover") && rule.style.color) return rule.style.color;
+          if (rule.cssRules) {
+            const nested = find(rule.cssRules);
+            if (nested) return nested;
+          }
+        }
+        return "";
+      }
+      const color = Array.from(document.styleSheets).map(function (sheet) { return find(sheet.cssRules); }).find(Boolean) || "";
+      return { color: color, selectors: selectors.filter(function (selector) { return selector.includes("home-rail"); }) };
+    });
+    assert.equal(railHoverRule.color, "var(--home-red-deep)", `desktop rail hover rule uses a non-AA red text token: ${JSON.stringify(railHoverRule)}`);
+    const constructionColor = cssRgb(await page.locator(".home-event--work.is-construction").first().evaluate(function (element) { return getComputedStyle(element).color; }));
+    for (const gradientColor of [[255, 232, 229], [255, 220, 217]]) {
+      assert(contrastRatio(constructionColor, gradientColor) >= 4.5, "construction-event text misses WCAG AA contrast on its gradient");
+    }
     const attachment = page.locator("#homeAttachment");
     await attachment.setInputFiles({ name: "정비 점검표.pdf", mimeType: "application/pdf", buffer: Buffer.from("fixture") });
     const selectedFileFeedback = await page.locator("#homeFeedback").innerText();
