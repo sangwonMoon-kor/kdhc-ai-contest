@@ -40,3 +40,16 @@
 - `node product-ui/tests/verify-showcase-e2e.js` — passed (격리 서버 `http://127.0.0.1:8947/?data=fixture`)
 - `node product-ui/tests/verify-home-model.js` — passed
 - `git diff --check` — passed
+
+## Fix Report — retarget cancellation is lossless
+
+### Exact RED command and result
+
+- `node product-ui/tests/verify-home-state.js` — failed as expected with `AssertionError [ERR_ASSERTION]: cancelling the retarget picker keeps the original record and candidate`; the actual state had removed the original record and linked schedule candidate before the picker callback ran.
+
+### Exact GREEN commands and results
+
+- `node product-ui/tests/verify-home-state.js` — `Home state contract passed`.
+- `node product-ui/tests/verify-home-browser.js` — `Home browser contract passed`.
+- `$env:PRODUCT_UI_URL = 'http://127.0.0.1:8410/?data=fixture'; node product-ui/tests/verify-showcase-e2e.js` — passed (exit 0). The pre-existing local product UI server owned port 8410, so fixture mode reused that current-worktree server rather than starting a second server.
+- `git diff --check` — passed (no whitespace errors).
