@@ -223,9 +223,12 @@ async function run() {
       assert(showcaseText.includes(documentId), `workbench showcase missed linked document: ${documentId}`);
     }
     assert(showcaseText.includes("설계·내역 작성"), "workbench showcase missed the selected briefing stage criterion");
-    assert(showcaseText.includes("완료 조건 결재 상신"), "workbench showcase did not truthfully use the completion condition");
+    const groundedOutput = showcase.locator('[data-showcase="output"]');
+    const groundedOutputText = (await groundedOutput.innerText()).trim();
+    assert(groundedOutputText.includes("확인 필요"), "workbench showcase did not keep an ungrounded output unresolved");
+    assert.equal(groundedOutputText.includes("결재 상신"), false, "workbench showcase conflated completion criteria with the output");
     assert.equal(showcaseText.includes("2026년 순환수 펌프 정비공사 추진 보고(안)"), false, "workbench showcase synthesized a deliverable from an empty draft");
-    assert(showcaseText.includes("결재 상신"), "workbench showcase missed the done-when condition");
+    assert((await page.locator(".wb-context").innerText()).includes("결재 상신"), "workbench context missed the done-when condition");
     assert.equal(await showcase.locator('[data-ev="okf:design-and-costing"]').count(), 1, "workbench showcase missed its selected-stage OKF evidence control");
     const legacyOutput = page.locator(".wb-output");
     assert((await legacyOutput.innerText()).includes("산출물 2026년 순환수 펌프 정비공사 추진 보고(안)"), "legacy workbench output no longer uses its original title-based display");
@@ -253,7 +256,8 @@ async function run() {
     await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, savedDraftWork.id);
     await page.waitForSelector('[data-testid="workbench-showcase"]');
     const savedDraftShowcase = page.locator('[data-testid="workbench-showcase"] [data-showcase="output"]');
-    assert((await savedDraftShowcase.innerText()).includes("저장 초안 저장된 현장 확인 기안"), "saved non-empty draft value was not shown truthfully in the showcase");
+    assert((await savedDraftShowcase.innerText()).includes("저장된 초안 있음"), "saved draft presence was not shown truthfully in the showcase");
+    assert.equal((await savedDraftShowcase.innerText()).includes("저장된 현장 확인 기안"), false, "an arbitrary draft field was presented as the output identity");
     assert.equal((await savedDraftShowcase.innerText()).includes("완료 조건 결재 상신"), false, "saved draft incorrectly fell back to the completion condition");
 
     await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, workId);

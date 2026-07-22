@@ -168,6 +168,13 @@ async function assertStatus(page, text, className) {
   const status = page.locator("#dataStatus");
   assert.equal(await status.textContent(), text);
   assert.equal(await status.evaluate(function (element, expected) { return element.classList.contains(expected); }, className), true);
+  if (new URL(page.url()).hash === "#home") {
+    const homeStatus = page.locator("#homeDataStatus");
+    assert.equal(await homeStatus.count(), 1, "home does not render a data-mode status");
+    assert.equal(await homeStatus.isVisible(), true, "home data-mode status is hidden");
+    assert.equal(await homeStatus.textContent(), text);
+    assert.equal(await homeStatus.evaluate(function (element, expected) { return element.classList.contains(expected); }, className), true);
+  }
 }
 
 async function ask(page, question) {

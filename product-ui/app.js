@@ -31,11 +31,14 @@ const TKEY = "jikmu.theme";
 
 /* ---------- 엔진·fixture API ---------- */
 function renderDataStatus(status) {
-  const el = document.getElementById("dataStatus");
-  if (!el) return;
   const isLiveError = status.error && status.activeMode !== "fixture";
-  el.className = "data-status " + (isLiveError ? "error" : status.activeMode);
-  el.textContent = status.activeMode === "fixture" ? "시연용 샘플 데이터" : isLiveError ? "엔진 연결 오류" : "실제 엔진 연결";
+  const className = "data-status " + (isLiveError ? "error" : status.activeMode);
+  const text = status.activeMode === "fixture" ? "시연용 샘플 데이터" : isLiveError ? "엔진 연결 오류" : "실제 엔진 연결";
+  [document.getElementById("dataStatus"), document.getElementById("homeDataStatus")].forEach((el) => {
+    if (!el) return;
+    el.className = el.id === "homeDataStatus" ? `${className} home-data-status` : className;
+    el.textContent = text;
+  });
 }
 const apiClient = window.JikmuApi.createApiClient({
   mode: window.JikmuApi.modeFromSearch(location.search),
@@ -336,6 +339,7 @@ async function vHome(main) {
   main.innerHTML = `<div class="home-shell">
     ${renderHomeRail()}
     <div class="home-content">
+      <span class="data-status home-data-status" id="homeDataStatus" role="status" aria-live="polite">데이터 확인 중</span>
       <section class="home-compose" aria-label="생각 입력">
         <form class="omni" id="omni" data-testid="home-omni">
           <label class="sr-only" for="omniIn">생각 입력</label>
@@ -371,6 +375,8 @@ async function vHome(main) {
       <div id="homeResult"></div>
     </div>
   </div>`;
+
+  renderDataStatus(apiClient.getStatus());
 
   const homeAttachment = $("#homeAttachment");
   $("#homeAttachBtn").onclick = () => homeAttachment.click();
@@ -815,14 +821,7 @@ async function vWorkbench(main, id) {
   const showcaseSources = (w.sources || []).filter((source) => source && source.docId);
   const showcaseStage = bf && Array.isArray(bf.stages) ? bf.stages.find((stage) => stage && stage.id === w.stageId) : null;
   const showcaseDue = w.due ? fmtD(w.due) : "확인 필요";
-  const savedDraftValue = (() => {
-    const draft = w.draft;
-    if (!draft || !draft.savedAt) return "";
-    if (typeof draft.freeText === "string" && draft.freeText.trim()) return draft.freeText.trim();
-    if (!draft.values || typeof draft.values !== "object") return "";
-    return Object.values(draft.values).find((value) => typeof value === "string" && value.trim()) || "";
-  })();
-  const showcaseOutput = savedDraftValue ? `저장 초안 ${savedDraftValue}` : (w.doneWhen ? `완료 조건 ${w.doneWhen}` : "확인 필요");
+  const showcaseOutput = w.draft && w.draft.savedAt ? "저장된 초안 있음" : "확인 필요";
 
   main.innerHTML = `<div class="view" data-testid="workbench">
     <a class="wb-back" href="#work/list">← 내 업무</a>

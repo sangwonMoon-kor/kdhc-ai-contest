@@ -11,6 +11,25 @@ const port = 8800 + (process.pid % 1000);
 const base = `http://127.0.0.1:${port}`;
 const forecastWorkId = "w-problem-recognition-m1";
 
+function cssRgb(value) {
+  const channels = String(value).match(/[\d.]+/g);
+  assert(channels && channels.length >= 3, `invalid CSS color: ${value}`);
+  return channels.slice(0, 3).map(Number);
+}
+
+function contrastRatio(first, second) {
+  function luminance(rgb) {
+    const linear = rgb.map(function (channel) {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+    });
+    return (0.2126 * linear[0]) + (0.7152 * linear[1]) + (0.0722 * linear[2]);
+  }
+  const light = Math.max(luminance(first), luminance(second));
+  const dark = Math.min(luminance(first), luminance(second));
+  return (light + 0.05) / (dark + 0.05);
+}
+
 const seededState = {
   v: 1,
   selectedWorkId: "calendar-work",
@@ -130,6 +149,19 @@ async function run() {
     assert.equal((await page.locator("body").innerText()).includes("오늘 할 일부터 챙겨드릴게요"), false, "legacy welcome copy remains visible");
     assert.equal(await page.locator("#simDate").isVisible(), false, "separate simulation date remains visible on home");
     assert.equal(await page.locator("#omniIn").getAttribute("placeholder"), "지금 어떤 생각을 하시나요?", "home placeholder changed");
+    await page.locator("#omniIn").focus();
+    const composeFocus = await page.locator(".home-compose").evaluate(function (element) {
+      const style = getComputedStyle(element);
+      return { outlineStyle: style.outlineStyle, outlineWidth: parseFloat(style.outlineWidth), outlineColor: style.outlineColor };
+    });
+    assert.equal(composeFocus.outlineStyle, "solid", "primary home input does not expose a solid focus-within ring");
+    assert(composeFocus.outlineWidth >= 2, "primary home input focus-within ring is too thin");
+    assert.notEqual(composeFocus.outlineColor, "rgba(0, 0, 0, 0)", "primary home input focus-within ring is transparent");
+    for (const selector of [".home-send", ".home-calendar-all", ".home-rail a.is-current"]) {
+      const textColor = cssRgb(await page.locator(selector).evaluate(function (element) { return getComputedStyle(element).color; }));
+      assert(contrastRatio(textColor, [255, 255, 255]) >= 4.5, `${selector} text misses WCAG AA contrast on white`);
+      assert(contrastRatio(textColor, [251, 250, 249]) >= 4.5, `${selector} text misses WCAG AA contrast on the home background`);
+    }
     const attachment = page.locator("#homeAttachment");
     await attachment.setInputFiles({ name: "정비 점검표.pdf", mimeType: "application/pdf", buffer: Buffer.from("fixture") });
     const selectedFileFeedback = await page.locator("#homeFeedback").innerText();
