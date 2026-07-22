@@ -154,6 +154,21 @@ async function run() {
       sources: [],
       draft: { savedAt: null, values: null }
     };
+    const savedDraftWork = {
+      id: "w-showcase-saved-draft",
+      title: "기존 결과물 제목",
+      instruction: "저장된 초안 표시 검증",
+      requester: "검증",
+      due: null,
+      stageId: null,
+      stageName: "",
+      doneWhen: "결재 상신",
+      repeat: false,
+      todos: [],
+      records: [],
+      sources: [],
+      draft: { savedAt: 1767225600000, freeText: "저장된 현장 확인 기안" }
+    };
     const desktop = await browser.newContext({
       viewport: { width: 1920, height: 1080 }, colorScheme: "light", reducedMotion: "reduce", locale: "ko-KR", timezoneId: "Asia/Seoul"
     });
@@ -165,9 +180,9 @@ async function run() {
       localStorage.removeItem("jikmu.workbench.v1");
       localStorage.removeItem("jikmu.ui.v1");
     });
-    await page.addInitScript((work) => {
-      localStorage.setItem("jikmu.workbench.v1", JSON.stringify({ v: 1, works: [work], selectedWorkId: work.id }));
-    }, missingWork);
+    await page.addInitScript((works) => {
+      localStorage.setItem("jikmu.workbench.v1", JSON.stringify({ v: 1, works, selectedWorkId: works[0].id }));
+    }, [missingWork, savedDraftWork]);
     await page.reload({ waitUntil: "networkidle" });
     await page.waitForSelector('[data-testid="home-omni"]');
 
@@ -212,6 +227,8 @@ async function run() {
     assert.equal(showcaseText.includes("2026년 순환수 펌프 정비공사 추진 보고(안)"), false, "workbench showcase synthesized a deliverable from an empty draft");
     assert(showcaseText.includes("결재 상신"), "workbench showcase missed the done-when condition");
     assert.equal(await showcase.locator('[data-ev="okf:design-and-costing"]').count(), 1, "workbench showcase missed its selected-stage OKF evidence control");
+    const legacyOutput = page.locator(".wb-output");
+    assert((await legacyOutput.innerText()).includes("산출물 2026년 순환수 펌프 정비공사 추진 보고(안)"), "legacy workbench output no longer uses its original title-based display");
 
     await showcase.locator('[data-ev="APPR-2024-0408"]').click();
     await page.waitForSelector("#drawer:not([hidden])");
@@ -232,6 +249,12 @@ async function run() {
     assert((await missingShowcase.locator('[data-showcase="sources"]').innerText()).includes("연결된 자료 없음"), "missing sources were synthesized");
     assert((await missingShowcase.locator('[data-showcase="criterion"]').innerText()).includes("확인 필요"), "unlinked stage used global criteria");
     assert((await missingShowcase.locator('[data-showcase="output"]').innerText()).includes("확인 필요"), "empty draft or title synthesized an output");
+
+    await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, savedDraftWork.id);
+    await page.waitForSelector('[data-testid="workbench-showcase"]');
+    const savedDraftShowcase = page.locator('[data-testid="workbench-showcase"] [data-showcase="output"]');
+    assert((await savedDraftShowcase.innerText()).includes("저장 초안 저장된 현장 확인 기안"), "saved non-empty draft value was not shown truthfully in the showcase");
+    assert.equal((await savedDraftShowcase.innerText()).includes("완료 조건 결재 상신"), false, "saved draft incorrectly fell back to the completion condition");
 
     await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, workId);
     await page.waitForSelector('[data-testid="workbench"]');

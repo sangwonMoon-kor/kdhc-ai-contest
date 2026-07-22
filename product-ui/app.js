@@ -895,7 +895,7 @@ async function vWorkbench(main, id) {
     <section class="card wb-output">
       <div class="blk-k">만들어야 할 결과물</div>
       <div class="kv" style="margin-bottom:10px">
-        <span>산출물 <b>${esc(showcaseOutput)}</b></span>
+        <span>산출물 <b>${esc(w.title)}(안)</b></span>
         <span>임시 저장 <b>${w.draft && w.draft.savedAt ? fmtTs(w.draft.savedAt) : "없음"}</b></span>
       </div>
       <button class="btn" id="goDraft">기안 ${w.draft && w.draft.savedAt ? "이어서 쓰기" : "시작"}</button>
