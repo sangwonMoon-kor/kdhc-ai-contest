@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hello JARVIS? · 직무 메모리</title>
+<title>Hello JARVIS? · ON_메모리</title>
 <!--
   Hello JARVIS? — 직원 진입점 (정본) · v2 "질문 → 화면 착지"
   구조: 검색창 하나 → 의도 라우팅(최대 2단계) → 4개 업무 화면에 착지
@@ -351,7 +351,7 @@
 <body class="at-entry">
 
 <header class="bar">
-  <div class="brand" onclick="home()"><span class="mark"><i></i></span>직무 메모리 <small>· 업무 승계 비서</small></div>
+  <div class="brand" onclick="home()"><span class="mark"><i></i></span>ON_메모리 <small>· 업무 승계 비서</small></div>
   <div class="right">
     <span class="proto">시연용 목업 · 샘플 데이터</span>
     <a class="adminlink" href="index.html">발표 데모</a>
@@ -746,7 +746,7 @@
     const seq = ++engineSeq;
     if(!ENGINE || !question){ el.style.display = "none"; return; }
     el.style.display = "";
-    el.innerHTML = `<div class="eh">⚡ 직무 메모리 엔진</div><div class="ea">엔진에 묻는 중…</div>`;
+    el.innerHTML = `<div class="eh">⚡ ON_메모리 엔진</div><div class="ea">엔진에 묻는 중…</div>`;
     const ctrl = new AbortController();
     const to = setTimeout(()=>ctrl.abort(), 3000);
     try{
@@ -760,7 +760,7 @@
       const kn = (r.knowledge||[]).slice(0,3).map(k=>
         `<div>• ${escapeHtml(String(k.text||""))} <span class="conf">${Math.round((k.confidence||0)*100)}%</span></div>`).join("");
       el.innerHTML =
-        `<div class="eh">⚡ 직무 메모리 엔진 — 실응답
+        `<div class="eh">⚡ ON_메모리 엔진 — 실응답
            <span class="badge ${r.grounded?"ok":"none"}">${r.grounded?"근거 있음":"근거 없음"}</span></div>
          <div class="ea">${ans || "응답이 비어 있습니다."}</div>
          ${kn ? `<div class="ek">${kn}</div>` : ""}`;

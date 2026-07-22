@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================================
- * app.js — 직무 메모리 · 업무 작업대 프론트엔드
+ * app.js — ON_메모리 · 업무 작업대 프론트엔드
  * 설계: docs/superpowers/specs/2026-07-21-workbench-rebuild-on-engine-design.md
  * 구조: 홈 만능 입력 → 내 업무(목록·달력) → 업무 작업대 → 기안 집중 화면
  * 원칙: 근거·질의·예보·초안·점검은 엔진 API, 업무 건 진행 상태만 브라우저 상태.
@@ -427,7 +427,7 @@ function homeIcon(name) {
 
 function renderHomeRail() {
   return `<aside class="home-rail" aria-label="홈 빠른 이동">
-    <div class="home-rail-brand">직무메모리</div>
+    <div class="home-rail-brand">ON_메모리</div>
     <nav aria-label="홈 메뉴">
       <a class="is-current" href="#home" aria-label="오늘의 업무" aria-current="page">${homeIcon("home")}<span>오늘의 업무</span></a>
       <a href="#work/list" aria-label="내 업무 목록">${homeIcon("folder")}<span>내 업무 목록</span></a>
@@ -1172,7 +1172,7 @@ async function vGraph(main) {
 function vVision(main) {
   main.innerHTML = `<div class="view"><h1 class="pg" tabindex="-1">서비스 소개</h1>
     <div class="card"><p><b>사람은 떠나도, 업무는 남게.</b></p>
-      <p style="margin-top:8px">직무 메모리는 순환근무 조직의 업무 기억을 개인이 아니라 자리(직무)에 남기는 AI 업무 승계 비서입니다.
+      <p style="margin-top:8px">ON_메모리는 순환근무 조직의 업무 기억을 개인이 아니라 자리(직무)에 남기는 AI 업무 승계 비서입니다.
       상급자의 지시를 받는 순간 해야 할 일과 과거 자료를 한 화면(업무 작업대)에 정리하고,
       그 과정에서 쌓인 결정·메모·산출물이 다음 담당자의 브리핑이 됩니다.</p>
       <p style="margin-top:8px" class="sub">모든 답변과 점검은 실제 문서·지식 근거를 함께 보여주며, 수치·기한을 임의로 만들지 않습니다.</p></div></div>`;

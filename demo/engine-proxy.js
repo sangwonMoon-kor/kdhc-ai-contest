@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 /* ============================================================================
- * engine-proxy.js — 직무 메모리 엔진용 CORS 프록시
+ * engine-proxy.js — ON_메모리 엔진용 CORS 프록시
  *
  * 팀원 엔진(creationy/jikmu-memory service)은 CORS 헤더를 보내지 않아
  * jarvis.html(파일/Pages 도메인)에서 브라우저가 직접 호출할 수 없다.

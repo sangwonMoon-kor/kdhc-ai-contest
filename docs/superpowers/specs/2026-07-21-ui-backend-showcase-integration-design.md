@@ -1,4 +1,4 @@
-# UI·UX 정본과 직무 메모리 엔진의 쇼케이스 통합 설계
+# UI·UX 정본과 ON_메모리 엔진의 쇼케이스 통합 설계
 
 > 확정일: 2026-07-21  
 > 대상 저장소: `sangwonMoon-kor/kdhc-ai-contest`, `creationy/jikmu-memory`  
