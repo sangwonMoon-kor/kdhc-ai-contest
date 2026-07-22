@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "fixtures:capture": "node tools/capture-product-fixtures.js",
+    "capture:product-ui:home": "node tools/capture-home-two-week-context.js",
     "test:workbench": "node demo/tests/verify-app-workbench.js",
     "test:workbench:e2e": "node demo/tests/verify-app-workbench-e2e.js",
     "product-ui:serve": "node tools/serve-product-ui.js",
@@ -12,12 +13,13 @@
     "test:product-ui:home-browser": "node product-ui/tests/verify-home-browser.js",
     "test:product-ui:source": "node product-ui/tests/verify-source-contract.js",
     "test:product-ui:fixtures": "node product-ui/tests/verify-fixtures.js",
-    "test:product-ui:data-mode": "node product-ui/tests/verify-app-data-mode.js && PRODUCT_UI_TEST_CLIENT=1 node product-ui/tests/verify-app-data-mode-browser.js",
+    "test:product-ui:data-mode": "node product-ui/tests/verify-app-data-mode.js && node -e \"process.env.PRODUCT_UI_TEST_CLIENT='1'; require('./product-ui/tests/verify-app-data-mode-browser.js')\"",
+    "test:product-ui:local-maintenance": "node product-ui/tests/verify-local-maintenance-demo.js",
     "test:product-ui:fixture-flows": "node product-ui/tests/verify-fixture-reachable-flows.js",
     "test:product-ui:capture": "node tools/tests/verify-capture-product-fixtures.js",
     "test:product-ui:e2e": "node product-ui/tests/verify-showcase-e2e.js",
     "test:product-ui:sync": "node tools/test-sync-product-ui.js",
-    "test:product-ui": "npm run test:product-ui:source && npm run test:product-ui:home-model && npm run test:product-ui:home-state && npm run test:product-ui:home-browser && npm run test:product-ui:fixtures && npm run test:product-ui:api && npm run test:product-ui:data-mode && npm run test:product-ui:fixture-flows && npm run test:product-ui:capture && npm run test:product-ui:sync && npm run test:product-ui:e2e"
+    "test:product-ui": "npm run test:product-ui:source && npm run test:product-ui:home-model && npm run test:product-ui:home-state && npm run test:product-ui:home-browser && npm run test:product-ui:local-maintenance && npm run test:product-ui:fixtures && npm run test:product-ui:api && npm run test:product-ui:data-mode && npm run test:product-ui:fixture-flows && npm run test:product-ui:capture && npm run test:product-ui:sync && npm run test:product-ui:e2e"
   },
   "devDependencies": {
     "playwright": "1.61.1"
