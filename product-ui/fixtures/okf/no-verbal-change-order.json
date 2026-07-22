@@ -1,0 +1,8 @@
+{
+  "id": "no-verbal-change-order",
+  "type": "Constraint",
+  "label": "구두 변경 금지 원칙",
+  "description": "현장 변경은 구두 지시가 아니라 현장확인서, 설계변경 사유서, 변경 내역서, 승인 기록으로 처리한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 구두 변경 금지 원칙\r\ndescription: 현장 변경은 구두 지시가 아니라 현장확인서, 설계변경 사유서, 변경 내역서, 승인 기록으로 처리한다.\r\nresource: okf://public-maintenance-rewritten/constraints/no-verbal-change-order.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 구두 변경 금지 원칙\r\n\r\n## 규칙\r\n현장 변경은 구두 지시가 아니라 현장확인서, 설계변경 사유서, 변경 내역서, 승인 기록으로 처리한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/verbal-change-order.md|구두 설계변경 위험]]\r\n- [[../risks/liability-ambiguity.md|책임소재 불명확 위험]]"
+}

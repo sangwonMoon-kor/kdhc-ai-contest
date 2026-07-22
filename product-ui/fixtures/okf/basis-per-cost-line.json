@@ -1,0 +1,8 @@
+{
+  "id": "basis-per-cost-line",
+  "type": "Constraint",
+  "label": "내역서 행별 근거 원칙",
+  "description": "설계내역서 각 행은 적용 기준, 산출 근거, 노무량 산정 이유, 견적 필요 여부, 안전조치 반영 여부, 검수 기준, 성능확인 방법을 가져야 한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 내역서 행별 근거 원칙\r\ndescription: 설계내역서 각 행은 적용 기준, 산출 근거, 노무량 산정 이유, 견적 필요 여부, 안전조치 반영 여부, 검수 기준, 성능확인 방법을 가져야 한다.\r\nresource: okf://public-maintenance-rewritten/constraints/basis-per-cost-line.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 내역서 행별 근거 원칙\r\n\r\n## 규칙\r\n설계내역서 각 행은 적용 기준, 산출 근거, 노무량 산정 이유, 견적 필요 여부, 안전조치 반영 여부, 검수 기준, 성능확인 방법을 가져야 한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/old-estimate-copy.md|과거 내역서 단순 복사 위험]]\r\n- [[../risks/duplicate-or-omitted-cost.md|내역 중복·누락 위험]]\r\n- [[../risks/unit-rate-error.md|노임단가·요율 오류 위험]]\r\n- [[../risks/audit-finding.md|감사 지적 위험]]"
+}

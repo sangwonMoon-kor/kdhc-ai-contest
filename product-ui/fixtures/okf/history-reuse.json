@@ -1,0 +1,8 @@
+{
+  "id": "history-reuse",
+  "type": "Constraint",
+  "label": "정비 이력화 원칙",
+  "description": "준공 결과, 고장 원인, 변경 사유, 성능확인 결과를 다음 설계와 예산 요구에 재사용 가능한 정비 이력으로 남긴다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 정비 이력화 원칙\r\ndescription: 준공 결과, 고장 원인, 변경 사유, 성능확인 결과를 다음 설계와 예산 요구에 재사용 가능한 정비 이력으로 남긴다.\r\nresource: okf://public-maintenance-rewritten/constraints/history-reuse.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 정비 이력화 원칙\r\n\r\n## 규칙\r\n준공 결과, 고장 원인, 변경 사유, 성능확인 결과를 다음 설계와 예산 요구에 재사용 가능한 정비 이력으로 남긴다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/knowledge-loss.md|정비 경험 유실 위험]]\r\n- [[../risks/budget-persuasion-failure.md|예산 설득 실패 위험]]"
+}

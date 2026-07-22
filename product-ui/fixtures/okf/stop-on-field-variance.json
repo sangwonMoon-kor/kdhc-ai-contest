@@ -1,0 +1,8 @@
+{
+  "id": "stop-on-field-variance",
+  "type": "Constraint",
+  "label": "현장 변수 발견 시 정지 원칙",
+  "description": "설계와 다른 조건을 발견하면 작업을 일시중지하고 사진 확보, 원인 분류, 영향 분석, 승인 루트 확인을 먼저 수행한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 현장 변수 발견 시 정지 원칙\r\ndescription: 설계와 다른 조건을 발견하면 작업을 일시중지하고 사진 확보, 원인 분류, 영향 분석, 승인 루트 확인을 먼저 수행한다.\r\nresource: okf://public-maintenance-rewritten/constraints/stop-on-field-variance.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 현장 변수 발견 시 정지 원칙\r\n\r\n## 규칙\r\n설계와 다른 조건을 발견하면 작업을 일시중지하고 사진 확보, 원인 분류, 영향 분석, 승인 루트 확인을 먼저 수행한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/field-variance-unmanaged.md|현장 변수 미관리 위험]]\r\n- [[../risks/verbal-change-order.md|구두 설계변경 위험]]\r\n- [[../risks/prior-construction.md|선시공 후 계약변경 위험]]"
+}

@@ -1,0 +1,55 @@
+# Task 4 구현 보고
+
+## 완료 내용
+
+- 홈의 펌프 업무 마감 이벤트에서 작업대로 들어가 명시 날짜 메모를 남기면, 홈 14일 달력에 `일정 후보`가 표시된다.
+- 후보 확인은 녹색 개인 메모 일정으로 전환되며, 되돌리기로 후보 상태를 복구한다.
+- 새 업무 지시에 `다음 주까지` 같은 범위 후보가 있으면 새 업무와 후보를 만들되 홈에 남아 범위 확인 문구를 표시한다. 단일 날짜로 임의 확정하지 않는다.
+- 기존 업무에 연결한 지시와 날짜가 포함된 기록·할 일은 일정 후보도 함께 저장한다. 되돌리기는 연결된 후보까지 함께 제거한다.
+- 질문의 `/api/ask` 최신 요청 우선·페이지 이탈 보호와 첨부 파일 차단 동작은 기존 브라우저 계약으로 보존했다.
+
+## 테스트
+
+- RED: `verify-showcase-e2e.js`에서 명시 날짜 워크벤치 입력 뒤 일정 후보가 없어 실패하는 것을 확인했다.
+- GREEN: `verify-showcase-e2e.js`
+- `verify-home-model.js`
+- `verify-home-state.js`
+- `verify-home-browser.js`
+- `verify-source-contract.js`
+- `verify-app-data-mode-browser.js` (`$env:PRODUCT_UI_TEST_CLIENT = '1'`)
+
+## 범위와 주의사항
+
+- Task 5 소유인 네 가지 업무 차원 작업대 요약은 변경하지 않았다.
+- Windows 환경에서 기존 8410 포트를 사용하는 로컬 서버가 있어, showcase E2E는 격리한 8947 서버를 `PRODUCT_UI_URL`로 지정해 실행했다.
+
+## Fix Report — retarget 일정 후보 소유권
+
+### 수정 내용
+
+- `retarget()`가 날짜가 연결된 기록·할 일을 옮길 때 `candidateId`의 일정 후보도 원래 업무에서 제거하고 새 업무에 같은 ID로 이동하도록 수정했다.
+- 이동 후 `lastAction.workId`와 `candidateId`는 새 업무의 후보를 계속 가리킨다. 따라서 새 업무에서 후보 확정과 되돌리기가 정확히 동작한다.
+- 날짜 없는 할 일의 기존 대상 변경 동작은 유지하며 일정 후보를 새로 만들지 않는다.
+
+### TDD 및 검증 결과
+
+- RED: `verify-home-state.js`의 retarget 회귀가 이전 업무에 `dated-candidate`가 남았다는 assertion으로 실패했다.
+- GREEN: 같은 회귀는 후보 이동, 대상 변경 직후의 정확한 되돌리기, 새 업무에서의 확정·되돌리기, 날짜 없는 할 일 이동을 모두 통과했다.
+- `node product-ui/tests/verify-home-state.js` — passed
+- `node product-ui/tests/verify-home-browser.js` — passed
+- `node product-ui/tests/verify-showcase-e2e.js` — passed (격리 서버 `http://127.0.0.1:8947/?data=fixture`)
+- `node product-ui/tests/verify-home-model.js` — passed
+- `git diff --check` — passed
+
+## Fix Report — retarget cancellation is lossless
+
+### Exact RED command and result
+
+- `node product-ui/tests/verify-home-state.js` — failed as expected with `AssertionError [ERR_ASSERTION]: cancelling the retarget picker keeps the original record and candidate`; the actual state had removed the original record and linked schedule candidate before the picker callback ran.
+
+### Exact GREEN commands and results
+
+- `node product-ui/tests/verify-home-state.js` — `Home state contract passed`.
+- `node product-ui/tests/verify-home-browser.js` — `Home browser contract passed`.
+- `$env:PRODUCT_UI_URL = 'http://127.0.0.1:8410/?data=fixture'; node product-ui/tests/verify-showcase-e2e.js` — passed (exit 0). The pre-existing local product UI server owned port 8410, so fixture mode reused that current-worktree server rather than starting a second server.
+- `git diff --check` — passed (no whitespace errors).

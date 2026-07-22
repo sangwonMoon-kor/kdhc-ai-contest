@@ -1,0 +1,29 @@
+{
+  "guard": {
+    "flagged": false
+  },
+  "triples": [
+    {
+      "from": {
+        "type": "WorkflowStage",
+        "name": "설계·내역 작성",
+        "id": "design-and-costing"
+      },
+      "rel": "has_tacit_knowledge",
+      "to": {
+        "type": "TacitKnowledge",
+        "name": "운영부 일정은 5월 둘째 주로 확정",
+        "id": "tacit-q33oor"
+      },
+      "trigger": "암묵지",
+      "evidence": {
+        "sentence": "운영부 일정은 5월 둘째 주로 확정",
+        "span": [
+          0,
+          19
+        ]
+      },
+      "confidence": 0.6
+    }
+  ]
+}

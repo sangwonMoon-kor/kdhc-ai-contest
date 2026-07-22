@@ -1,0 +1,442 @@
+{
+  "doc": {
+    "id": "APPR-2024-1015",
+    "kind": "전자결재",
+    "kindConfidence": 1,
+    "title": "동계 대비 차단기 예비부품 구매 품의",
+    "stageId": "procurement",
+    "task": "물품구매",
+    "taskScore": 22,
+    "date": "2024-10-15",
+    "drafter": "이지훈 과장",
+    "author": "이지훈 과장",
+    "fields": {
+      "dates": [
+        {
+          "raw": "2024-10-15",
+          "span": [
+            42,
+            52
+          ],
+          "iso": "2024-10-15",
+          "year": 2024,
+          "month": 10,
+          "day": 15,
+          "gran": "day"
+        }
+      ],
+      "title": "동계 대비 차단기 예비부품 구매 품의",
+      "drafter": "이지훈 과장",
+      "sections": [
+        {
+          "h": "1. 구매 필요성",
+          "body": "동계 전 노후 차단기 예비부품 확보가 필요함. 고장 이력과 예비품 재고를 확인함."
+        },
+        {
+          "h": "2. 규격 조건",
+          "body": "필수 성능조건, 기존 설비 호환 조건, 납품 후 검수 조건을 분리하여 규격서에 명시함. 동등 이상 적용 시 판단 기준(정격·시험성적서·설치 치수)을 첨부함."
+        },
+        {
+          "h": "3. 소요 예산",
+          "body": "4,800만 원. 산출근거는 붙임 1로 첨부함."
+        }
+      ],
+      "attachments": [
+        "첨부 함",
+        "붙임 1 로 첨부함"
+      ],
+      "rejected": false,
+      "rejReason": null
+    },
+    "text": "제목: 동계 대비 차단기 예비부품 구매 품의\n기안자: 이지훈 과장\n기안일: 2024-10-15\n\n1. 구매 필요성\n동계 전 노후 차단기 예비부품 확보가 필요함. 고장 이력과 예비품 재고를 확인함.\n\n2. 규격 조건\n필수 성능조건, 기존 설비 호환 조건, 납품 후 검수 조건을 분리하여 규격서에 명시함. 동등 이상 적용 시 판단 기준(정격·시험성적서·설치 치수)을 첨부함.\n\n3. 소요 예산\n4,800만 원. 산출근거는 붙임 1로 첨부함.",
+    "entities": {
+      "actors": [],
+      "assets": [
+        "차단기 예비부품"
+      ],
+      "docRefs": [
+        "시험성적서",
+        "고장 이력",
+        "설계근거 기록",
+        "규격서"
+      ],
+      "dates": [
+        {
+          "raw": "2024-10-15",
+          "iso": "2024-10-15",
+          "gran": "day"
+        }
+      ],
+      "amounts": [
+        "4,800만 원"
+      ]
+    }
+  },
+  "edges": [
+    {
+      "key": "WorkflowStage:설계·내역 작성|requires_document|Document:설계근거 기록",
+      "from": "WorkflowStage:설계·내역 작성",
+      "to": "Document:설계근거 기록",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 10,
+      "provenance": [
+        {
+          "docId": "okf:design-and-costing",
+          "label": "설계·내역 작성",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "APPR-2024-0408",
+          "label": "2024년 순환수 펌프 정비공사 추진 보고",
+          "kind": "전자결재",
+          "date": "2024-04-08",
+          "span": [
+            277,
+            294
+          ],
+          "text": "산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2025-0409",
+          "label": "2025년 순환수 펌프 정비공사 추진 보고",
+          "kind": "전자결재",
+          "date": "2025-04-09",
+          "span": [
+            289,
+            310
+          ],
+          "text": "항목별 산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2025-1014",
+          "label": "2025년 4분기 노후설비 정비 내역 보고",
+          "kind": "전자결재",
+          "date": "2025-10-14",
+          "span": [
+            192,
+            231
+          ],
+          "text": "재상신 시 항목별 산출근거 첨부 후 승인 처리됨(2025-10-22)."
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            41,
+            83
+          ],
+          "text": "제12조(산출근거) 내역서의 단가·수량 항목마다 산출근거를 첨부하여야 한다."
+        },
+        {
+          "docId": "RULE-2026-0401",
+          "label": "계약·조달 운영지침(비식별 합성 재구성본 V2026.04-R03)",
+          "kind": "사규·지침",
+          "date": "2026-04-01",
+          "span": [
+            412,
+            455
+          ],
+          "text": "5% 범위에서 예비가격 12개를 생성하여 산정하고 항목별 산출근거를 명시한다."
+        },
+        {
+          "docId": "APPR-2024-0910",
+          "label": "2025년 유지보수 예산 요구서",
+          "kind": "전자결재",
+          "date": "2024-09-10",
+          "span": [
+            181,
+            202
+          ],
+          "text": "항목별 산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2025-0910",
+          "label": "2026년 유지보수 예산 요구서",
+          "kind": "전자결재",
+          "date": "2025-09-10",
+          "span": [
+            278,
+            299
+          ],
+          "text": "항목별 산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2024-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2024-10-15",
+          "span": [
+            227,
+            244
+          ],
+          "text": "산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2025-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2025-10-15",
+          "span": [
+            232,
+            249
+          ],
+          "text": "산출근거는 붙임 1로 첨부함."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:물품구매|requires_document|Document:규격서",
+      "from": "WorkflowStage:물품구매",
+      "to": "Document:규격서",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 4,
+      "provenance": [
+        {
+          "docId": "okf:procurement",
+          "label": "물품구매",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            260,
+            330
+          ],
+          "text": "제16조(규격서) 물품 규격서에는 필수 성능조건, 호환 조건, 검수 조건을 분리하고 동등 이상 적용 시 판단 기준을 명시한다."
+        },
+        {
+          "docId": "RULE-2026-0401",
+          "label": "계약·조달 운영지침(비식별 합성 재구성본 V2026.04-R03)",
+          "kind": "사규·지침",
+          "date": "2026-04-01",
+          "span": [
+            1590,
+            1665
+          ],
+          "text": "제85조(기술규격 검토) 규격서에 특정상표를 표시할 때에는 동등 이상 판단 기준을 명시하여야 하고 성능지표 3개 이상을 함께 제시한다."
+        },
+        {
+          "docId": "APPR-2024-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2024-10-15",
+          "span": [
+            120,
+            168
+          ],
+          "text": "필수 성능조건, 기존 설비 호환 조건, 납품 후 검수 조건을 분리하여 규격서에 명시함."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:물품구매|requires_document|Document:시험성적서",
+      "from": "WorkflowStage:물품구매",
+      "to": "Document:시험성적서",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.96,
+      "provCount": 2,
+      "provenance": [
+        {
+          "docId": "okf:procurement",
+          "label": "물품구매",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "APPR-2024-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2024-10-15",
+          "span": [
+            168,
+            207
+          ],
+          "text": "동등 이상 적용 시 판단 기준(정격·시험성적서·설치 치수)을 첨부함."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:물품구매|is_controlled_by|Constraint:물품 규격 삼분리 원칙",
+      "from": "WorkflowStage:물품구매",
+      "to": "Constraint:물품 규격 삼분리 원칙",
+      "rel": "is_controlled_by",
+      "meta": {
+        "ko": "통제 규칙",
+        "hue": "#0a8fc9",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 3,
+      "provenance": [
+        {
+          "docId": "okf:procurement",
+          "label": "물품구매",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            260,
+            330
+          ],
+          "text": "제16조(규격서) 물품 규격서에는 필수 성능조건, 호환 조건, 검수 조건을 분리하고 동등 이상 적용 시 판단 기준을 명시한다."
+        },
+        {
+          "docId": "APPR-2024-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2024-10-15",
+          "span": [
+            120,
+            168
+          ],
+          "text": "필수 성능조건, 기존 설비 호환 조건, 납품 후 검수 조건을 분리하여 규격서에 명시함."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:물품구매|produces_document|Document:동계 대비 차단기 예비부품 구매 품의",
+      "from": "WorkflowStage:물품구매",
+      "to": "Document:동계 대비 차단기 예비부품 구매 품의",
+      "rel": "produces_document",
+      "meta": {
+        "ko": "산출 문서",
+        "hue": "#7d8db0",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.97,
+      "provCount": 2,
+      "provenance": [
+        {
+          "docId": "APPR-2024-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2024-10-15",
+          "span": null,
+          "text": "분류 근거: 규격서×1, 납품×1, 예비품×1, 예비부품×2, 구매×2, 동등 이상×1"
+        },
+        {
+          "docId": "APPR-2025-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2025-10-15",
+          "span": null,
+          "text": "분류 근거: 납품×2, 예비부품×2, 구매×2, 동등 이상×1"
+        }
+      ],
+      "createdBy": "이지훈 과장",
+      "createdAt": "2024-10-15"
+    },
+    {
+      "key": "Document:동계 대비 차단기 예비부품 구매 품의|mentions|Asset:차단기 예비부품",
+      "from": "Document:동계 대비 차단기 예비부품 구매 품의",
+      "to": "Asset:차단기 예비부품",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.6100000000000001,
+      "provCount": 2,
+      "provenance": [
+        {
+          "docId": "APPR-2024-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2024-10-15",
+          "span": [
+            10,
+            18
+          ],
+          "text": "차단기 예비부품"
+        },
+        {
+          "docId": "APPR-2025-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2025-10-15",
+          "span": [
+            10,
+            18
+          ],
+          "text": "차단기 예비부품"
+        }
+      ],
+      "createdBy": "이지훈 과장",
+      "createdAt": "2024-10-15"
+    }
+  ]
+}

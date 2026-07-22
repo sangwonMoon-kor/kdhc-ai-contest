@@ -19,6 +19,10 @@
 > 지시·질문·메모·기안을 업무 건에 연결하고, Todo 후보 확인, 근거 이동, 되돌리기·대상 변경, 임시 저장·뒤로가기·샘플 초기화를 검증한다.
 > jarvis.html은 발표용 정본으로 보존하고, 제품 방향 디벨롭은 app.html에서 진행한다. [GitHub Pages 미리보기](https://sangwonmoon-kor.github.io/kdhc-ai-contest/demo/app.html)
 >
+> 🎬 **최종 통합 UI·UX 정본은 [`product-ui/`](product-ui/README.md)** — fixture로 맥미니에서 독립 수정하고,
+> 검증된 파일만 `creationy/jikmu-memory/service/public/`의 통합 브랜치로 동기화한다.
+> `demo/app.html`은 제품 방향과 과거 프로토타입을 보존한다.
+>
 > 💡 **다음 라운드 1순위: [docs/아이디어-만능입력.md](docs/아이디어-만능입력.md)** — 상급자 지시를 하나의 업무 건으로 만들고,
 > Todo와 과거 자료, 협조처, 진행 메모, 산출물을 한 화면에 묶는 방향. 반복 업무 70%를 1차 범위로 확정.
 >

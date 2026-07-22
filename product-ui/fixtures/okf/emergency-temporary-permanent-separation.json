@@ -1,0 +1,8 @@
+{
+  "id": "emergency-temporary-permanent-separation",
+  "type": "Constraint",
+  "label": "임시조치·본복구 분리 원칙",
+  "description": "긴급 상황에서는 즉시 시행하는 임시조치와 정식 절차를 밟는 본 복구 공사를 분리하고, 임시조치는 사진·시간·지시자·조치 내용을 즉시 기록한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 임시조치·본복구 분리 원칙\r\ndescription: 긴급 상황에서는 즉시 시행하는 임시조치와 정식 절차를 밟는 본 복구 공사를 분리하고, 임시조치는 사진·시간·지시자·조치 내용을 즉시 기록한다.\r\nresource: okf://public-maintenance-rewritten/constraints/emergency-temporary-permanent-separation.md\r\ntags:\r\n- 제약\r\n- 긴급대응\r\n- 동절기\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n\r\n# 임시조치·본복구 분리 원칙\r\n\r\n## 정의\r\n긴급 상황에서는 즉시 시행하는 임시조치와 정식 설계·계약 절차를 밟는 본 복구 공사를 분리한다. 임시조치는 지체 없이 시행하되 사진, 시간, 지시자, 조치 내용을 그 자리에서 기록하고, 본 복구는 설계변경·계약·예산 절차를 정식으로 진행한다.\r\n\r\n## 완화 대상 위험\r\n- [[../risks/verbal-change-order.md|구두 설계변경 위험]]\r\n- [[../risks/prior-construction.md|선시공 위험]]\r\n- [[../risks/evidence-omission.md|증빙 누락 위험]]\r\n\r\n## 적용 단계\r\n- [[../workflows/problem-recognition.md|문제 인식]]\r\n- [[../workflows/field-change-response.md|현장 변수 대응]]\r\n\r\n## 관련 사례\r\n- [[../cases/case-08-winter-freeze-emergency-response.md|동절기 한파 옥외 배관 동파 긴급 대응 및 임시조치·본복구 분리 사례]]"
+}

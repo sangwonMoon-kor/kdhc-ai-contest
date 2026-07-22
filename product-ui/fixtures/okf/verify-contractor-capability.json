@@ -1,0 +1,8 @@
+{
+  "id": "verify-contractor-capability",
+  "type": "Constraint",
+  "label": "업체 수행능력·투입인력 검증 원칙",
+  "description": "착수계상 인력과 실제 투입인력의 경험, 자격, 역할, 발전소 정지정비 이해도를 확인한다.",
+  "resource": null,
+  "body": "---\r\ntype: Constraint\r\ntitle: 업체 수행능력·투입인력 검증 원칙\r\ndescription: 착수계상 인력과 실제 투입인력의 경험, 자격, 역할, 발전소 정지정비 이해도를 확인한다.\r\nresource: okf://public-maintenance-rewritten/constraints/verify-contractor-capability.md\r\ntags:\r\n- 제약\r\n- 업무규칙\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 업체 수행능력·투입인력 검증 원칙\r\n\r\n## 규칙\r\n착수계상 인력과 실제 투입인력의 경험, 자격, 역할, 발전소 정지정비 이해도를 확인한다.\r\n\r\n## 통제하는 위험\r\n- [[../risks/actual-input-mismatch.md|실제 투입인력 불일치 위험]]\r\n- [[../risks/quality-evidence-mismatch.md|품질증빙 불일치 위험]]\r\n- [[../risks/safety-noncompliance.md|안전수칙 미준수 위험]]"
+}

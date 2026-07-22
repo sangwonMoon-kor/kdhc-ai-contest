@@ -1,0 +1,406 @@
+{
+  "doc": {
+    "id": "MAIL-2025-0212",
+    "kind": "이메일",
+    "kindConfidence": 1,
+    "title": "대금 지급 및 검수 절차 안내",
+    "stageId": "completion-settlement",
+    "task": "준공·정산",
+    "taskScore": 18,
+    "date": "2025-02-12",
+    "drafter": null,
+    "author": "지사 계약부(고객지원부)",
+    "fields": {
+      "dates": [
+        {
+          "raw": "2025-02-12",
+          "span": [
+            63,
+            73
+          ],
+          "iso": "2025-02-12",
+          "year": 2025,
+          "month": 2,
+          "day": 12,
+          "gran": "day"
+        }
+      ],
+      "title": "대금 지급 및 검수 절차 안내",
+      "from": "지사 계약부(고객지원부)",
+      "to": "지사 공무부"
+    },
+    "text": "From: 지사 계약부(고객지원부)\nTo: 지사 공무부\nSubject: 대금 지급 및 검수 절차 안내\nSent: 2025-02-12\n\n유지보수 공사·용역 대금은 검수 완료 후 지급이 원칙입니다. 검수 전 지급 요청은 수용할 수 없습니다.\n준공계 접수 시 작업일보, 출입기록, 사진대지, 시험성적서를 교차 확인 후 지급 절차를 진행합니다.",
+    "entities": {
+      "actors": [
+        "지사 계약부(고객지원부)",
+        "지사 공무부"
+      ],
+      "assets": [],
+      "docRefs": [
+        "시험성적서",
+        "작업일보",
+        "사진대지",
+        "출입기록",
+        "준공계"
+      ],
+      "dates": [
+        {
+          "raw": "2025-02-12",
+          "iso": "2025-02-12",
+          "gran": "day"
+        }
+      ],
+      "amounts": []
+    }
+  },
+  "edges": [
+    {
+      "key": "WorkflowStage:준공·정산|causes_risk|Risk:검수 전 지급 압박 위험",
+      "from": "WorkflowStage:준공·정산",
+      "to": "Risk:검수 전 지급 압박 위험",
+      "rel": "causes_risk",
+      "meta": {
+        "ko": "위험 유발",
+        "hue": "#e0620d",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 3,
+      "provenance": [
+        {
+          "docId": "okf:completion-settlement",
+          "label": "준공·정산",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": [
+            108,
+            132
+          ],
+          "text": "검수 전 지급 요청은 수용할 수 없습니다."
+        },
+        {
+          "docId": "RULE-2026-0401",
+          "label": "계약·조달 운영지침(비식별 합성 재구성본 V2026.04-R03)",
+          "kind": "사규·지침",
+          "date": "2026-04-01",
+          "span": [
+            1014,
+            1059
+          ],
+          "text": "제23조(대가지급) 대금은 검수 완료 후 지급하며 검수 전 대금 지급은 금지한다."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:준공·정산|is_controlled_by|Constraint:검수 선행 지급 원칙",
+      "from": "WorkflowStage:준공·정산",
+      "to": "Constraint:검수 선행 지급 원칙",
+      "rel": "is_controlled_by",
+      "meta": {
+        "ko": "통제 규칙",
+        "hue": "#0a8fc9",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 4,
+      "provenance": [
+        {
+          "docId": "okf:completion-settlement",
+          "label": "준공·정산",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": [
+            75,
+            108
+          ],
+          "text": "유지보수 공사·용역 대금은 검수 완료 후 지급이 원칙입니다."
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            196,
+            225
+          ],
+          "text": "제15조(검수·지급) 대금은 검수 완료 후 지급한다."
+        },
+        {
+          "docId": "RULE-2026-0401",
+          "label": "계약·조달 운영지침(비식별 합성 재구성본 V2026.04-R03)",
+          "kind": "사규·지침",
+          "date": "2026-04-01",
+          "span": [
+            1014,
+            1059
+          ],
+          "text": "제23조(대가지급) 대금은 검수 완료 후 지급하며 검수 전 대금 지급은 금지한다."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "Document:시험성적서|cross_checks|Document:작업일보",
+      "from": "Document:시험성적서",
+      "to": "Document:작업일보",
+      "rel": "cross_checks",
+      "meta": {
+        "ko": "교차 확인",
+        "hue": "#b0640b",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.83,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": [
+            133,
+            188
+          ],
+          "text": "준공계 접수 시 작업일보, 출입기록, 사진대지, 시험성적서를 교차 확인 후 지급 절차를 진행합니다."
+        }
+      ],
+      "createdBy": "지사 계약부(고객지원부)",
+      "createdAt": "2025-02-12"
+    },
+    {
+      "key": "Document:시험성적서|cross_checks|Document:사진대지",
+      "from": "Document:시험성적서",
+      "to": "Document:사진대지",
+      "rel": "cross_checks",
+      "meta": {
+        "ko": "교차 확인",
+        "hue": "#b0640b",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.83,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": [
+            133,
+            188
+          ],
+          "text": "준공계 접수 시 작업일보, 출입기록, 사진대지, 시험성적서를 교차 확인 후 지급 절차를 진행합니다."
+        }
+      ],
+      "createdBy": "지사 계약부(고객지원부)",
+      "createdAt": "2025-02-12"
+    },
+    {
+      "key": "Document:시험성적서|cross_checks|Document:출입기록",
+      "from": "Document:시험성적서",
+      "to": "Document:출입기록",
+      "rel": "cross_checks",
+      "meta": {
+        "ko": "교차 확인",
+        "hue": "#b0640b",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.83,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": [
+            133,
+            188
+          ],
+          "text": "준공계 접수 시 작업일보, 출입기록, 사진대지, 시험성적서를 교차 확인 후 지급 절차를 진행합니다."
+        }
+      ],
+      "createdBy": "지사 계약부(고객지원부)",
+      "createdAt": "2025-02-12"
+    },
+    {
+      "key": "Document:시험성적서|cross_checks|Document:준공계",
+      "from": "Document:시험성적서",
+      "to": "Document:준공계",
+      "rel": "cross_checks",
+      "meta": {
+        "ko": "교차 확인",
+        "hue": "#b0640b",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.83,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": [
+            133,
+            188
+          ],
+          "text": "준공계 접수 시 작업일보, 출입기록, 사진대지, 시험성적서를 교차 확인 후 지급 절차를 진행합니다."
+        }
+      ],
+      "createdBy": "지사 계약부(고객지원부)",
+      "createdAt": "2025-02-12"
+    },
+    {
+      "key": "WorkflowStage:준공·정산|produces_document|Document:대금 지급 및 검수 절차 안내",
+      "from": "WorkflowStage:준공·정산",
+      "to": "Document:대금 지급 및 검수 절차 안내",
+      "rel": "produces_document",
+      "meta": {
+        "ko": "산출 문서",
+        "hue": "#7d8db0",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.95,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": null,
+          "text": "분류 근거: 준공×1, 검수×3, 대금×2, 출입기록×1, 준공계×1"
+        }
+      ],
+      "createdBy": "지사 계약부(고객지원부)",
+      "createdAt": "2025-02-12"
+    },
+    {
+      "key": "Document:대금 지급 및 검수 절차 안내|mentions|Actor:지사 계약부(고객지원부)",
+      "from": "Document:대금 지급 및 검수 절차 안내",
+      "to": "Actor:지사 계약부(고객지원부)",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": [
+            6,
+            19
+          ],
+          "text": "지사 계약부(고객지원부)"
+        }
+      ],
+      "createdBy": "지사 계약부(고객지원부)",
+      "createdAt": "2025-02-12"
+    },
+    {
+      "key": "Document:대금 지급 및 검수 절차 안내|mentions|Actor:지사 공무부",
+      "from": "Document:대금 지급 및 검수 절차 안내",
+      "to": "Actor:지사 공무부",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MAIL-2025-0212",
+          "label": "대금 지급 및 검수 절차 안내",
+          "kind": "이메일",
+          "date": "2025-02-12",
+          "span": [
+            24,
+            30
+          ],
+          "text": "지사 공무부"
+        }
+      ],
+      "createdBy": "지사 계약부(고객지원부)",
+      "createdAt": "2025-02-12"
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "simDate": "2026-01-02",
+  "items": [
+    {
+      "name": "동절기 옥외 설비 동파 방지 점검 결과 보고",
+      "task": "문제 인식",
+      "stageId": "problem-recognition",
+      "month": 1,
+      "lastDate": "2025-01-06",
+      "dueDate": "2026-01-06",
+      "dday": 4,
+      "docCount": 2,
+      "docs": [
+        "APPR-2024-0108",
+        "APPR-2025-0106"
+      ]
+    },
+    {
+      "name": "순환수 펌프 정비공사 추진 보고",
+      "task": "설계·내역 작성",
+      "stageId": "design-and-costing",
+      "month": 4,
+      "lastDate": "2025-04-09",
+      "dueDate": "2026-04-09",
+      "dday": 97,
+      "docCount": 2,
+      "docs": [
+        "APPR-2024-0408",
+        "APPR-2025-0409"
+      ]
+    }
+  ],
+  "recurrences": [
+    {
+      "stageId": "design-and-costing",
+      "task": "설계·내역 작성",
+      "month": 4,
+      "years": [
+        2024,
+        2025
+      ],
+      "day": 9,
+      "title": "순환수 펌프 정비공사 추진 보고",
+      "docs": [
+        "APPR-2024-0408",
+        "APPR-2025-0409"
+      ],
+      "lastDate": "2025-04-09"
+    },
+    {
+      "stageId": "budget-persuasion",
+      "task": "예산 설득",
+      "month": 9,
+      "years": [
+        2024,
+        2025
+      ],
+      "day": 10,
+      "title": "유지보수 예산 요구서",
+      "docs": [
+        "APPR-2024-0910",
+        "APPR-2025-0910"
+      ],
+      "lastDate": "2025-09-10"
+    },
+    {
+      "stageId": "procurement",
+      "task": "물품구매",
+      "month": 10,
+      "years": [
+        2024,
+        2025
+      ],
+      "day": 15,
+      "title": "동계 대비 차단기 예비부품 구매 품의",
+      "docs": [
+        "APPR-2024-1015",
+        "APPR-2025-1015"
+      ],
+      "lastDate": "2025-10-15"
+    },
+    {
+      "stageId": "problem-recognition",
+      "task": "문제 인식",
+      "month": 1,
+      "years": [
+        2024,
+        2025
+      ],
+      "day": 6,
+      "title": "동절기 옥외 설비 동파 방지 점검 결과 보고",
+      "docs": [
+        "APPR-2024-0108",
+        "APPR-2025-0106"
+      ],
+      "lastDate": "2025-01-06"
+    }
+  ]
+}

@@ -1,0 +1,648 @@
+{
+  "doc": {
+    "id": "MTG-2025-1121",
+    "kind": "회의록",
+    "kindConfidence": 1,
+    "title": "노후 배관 교체공사 현장 변수 대응 회의",
+    "stageId": "field-change-response",
+    "task": "현장 변수 대응",
+    "taskScore": 9,
+    "date": "2025-11-21",
+    "drafter": null,
+    "author": "지사 공무부",
+    "fields": {
+      "dates": [
+        {
+          "raw": "2025-11-21",
+          "span": [
+            31,
+            41
+          ],
+          "iso": "2025-11-21",
+          "year": 2025,
+          "month": 11,
+          "day": 21,
+          "gran": "day"
+        }
+      ],
+      "title": "노후 배관 교체공사 현장 변수 대응 회의",
+      "attendees": "지사 공무부, 지사 운영부, 지사 안전관리관, 지사 품질관리부, 계약업체",
+      "decisions": [
+        "현장 변수 발견 즉시 작업 중지하고 사진 확보. 설계변경 사유서와 현장확인서 승인 후 착수한다. 구두 지시에 의한 선시공은 금지한다."
+      ],
+      "actions": [
+        "품질관리부는 변경 전 상태를 사진과 측정값으로 기록한다."
+      ]
+    },
+    "text": "제목: 노후 배관 교체공사 현장 변수 대응 회의\n일시: 2025-11-21\n참석: 지사 공무부, 지사 운영부, 지사 안전관리관, 지사 품질관리부, 계약업체\n\n안건: 보온재 제거 후 발견된 우회 배관 및 지지대 처리 방안.\n\n논의: 도면과 달리 우회 배관이 존재하여 기존 설계대로 절단 불가. 작업 공간 축소로 위험성평가 재실시 필요. 업체는 추가비용을 요구함.\n결정: 현장 변수 발견 즉시 작업 중지하고 사진 확보. 설계변경 사유서와 현장확인서 승인 후 착수한다. 구두 지시에 의한 선시공은 금지한다.\n액션: 품질관리부는 변경 전 상태를 사진과 측정값으로 기록한다.",
+    "entities": {
+      "actors": [
+        "지사 품질관리부",
+        "지사 안전관리관",
+        "지사 공무부",
+        "지사 운영부",
+        "계약업체"
+      ],
+      "assets": [
+        "노후 배관",
+        "우회배관",
+        "지지대"
+      ],
+      "docRefs": [
+        "설계변경 사유서",
+        "위험성평가",
+        "현장확인서"
+      ],
+      "dates": [
+        {
+          "raw": "2025-11-21",
+          "iso": "2025-11-21",
+          "gran": "day"
+        }
+      ],
+      "amounts": []
+    }
+  },
+  "edges": [
+    {
+      "key": "WorkflowStage:현장 변수 대응|requires_document|Document:현장확인서",
+      "from": "WorkflowStage:현장 변수 대응",
+      "to": "Document:현장확인서",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 3,
+      "provenance": [
+        {
+          "docId": "okf:field-change-response",
+          "label": "현장 변수 대응",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "AUDIT-2025-0620",
+          "label": "2025년 상반기 자체감사 결과 통보",
+          "kind": "감사문서",
+          "date": "2025-06-20",
+          "span": [
+            271,
+            350
+          ],
+          "text": "조치요구: 설계변경은 현장확인서·변경 사유서 승인 후 착수하고, 규격서에는 동등성 판단 기준을 명시하며, 주요 공정 사진 기록을 의무화할 것."
+        },
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            232,
+            259
+          ],
+          "text": "설계변경 사유서와 현장확인서 승인 후 착수한다."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:현장 변수 대응|requires_document|Document:설계변경 사유서",
+      "from": "WorkflowStage:현장 변수 대응",
+      "to": "Document:설계변경 사유서",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.96,
+      "provCount": 2,
+      "provenance": [
+        {
+          "docId": "okf:field-change-response",
+          "label": "현장 변수 대응",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            232,
+            259
+          ],
+          "text": "설계변경 사유서와 현장확인서 승인 후 착수한다."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:현장 변수 대응|causes_risk|Risk:구두 설계변경 위험",
+      "from": "WorkflowStage:현장 변수 대응",
+      "to": "Risk:구두 설계변경 위험",
+      "rel": "causes_risk",
+      "meta": {
+        "ko": "위험 유발",
+        "hue": "#e0620d",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 4,
+      "provenance": [
+        {
+          "docId": "okf:field-change-response",
+          "label": "현장 변수 대응",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "AUDIT-2025-0620",
+          "label": "2025년 상반기 자체감사 결과 통보",
+          "kind": "감사문서",
+          "date": "2025-06-20",
+          "span": [
+            73,
+            134
+          ],
+          "text": "지적사항 1: 구두 설계변경 — 현장 변수 발견 후 구두 지시로 선시공하고 사후 계약변경을 진행한 사례 확인."
+        },
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            259,
+            280
+          ],
+          "text": "구두 지시에 의한 선시공은 금지한다."
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            129,
+            195
+          ],
+          "text": "제14조(변경 절차) 현장 변수 발견 시 작업을 중지하고, 구두 지시에 의한 변경은 금지하며, 변경 승인 후 시공한다."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:현장 변수 대응|is_controlled_by|Constraint:구두 변경 금지 원칙",
+      "from": "WorkflowStage:현장 변수 대응",
+      "to": "Constraint:구두 변경 금지 원칙",
+      "rel": "is_controlled_by",
+      "meta": {
+        "ko": "통제 규칙",
+        "hue": "#0a8fc9",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 4,
+      "provenance": [
+        {
+          "docId": "okf:field-change-response",
+          "label": "현장 변수 대응",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "AUDIT-2025-0620",
+          "label": "2025년 상반기 자체감사 결과 통보",
+          "kind": "감사문서",
+          "date": "2025-06-20",
+          "span": [
+            271,
+            350
+          ],
+          "text": "조치요구: 설계변경은 현장확인서·변경 사유서 승인 후 착수하고, 규격서에는 동등성 판단 기준을 명시하며, 주요 공정 사진 기록을 의무화할 것."
+        },
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            259,
+            280
+          ],
+          "text": "구두 지시에 의한 선시공은 금지한다."
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            129,
+            195
+          ],
+          "text": "제14조(변경 절차) 현장 변수 발견 시 작업을 중지하고, 구두 지시에 의한 변경은 금지하며, 변경 승인 후 시공한다."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "Risk:구두 설계변경 위험|mitigated_by|Constraint:구두 변경 금지 원칙",
+      "from": "Risk:구두 설계변경 위험",
+      "to": "Constraint:구두 변경 금지 원칙",
+      "rel": "mitigated_by",
+      "meta": {
+        "ko": "완화 규칙",
+        "hue": "#0aa8cf",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 4,
+      "provenance": [
+        {
+          "docId": "okf:verbal-change-order",
+          "label": "구두 설계변경 위험",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            259,
+            280
+          ],
+          "text": "구두 지시에 의한 선시공은 금지한다."
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            129,
+            195
+          ],
+          "text": "제14조(변경 절차) 현장 변수 발견 시 작업을 중지하고, 구두 지시에 의한 변경은 금지하며, 변경 승인 후 시공한다."
+        },
+        {
+          "docId": "MTG-2025-0113",
+          "label": "한파 옥외 소화수 배관 동파 긴급 대응 회의",
+          "kind": "회의록",
+          "date": "2025-01-13",
+          "span": [
+            212,
+            241
+          ],
+          "text": "긴급 상황이라도 구두 지시에 의한 선시공은 금지함."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:현장 변수 대응|requires_document|Document:위험성평가",
+      "from": "WorkflowStage:현장 변수 대응",
+      "to": "Document:위험성평가",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.57,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            162,
+            186
+          ],
+          "text": "작업 공간 축소로 위험성평가 재실시 필요."
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    },
+    {
+      "key": "WorkflowStage:현장 변수 대응|produces_document|Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "from": "WorkflowStage:현장 변수 대응",
+      "to": "Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "rel": "produces_document",
+      "meta": {
+        "ko": "산출 문서",
+        "hue": "#7d8db0",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.95,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": null,
+          "text": "분류 근거: 설계변경×1, 현장 변수×2"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    },
+    {
+      "key": "Document:노후 배관 교체공사 현장 변수 대응 회의|mentions|Actor:지사 품질관리부",
+      "from": "Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "to": "Actor:지사 품질관리부",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            72,
+            80
+          ],
+          "text": "지사 품질관리부"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    },
+    {
+      "key": "Document:노후 배관 교체공사 현장 변수 대응 회의|mentions|Actor:지사 안전관리관",
+      "from": "Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "to": "Actor:지사 안전관리관",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            62,
+            70
+          ],
+          "text": "지사 안전관리관"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    },
+    {
+      "key": "Document:노후 배관 교체공사 현장 변수 대응 회의|mentions|Actor:지사 공무부",
+      "from": "Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "to": "Actor:지사 공무부",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            46,
+            52
+          ],
+          "text": "지사 공무부"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    },
+    {
+      "key": "Document:노후 배관 교체공사 현장 변수 대응 회의|mentions|Actor:지사 운영부",
+      "from": "Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "to": "Actor:지사 운영부",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            54,
+            60
+          ],
+          "text": "지사 운영부"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    },
+    {
+      "key": "Document:노후 배관 교체공사 현장 변수 대응 회의|mentions|Asset:노후 배관",
+      "from": "Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "to": "Asset:노후 배관",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            4,
+            9
+          ],
+          "text": "노후 배관"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    },
+    {
+      "key": "Document:노후 배관 교체공사 현장 변수 대응 회의|mentions|Asset:우회배관",
+      "from": "Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "to": "Asset:우회배관",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            105,
+            110
+          ],
+          "text": "우회 배관"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    },
+    {
+      "key": "Document:노후 배관 교체공사 현장 변수 대응 회의|mentions|Asset:지지대",
+      "from": "Document:노후 배관 교체공사 현장 변수 대응 회의",
+      "to": "Asset:지지대",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "MTG-2025-1121",
+          "label": "노후 배관 교체공사 현장 변수 대응 회의",
+          "kind": "회의록",
+          "date": "2025-11-21",
+          "span": [
+            113,
+            116
+          ],
+          "text": "지지대"
+        }
+      ],
+      "createdBy": "지사 공무부",
+      "createdAt": "2025-11-21"
+    }
+  ]
+}

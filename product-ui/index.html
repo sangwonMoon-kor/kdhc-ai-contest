@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>직무 메모리 — 일한 만큼, 준비됩니다</title>
+<meta name="description" content="상급자의 지시를 받는 순간, 해야 할 일과 과거 자료를 한 화면에 정리해 주는 개인 업무 비서">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#view">본문으로 건너뛰기</a>
+
+<header class="top" role="banner">
+  <a class="brand" href="#home" aria-label="직무 메모리 홈">직무 <b>메모리</b></a>
+  <nav class="nav-caps" aria-label="주 메뉴">
+    <a href="#home" data-nav="home">홈</a>
+    <a href="#work/list" data-nav="work">내 업무</a>
+  </nav>
+  <div class="top-right">
+    <span class="simdate" id="simDate" title="시연 기준일"></span>
+    <span class="data-status" id="dataStatus" role="status" aria-live="polite">데이터 확인 중</span>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="화면 모드 전환">◐</button>
+  </div>
+</header>
+
+<main id="view" tabindex="-1"></main>
+
+<div class="drawer-veil" id="drawerVeil" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden>
+  <div class="drawer-head">
+    <h2 id="drawerTitle">근거</h2>
+    <button class="icon-btn" id="drawerClose" type="button" aria-label="근거 닫기">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<footer class="foot">
+  <span>시연용 서비스 · 각색된 샘플 데이터</span>
+  <span class="foot-links">
+    <a href="#graph">업무 지식 지도</a>
+    <a href="#vision">서비스 소개</a>
+    <button class="linklike" id="resetBtn" type="button">샘플 초기화</button>
+  </span>
+</footer>
+
+<script src="intent.js"></script>
+<script src="extract.js"></script>
+<script src="api-client.js"></script>
+<script src="home-model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

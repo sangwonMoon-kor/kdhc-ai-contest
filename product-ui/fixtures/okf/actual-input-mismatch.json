@@ -1,0 +1,8 @@
+{
+  "id": "actual-input-mismatch",
+  "type": "Risk",
+  "label": "실제 투입인력 불일치 위험",
+  "description": "착수계상 인력과 실제 현장 투입인력이 다르거나 적격성이 확인되지 않는 위험이다.",
+  "resource": null,
+  "body": "---\r\ntype: Risk\r\ntitle: 실제 투입인력 불일치 위험\r\ndescription: 착수계상 인력과 실제 현장 투입인력이 다르거나 적격성이 확인되지 않는 위험이다.\r\nresource: okf://public-maintenance-rewritten/risks/actual-input-mismatch.md\r\ntags:\r\n- 위험\r\n- 반복실수\r\ntimestamp: '2026-07-08T00:00:00+09:00'\r\n---\r\n# 실제 투입인력 불일치 위험\r\n\r\n## 정의\r\n착수계상 인력과 실제 현장 투입인력이 다르거나 적격성이 확인되지 않는 위험이다.\r\n\r\n## 완화 제약\r\n- [[../constraints/kickoff-interpretation-alignment.md|착수회의 과업 해석 정렬 원칙]]\r\n- [[../constraints/verify-contractor-capability.md|업체 수행능력·투입인력 검증 원칙]]"
+}

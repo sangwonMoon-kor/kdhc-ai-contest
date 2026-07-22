@@ -1,0 +1,203 @@
+{
+  "doc": {
+    "id": "APPR-2025-0106",
+    "kind": "전자결재",
+    "kindConfidence": 1,
+    "title": "2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+    "stageId": "problem-recognition",
+    "task": "문제 인식",
+    "taskScore": 10,
+    "date": "2025-01-06",
+    "drafter": "이지훈 과장",
+    "author": "이지훈 과장",
+    "fields": {
+      "dates": [
+        {
+          "raw": "2025-01-06",
+          "span": [
+            52,
+            62
+          ],
+          "iso": "2025-01-06",
+          "year": 2025,
+          "month": 1,
+          "day": 6,
+          "gran": "day"
+        }
+      ],
+      "title": "2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+      "drafter": "이지훈 과장",
+      "sections": [
+        {
+          "h": "1. 점검 결과",
+          "body": "옥외 노출 배관, 열선, 소화수 배관을 점검함. 열선 1개 구간 저항 이상 징후 확인."
+        },
+        {
+          "h": "2. 조치 사항",
+          "body": "이상 구간 열선 교체 예정. 한파경보 시 순찰 주기 단축."
+        },
+        {
+          "h": "3. 협조",
+          "body": "지사 운영부(운전 조건), 지사 안전관리관(한랭 작업 안전)."
+        }
+      ],
+      "attachments": [],
+      "rejected": false,
+      "rejReason": null
+    },
+    "text": "제목: 2025년 동절기 옥외 설비 동파 방지 점검 결과 보고\n기안자: 이지훈 과장\n기안일: 2025-01-06\n\n동계 한파 대비 옥외 설비 동파 방지 점검 결과를 보고드립니다.\n\n1. 점검 결과\n옥외 노출 배관, 열선, 소화수 배관을 점검함. 열선 1개 구간 저항 이상 징후 확인.\n\n2. 조치 사항\n이상 구간 열선 교체 예정. 한파경보 시 순찰 주기 단축.\n\n3. 협조\n지사 운영부(운전 조건), 지사 안전관리관(한랭 작업 안전).",
+    "entities": {
+      "actors": [
+        "지사 안전관리관",
+        "지사 운영부"
+      ],
+      "assets": [
+        "노후 배관"
+      ],
+      "docRefs": [],
+      "dates": [
+        {
+          "raw": "2025-01-06",
+          "iso": "2025-01-06",
+          "gran": "day"
+        }
+      ],
+      "amounts": []
+    }
+  },
+  "edges": [
+    {
+      "key": "WorkflowStage:문제 인식|produces_document|Document:2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+      "from": "WorkflowStage:문제 인식",
+      "to": "Document:2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+      "rel": "produces_document",
+      "meta": {
+        "ko": "산출 문서",
+        "hue": "#7d8db0",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.95,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "APPR-2025-0106",
+          "label": "2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+          "kind": "전자결재",
+          "date": "2025-01-06",
+          "span": null,
+          "text": "분류 근거: 이상×2, 점검 결과×3"
+        }
+      ],
+      "createdBy": "이지훈 과장",
+      "createdAt": "2025-01-06"
+    },
+    {
+      "key": "Document:2025년 동절기 옥외 설비 동파 방지 점검 결과 보고|mentions|Actor:지사 안전관리관",
+      "from": "Document:2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+      "to": "Actor:지사 안전관리관",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "APPR-2025-0106",
+          "label": "2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+          "kind": "전자결재",
+          "date": "2025-01-06",
+          "span": [
+            224,
+            232
+          ],
+          "text": "지사 안전관리관"
+        }
+      ],
+      "createdBy": "이지훈 과장",
+      "createdAt": "2025-01-06"
+    },
+    {
+      "key": "Document:2025년 동절기 옥외 설비 동파 방지 점검 결과 보고|mentions|Actor:지사 운영부",
+      "from": "Document:2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+      "to": "Actor:지사 운영부",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "APPR-2025-0106",
+          "label": "2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+          "kind": "전자결재",
+          "date": "2025-01-06",
+          "span": [
+            209,
+            215
+          ],
+          "text": "지사 운영부"
+        }
+      ],
+      "createdBy": "이지훈 과장",
+      "createdAt": "2025-01-06"
+    },
+    {
+      "key": "Document:2025년 동절기 옥외 설비 동파 방지 점검 결과 보고|mentions|Asset:노후 배관",
+      "from": "Document:2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+      "to": "Asset:노후 배관",
+      "rel": "mentions",
+      "meta": {
+        "ko": "언급(보조)",
+        "hue": "#b8c1d6",
+        "std": false
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.55,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "APPR-2025-0106",
+          "label": "2025년 동절기 옥외 설비 동파 방지 점검 결과 보고",
+          "kind": "전자결재",
+          "date": "2025-01-06",
+          "span": [
+            116,
+            118
+          ],
+          "text": "배관"
+        }
+      ],
+      "createdBy": "이지훈 과장",
+      "createdAt": "2025-01-06"
+    }
+  ]
+}

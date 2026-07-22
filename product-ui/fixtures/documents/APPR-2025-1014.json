@@ -1,0 +1,365 @@
+{
+  "doc": {
+    "id": "APPR-2025-1014",
+    "kind": "전자결재",
+    "kindConfidence": 1,
+    "title": "2025년 4분기 노후설비 정비 내역 보고",
+    "stageId": "design-and-costing",
+    "task": "설계·내역 작성",
+    "taskScore": 9,
+    "date": "2025-10-14",
+    "drafter": "이지훈 과장",
+    "author": "이지훈 과장",
+    "fields": {
+      "dates": [
+        {
+          "raw": "2025-10-14",
+          "span": [
+            45,
+            55
+          ],
+          "iso": "2025-10-14",
+          "year": 2025,
+          "month": 10,
+          "day": 14,
+          "gran": "day"
+        },
+        {
+          "raw": "2025-10-22",
+          "span": [
+            219,
+            229
+          ],
+          "iso": "2025-10-22",
+          "year": 2025,
+          "month": 10,
+          "day": 22,
+          "gran": "day"
+        }
+      ],
+      "title": "2025년 4분기 노후설비 정비 내역 보고",
+      "drafter": "이지훈 과장",
+      "sections": [
+        {
+          "h": "1. 내역 개요",
+          "body": "기존 내역을 준용하여 작성함. 소요 예산 산출근거는 추후 별도 보고 예정임.\n\n반려 사유: 산출근거 표 누락. 과거 내역 복사 항목에 대한 최신 기준 확인 후 재상신할 것.\n재상신 시 항목별 산출근거 첨부 후 승인 처리됨(2025-10-22)."
+        }
+      ],
+      "attachments": [
+        "첨부 후 승인 처리됨(2025-10-22)"
+      ],
+      "rejected": true,
+      "rejReason": "산출근거 표 누락"
+    },
+    "text": "제목: 2025년 4분기 노후설비 정비 내역 보고\n기안자: 이지훈 과장\n기안일: 2025-10-14\n\n4분기 노후설비 정비공사 설계내역을 보고드립니다.\n\n1. 내역 개요\n기존 내역을 준용하여 작성함. 소요 예산 산출근거는 추후 별도 보고 예정임.\n\n반려 사유: 산출근거 표 누락. 과거 내역 복사 항목에 대한 최신 기준 확인 후 재상신할 것.\n재상신 시 항목별 산출근거 첨부 후 승인 처리됨(2025-10-22).",
+    "entities": {
+      "actors": [],
+      "assets": [],
+      "docRefs": [
+        "설계근거 기록"
+      ],
+      "dates": [
+        {
+          "raw": "2025-10-14",
+          "iso": "2025-10-14",
+          "gran": "day"
+        },
+        {
+          "raw": "2025-10-22",
+          "iso": "2025-10-22",
+          "gran": "day"
+        }
+      ],
+      "amounts": []
+    }
+  },
+  "edges": [
+    {
+      "key": "WorkflowStage:설계·내역 작성|requires_document|Document:설계근거 기록",
+      "from": "WorkflowStage:설계·내역 작성",
+      "to": "Document:설계근거 기록",
+      "rel": "requires_document",
+      "meta": {
+        "ko": "필요 문서",
+        "hue": "#5d6b8c",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 10,
+      "provenance": [
+        {
+          "docId": "okf:design-and-costing",
+          "label": "설계·내역 작성",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "APPR-2024-0408",
+          "label": "2024년 순환수 펌프 정비공사 추진 보고",
+          "kind": "전자결재",
+          "date": "2024-04-08",
+          "span": [
+            277,
+            294
+          ],
+          "text": "산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2025-0409",
+          "label": "2025년 순환수 펌프 정비공사 추진 보고",
+          "kind": "전자결재",
+          "date": "2025-04-09",
+          "span": [
+            289,
+            310
+          ],
+          "text": "항목별 산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2025-1014",
+          "label": "2025년 4분기 노후설비 정비 내역 보고",
+          "kind": "전자결재",
+          "date": "2025-10-14",
+          "span": [
+            192,
+            231
+          ],
+          "text": "재상신 시 항목별 산출근거 첨부 후 승인 처리됨(2025-10-22)."
+        },
+        {
+          "docId": "RULE-2024-0302",
+          "label": "유지보수 공사·용역·구매 시행 지침",
+          "kind": "사규·지침",
+          "date": "2024-03-02",
+          "span": [
+            41,
+            83
+          ],
+          "text": "제12조(산출근거) 내역서의 단가·수량 항목마다 산출근거를 첨부하여야 한다."
+        },
+        {
+          "docId": "RULE-2026-0401",
+          "label": "계약·조달 운영지침(비식별 합성 재구성본 V2026.04-R03)",
+          "kind": "사규·지침",
+          "date": "2026-04-01",
+          "span": [
+            412,
+            455
+          ],
+          "text": "5% 범위에서 예비가격 12개를 생성하여 산정하고 항목별 산출근거를 명시한다."
+        },
+        {
+          "docId": "APPR-2024-0910",
+          "label": "2025년 유지보수 예산 요구서",
+          "kind": "전자결재",
+          "date": "2024-09-10",
+          "span": [
+            181,
+            202
+          ],
+          "text": "항목별 산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2025-0910",
+          "label": "2026년 유지보수 예산 요구서",
+          "kind": "전자결재",
+          "date": "2025-09-10",
+          "span": [
+            278,
+            299
+          ],
+          "text": "항목별 산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2024-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2024-10-15",
+          "span": [
+            227,
+            244
+          ],
+          "text": "산출근거는 붙임 1로 첨부함."
+        },
+        {
+          "docId": "APPR-2025-1015",
+          "label": "동계 대비 차단기 예비부품 구매 품의",
+          "kind": "전자결재",
+          "date": "2025-10-15",
+          "span": [
+            232,
+            249
+          ],
+          "text": "산출근거는 붙임 1로 첨부함."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:설계·내역 작성|causes_risk|Risk:과거 내역서 단순 복사 위험",
+      "from": "WorkflowStage:설계·내역 작성",
+      "to": "Risk:과거 내역서 단순 복사 위험",
+      "rel": "causes_risk",
+      "meta": {
+        "ko": "위험 유발",
+        "hue": "#e0620d",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.97,
+      "provCount": 3,
+      "provenance": [
+        {
+          "docId": "okf:design-and-costing",
+          "label": "설계·내역 작성",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "APPR-2025-1014",
+          "label": "2025년 4분기 노후설비 정비 내역 보고",
+          "kind": "전자결재",
+          "date": "2025-10-14",
+          "span": [
+            95,
+            111
+          ],
+          "text": "기존 내역을 준용하여 작성함."
+        },
+        {
+          "docId": "APPR-2025-1014",
+          "label": "2025년 4분기 노후설비 정비 내역 보고",
+          "kind": "전자결재",
+          "date": "2025-10-14",
+          "span": null,
+          "text": "반려: 산출근거 표 누락"
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:설계·내역 작성|causes_risk|Risk:노임단가·요율 오류 위험",
+      "from": "WorkflowStage:설계·내역 작성",
+      "to": "Risk:노임단가·요율 오류 위험",
+      "rel": "causes_risk",
+      "meta": {
+        "ko": "위험 유발",
+        "hue": "#e0620d",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.96,
+      "provCount": 2,
+      "provenance": [
+        {
+          "docId": "okf:design-and-costing",
+          "label": "설계·내역 작성",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "APPR-2025-1014",
+          "label": "2025년 4분기 노후설비 정비 내역 보고",
+          "kind": "전자결재",
+          "date": "2025-10-14",
+          "span": [
+            111,
+            137
+          ],
+          "text": "소요 예산 산출근거는 추후 별도 보고 예정임."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "Risk:과거 내역서 단순 복사 위험|mitigated_by|Constraint:기존 내역 최신성 검토 원칙",
+      "from": "Risk:과거 내역서 단순 복사 위험",
+      "to": "Constraint:기존 내역 최신성 검토 원칙",
+      "rel": "mitigated_by",
+      "meta": {
+        "ko": "완화 규칙",
+        "hue": "#0aa8cf",
+        "std": true
+      },
+      "status": "업무오너승인",
+      "statusMeta": {
+        "rank": 3,
+        "color": "#2f6bff",
+        "trust": "공식 지식(OKF 팩)"
+      },
+      "confidence": 0.96,
+      "provCount": 2,
+      "provenance": [
+        {
+          "docId": "okf:old-estimate-copy",
+          "label": "과거 내역서 단순 복사 위험",
+          "kind": "OKF",
+          "text": ""
+        },
+        {
+          "docId": "APPR-2025-1014",
+          "label": "2025년 4분기 노후설비 정비 내역 보고",
+          "kind": "전자결재",
+          "date": "2025-10-14",
+          "span": [
+            156,
+            191
+          ],
+          "text": "과거 내역 복사 항목에 대한 최신 기준 확인 후 재상신할 것."
+        }
+      ],
+      "createdBy": "OKF 지식 팩",
+      "createdAt": "2026-07-08"
+    },
+    {
+      "key": "WorkflowStage:설계·내역 작성|produces_document|Document:2025년 4분기 노후설비 정비 내역 보고",
+      "from": "WorkflowStage:설계·내역 작성",
+      "to": "Document:2025년 4분기 노후설비 정비 내역 보고",
+      "rel": "produces_document",
+      "meta": {
+        "ko": "산출 문서",
+        "hue": "#7d8db0",
+        "std": true
+      },
+      "status": "작성자확인",
+      "statusMeta": {
+        "rank": 1,
+        "color": "#0f8a55",
+        "trust": "작성자 승인"
+      },
+      "confidence": 0.95,
+      "provCount": 1,
+      "provenance": [
+        {
+          "docId": "APPR-2025-1014",
+          "label": "2025년 4분기 노후설비 정비 내역 보고",
+          "kind": "전자결재",
+          "date": "2025-10-14",
+          "span": null,
+          "text": "분류 근거: 설계내역×1, 산출근거×3"
+        }
+      ],
+      "createdBy": "이지훈 과장",
+      "createdAt": "2025-10-14"
+    }
+  ]
+}
