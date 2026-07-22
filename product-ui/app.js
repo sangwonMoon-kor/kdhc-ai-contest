@@ -813,8 +813,16 @@ async function vWorkbench(main, id) {
   const nt = nextTodo(w);
   const cautions = bf && Array.isArray(bf.cautions) ? bf.cautions.slice(0, 2) : [];
   const showcaseSources = (w.sources || []).filter((source) => source && source.docId);
-  const showcaseDue = w.due ? fmtD(w.due) : (w.dueText || "확인 필요");
-  const showcaseOutput = w.draft ? `${w.title}(안) · ${w.doneWhen || "확인 필요"}` : "확인 필요";
+  const showcaseStage = bf && Array.isArray(bf.stages) ? bf.stages.find((stage) => stage && stage.id === w.stageId) : null;
+  const showcaseDue = w.due ? fmtD(w.due) : "확인 필요";
+  const savedDraftValue = (() => {
+    const draft = w.draft;
+    if (!draft || !draft.savedAt) return "";
+    if (typeof draft.freeText === "string" && draft.freeText.trim()) return draft.freeText.trim();
+    if (!draft.values || typeof draft.values !== "object") return "";
+    return Object.values(draft.values).find((value) => typeof value === "string" && value.trim()) || "";
+  })();
+  const showcaseOutput = savedDraftValue ? `저장 초안 ${savedDraftValue}` : (w.doneWhen ? `완료 조건 ${w.doneWhen}` : "확인 필요");
 
   main.innerHTML = `<div class="view" data-testid="workbench">
     <a class="wb-back" href="#work/list">← 내 업무</a>
@@ -834,10 +842,10 @@ async function vWorkbench(main, id) {
     <section class="card" data-testid="workbench-showcase">
       <div class="blk-k">업무 시연 요약</div>
       <div class="kv">
-        <span>언제 해야 하는가 <b>${esc(showcaseDue)}</b></span>
-        <span>무엇을 참고해야 하는가 <b>${showcaseSources.length ? showcaseSources.map((source) => evBtn({ docId: source.docId, label: source.docId })).join("") : "연결된 자료 없음"}</b></span>
-        <span>어떤 기준을 지켜야 하는가 <b>${cautions.length ? cautions.map((caution) => `${esc(caution.text)} ${(caution.evidence || []).slice(0, 1).map(evBtn).join("")}`).join(" · ") : "확인 필요"}</b></span>
-        <span>무엇을 만들어야 하는가 <b>${esc(showcaseOutput)}</b></span>
+        <span data-showcase="due">언제 해야 하는가 <b>${esc(showcaseDue)}</b></span>
+        <span data-showcase="sources">무엇을 참고해야 하는가 <b>${showcaseSources.length ? showcaseSources.map((source) => evBtn({ docId: source.docId, label: source.docId })).join("") : "연결된 자료 없음"}</b></span>
+        <span data-showcase="criterion">어떤 기준을 지켜야 하는가 <b>${showcaseStage && showcaseStage.desc ? `${esc(showcaseStage.name || showcaseStage.id)} · ${esc(showcaseStage.desc)} ${evBtn({ docId: `okf:${showcaseStage.id}`, label: showcaseStage.name || showcaseStage.id })}` : "확인 필요"}</b></span>
+        <span data-showcase="output">무엇을 만들어야 하는가 <b>${esc(showcaseOutput)}</b></span>
       </div>
     </section>
 
@@ -887,7 +895,7 @@ async function vWorkbench(main, id) {
     <section class="card wb-output">
       <div class="blk-k">만들어야 할 결과물</div>
       <div class="kv" style="margin-bottom:10px">
-        <span>산출물 <b>${esc(w.title)}(안)</b></span>
+        <span>산출물 <b>${esc(showcaseOutput)}</b></span>
         <span>임시 저장 <b>${w.draft && w.draft.savedAt ? fmtTs(w.draft.savedAt) : "없음"}</b></span>
       </div>
       <button class="btn" id="goDraft">기안 ${w.draft && w.draft.savedAt ? "이어서 쓰기" : "시작"}</button>

@@ -138,6 +138,22 @@ async function run() {
     browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
     const errors = [];
     const apiRequests = [];
+    const missingWork = {
+      id: "w-showcase-missing-data",
+      title: "임의 제목은 산출물이 아님",
+      instruction: "누락값 표시 검증",
+      requester: "검증",
+      due: null,
+      dueText: "임의 기한 메모",
+      stageId: "unlinked-stage",
+      stageName: "",
+      doneWhen: "",
+      repeat: false,
+      todos: [],
+      records: [],
+      sources: [],
+      draft: { savedAt: null, values: null }
+    };
     const desktop = await browser.newContext({
       viewport: { width: 1920, height: 1080 }, colorScheme: "light", reducedMotion: "reduce", locale: "ko-KR", timezoneId: "Asia/Seoul"
     });
@@ -149,6 +165,9 @@ async function run() {
       localStorage.removeItem("jikmu.workbench.v1");
       localStorage.removeItem("jikmu.ui.v1");
     });
+    await page.addInitScript((work) => {
+      localStorage.setItem("jikmu.workbench.v1", JSON.stringify({ v: 1, works: [work], selectedWorkId: work.id }));
+    }, missingWork);
     await page.reload({ waitUntil: "networkidle" });
     await page.waitForSelector('[data-testid="home-omni"]');
 
@@ -162,6 +181,22 @@ async function run() {
     const workId = workIdFromHash(page, "workbench");
     if (!(await page.textContent("main")).includes("순환수 펌프")) throw new Error("pump deadline did not open its workbench");
 
+    const seededWork = await page.evaluate((id) => {
+      const state = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      return state.works.find((work) => work.id === id);
+    }, workId);
+    assert.deepEqual({
+      due: seededWork.due,
+      sources: seededWork.sources.map((source) => source.docId),
+      doneWhen: seededWork.doneWhen,
+      draft: seededWork.draft
+    }, {
+      due: "2026-04-09",
+      sources: ["APPR-2024-0408", "APPR-2025-0409"],
+      doneWhen: "결재 상신",
+      draft: { savedAt: null, values: null }
+    }, "pump showcase seed values changed");
+
     const showcase = page.locator('[data-testid="workbench-showcase"]');
     await showcase.waitFor();
     const showcaseText = (await showcase.innerText()).trim();
@@ -172,10 +207,34 @@ async function run() {
     for (const documentId of ["APPR-2024-0408", "APPR-2025-0409"]) {
       assert(showcaseText.includes(documentId), `workbench showcase missed linked document: ${documentId}`);
     }
-    assert(showcaseText.includes("내역서 행별 근거 원칙"), "workbench showcase missed the briefing/OKF constraint");
-    assert(showcaseText.includes("2026년 순환수 펌프 정비공사 추진 보고(안)"), "workbench showcase missed the draft deliverable");
+    assert(showcaseText.includes("설계·내역 작성"), "workbench showcase missed the selected briefing stage criterion");
+    assert(showcaseText.includes("완료 조건 결재 상신"), "workbench showcase did not truthfully use the completion condition");
+    assert.equal(showcaseText.includes("2026년 순환수 펌프 정비공사 추진 보고(안)"), false, "workbench showcase synthesized a deliverable from an empty draft");
     assert(showcaseText.includes("결재 상신"), "workbench showcase missed the done-when condition");
-    assert.equal(await showcase.locator('[data-ev="okf:basis-per-cost-line"]').count(), 1, "workbench showcase missed an OKF evidence control");
+    assert.equal(await showcase.locator('[data-ev="okf:design-and-costing"]').count(), 1, "workbench showcase missed its selected-stage OKF evidence control");
+
+    await showcase.locator('[data-ev="APPR-2024-0408"]').click();
+    await page.waitForSelector("#drawer:not([hidden])");
+    await page.waitForFunction(() => !document.querySelector("#drawerBody")?.textContent.includes("불러오는 중"));
+    assert((await page.locator("#drawerBody").innerText()).includes("2024년 순환수 펌프 정비공사 추진 보고"), "summary document evidence drawer showed unexpected detail");
+    await page.click("#drawerClose");
+
+    await showcase.locator('[data-ev="okf:design-and-costing"]').click();
+    await page.waitForSelector("#drawer:not([hidden])");
+    await page.waitForFunction(() => !document.querySelector("#drawerBody")?.textContent.includes("불러오는 중"));
+    assert((await page.locator("#drawerBody").innerText()).includes("설계·내역 작성"), "summary criterion evidence drawer showed unexpected detail");
+    await page.click("#drawerClose");
+
+    await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, missingWork.id);
+    await page.waitForSelector('[data-testid="workbench-showcase"]');
+    const missingShowcase = page.locator('[data-testid="workbench-showcase"]');
+    assert((await missingShowcase.locator('[data-showcase="due"]').innerText()).includes("확인 필요"), "missing due used an arbitrary dueText value");
+    assert((await missingShowcase.locator('[data-showcase="sources"]').innerText()).includes("연결된 자료 없음"), "missing sources were synthesized");
+    assert((await missingShowcase.locator('[data-showcase="criterion"]').innerText()).includes("확인 필요"), "unlinked stage used global criteria");
+    assert((await missingShowcase.locator('[data-showcase="output"]').innerText()).includes("확인 필요"), "empty draft or title synthesized an output");
+
+    await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, workId);
+    await page.waitForSelector('[data-testid="workbench"]');
 
     await page.fill("#wbIn", "업체 서류는 1월 8일까지 받기로 함");
     await page.locator("#wbOmni").evaluate((form) => form.requestSubmit());
