@@ -151,13 +151,50 @@ async function run() {
     });
     await page.reload({ waitUntil: "networkidle" });
     await page.waitForSelector('[data-testid="home-omni"]');
-    await page.fill("#omniIn", "팀장님이 다음 주까지 펌프 정비계획 올리래");
-    await page.locator('[data-testid="home-omni"]').evaluate((form) => form.requestSubmit());
+
+    for (let index = 0; index < 7; index += 1) {
+      await page.click("#homeCalNext");
+    }
+    const pumpDeadline = page.locator('[data-calendar-kind="deadline"]').filter({ hasText: "순환수 펌프" });
+    await pumpDeadline.click();
     await page.waitForFunction(() => location.hash.startsWith("#workbench/"));
     await page.waitForSelector('[data-testid="workbench"]');
     const workId = workIdFromHash(page, "workbench");
-    if (!(await page.textContent("main")).includes("순환수 펌프")) throw new Error("pump workbench did not open");
+    if (!(await page.textContent("main")).includes("순환수 펌프")) throw new Error("pump deadline did not open its workbench");
 
+    await page.fill("#wbIn", "업체 서류는 1월 8일까지 받기로 함");
+    await page.locator("#wbOmni").evaluate((form) => form.requestSubmit());
+    await page.waitForFunction(() => document.querySelector("main")?.textContent.includes("업체 서류는 1월 8일까지 받기로 함"));
+    assertRouteWorkId(page, "workbench", workId);
+
+    await page.evaluate(() => { location.hash = "#home"; });
+    await page.waitForSelector('[data-testid="home-omni"]');
+    for (let index = 0; index < 7; index += 1) {
+      await page.click("#homeCalPrev");
+    }
+    const datedCandidate = page.locator('[data-calendar-kind="candidate"]').filter({ hasText: "업체 서류는 1월 8일까지 받기로 함" });
+    await datedCandidate.waitFor();
+    assert.equal(await datedCandidate.getAttribute("data-event-start"), "2026-01-08", "explicit memo date did not create its schedule candidate");
+    assert.equal(await datedCandidate.getAttribute("data-event-end"), "2026-01-08", "explicit memo candidate changed its single day");
+    await datedCandidate.click();
+    await page.waitForFunction(() => !Array.from(document.querySelectorAll('[data-calendar-kind="candidate"]')).some((item) => item.textContent.includes("업체 서류는 1월 8일까지 받기로 함")));
+    const confirmedMemo = page.locator('[data-calendar-kind="memo"]').filter({ hasText: "업체 서류는 1월 8일까지 받기로 함" });
+    await confirmedMemo.waitFor();
+    assert((await page.locator("#homeFeedback").innerText()).includes("일정을 확정했습니다."), "candidate confirmation did not show Korean inline feedback");
+    await page.click("#homeUndo");
+    await datedCandidate.waitFor();
+
+    await page.fill("#omniIn", "팀장님이 다음 주까지 계약 보증서 현황 올리래");
+    await page.locator('[data-testid="home-omni"]').evaluate((form) => form.requestSubmit());
+    await page.waitForFunction(() => document.querySelector("#homeFeedback")?.textContent.includes("날짜 범위를 확인"));
+    assert.equal(new URL(page.url()).hash, "#home", "new range instruction left home");
+    const rangeCandidate = page.locator('[data-calendar-kind="candidate"]').filter({ hasText: "팀장님이 다음 주까지 계약 보증서 현황 올리래" });
+    await rangeCandidate.waitFor();
+    assert.equal(await rangeCandidate.getAttribute("data-event-start"), "2026-01-04", "range candidate start changed");
+    assert.equal(await rangeCandidate.getAttribute("data-event-end"), "2026-01-10", "range candidate end changed");
+
+    await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, workId);
+    await page.waitForSelector('[data-testid="workbench"]');
     await page.fill("#wbIn", "운영부 일정은 5월 둘째 주로 확정");
     await page.locator("#wbOmni").evaluate((form) => form.requestSubmit());
     await page.waitForFunction(() => document.querySelector("main")?.textContent.includes("운영부 일정은 5월 둘째 주로 확정"));

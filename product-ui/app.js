@@ -167,8 +167,14 @@ function undoLast() {
   if (!lastAction) return;
   const a = lastAction; lastAction = null; lastActionMessage = "";
   const w = getWork(a.workId);
-  if (a.type === "addRecord" && w) w.records = w.records.filter((r) => r.id !== a.recId);
-  if (a.type === "addTodo" && w) w.todos = w.todos.filter((t) => t.id !== a.todoId);
+  if (a.type === "addRecord" && w) {
+    w.records = w.records.filter((r) => r.id !== a.recId);
+    if (a.candidateId) w.scheduleCandidates = (w.scheduleCandidates || []).filter((c) => c.id !== a.candidateId);
+  }
+  if (a.type === "addTodo" && w) {
+    w.todos = w.todos.filter((t) => t.id !== a.todoId);
+    if (a.candidateId) w.scheduleCandidates = (w.scheduleCandidates || []).filter((c) => c.id !== a.candidateId);
+  }
   if (a.type === "toggleTodo" && w) { const t = w.todos.find((x) => x.id === a.todoId); if (t) t.done = a.prev; }
   if (a.type === "promoteTodo" && w) { const t = w.todos.find((x) => x.id === a.todoId); if (t) t.candidate = true; }
   if (a.type === "createWork") S.works = S.works.filter((x) => x.id !== a.workId);
@@ -545,11 +551,14 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
     if (target) {
       S.selectedWorkId = target.id; saveState();
       const rec = { id: uid("r"), ts: Date.now(), kind: "note", text: "지시 연결: " + t };
-      target.records.push(rec); saveState();
-      setAction({ type: "addRecord", workId: target.id, recId: rec.id }, `${target.title}에 지시를 연결했습니다.`);
+      target.records.push(rec);
+      const candidate = addScheduleCandidate(target, t, sim);
+      saveState();
+      setAction({ type: "addRecord", workId: target.id, recId: rec.id, candidateId: candidate && candidate.id }, candidate ? `${target.title}에 지시와 일정 후보를 연결했습니다.` : `${target.title}에 지시를 연결했습니다.`);
       return nav("#workbench/" + target.id);
     }
-    return createWorkFrom(t, extractDueText(t));
+    const candidate = parseScheduleCandidate(t, sim);
+    return createWorkFrom(t, extractDueText(t), candidate && candidate.kind === "range" ? candidate : null);
   }
 
   if (c.intent === "record" || c.intent === "todo") return applyRecordOrTodo(t, c.intent, fixedWork, target, sim);
@@ -573,9 +582,12 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
     });
   }
 }
-function addScheduleCandidate(work, text, sim) {
+function parseScheduleCandidate(text, sim) {
   if (!window.JikmuHomeModel || typeof window.JikmuHomeModel.parseScheduleCandidate !== "function") return null;
-  const parsed = window.JikmuHomeModel.parseScheduleCandidate(text, sim);
+  return window.JikmuHomeModel.parseScheduleCandidate(text, sim);
+}
+function addScheduleCandidate(work, text, sim) {
+  const parsed = parseScheduleCandidate(text, sim);
   if (!parsed) return null;
   const candidate = Object.assign({ id: uid("sc") }, parsed);
   if (!Array.isArray(work.scheduleCandidates)) work.scheduleCandidates = [];
@@ -588,13 +600,15 @@ function applyRecordOrTodo(t, kind, fixedWork, target, sim) {
     if (kind === "record") {
       const rec = { id: uid("r"), ts: Date.now(), kind: "decision", text: t };
       w.records.push(rec);
-      addScheduleCandidate(w, t, sim);
+      const candidate = addScheduleCandidate(w, t, sim);
       saveState();
-      setAction({ type: "addRecord", workId: w.id, recId: rec.id }, `${w.title}에 결정 기록을 추가했습니다.`);
+      setAction({ type: "addRecord", workId: w.id, recId: rec.id, candidateId: candidate && candidate.id }, candidate ? `${w.title}에 결정 기록과 일정 후보를 추가했습니다.` : `${w.title}에 결정 기록을 추가했습니다.`);
     } else {
       const td = { id: uid("t"), text: t, done: false, candidate: true, evidence: [] };
-      w.todos.push(td); saveState();
-      setAction({ type: "addTodo", workId: w.id, todoId: td.id }, `${w.title}의 할 일 후보로 추가했습니다(반영 전).`);
+      w.todos.push(td);
+      const candidate = addScheduleCandidate(w, t, sim);
+      saveState();
+      setAction({ type: "addTodo", workId: w.id, todoId: td.id, candidateId: candidate && candidate.id }, candidate ? `${w.title}의 할 일과 일정 후보로 추가했습니다.` : `${w.title}의 할 일 후보로 추가했습니다(반영 전).`);
     }
     route();
   };
@@ -625,7 +639,7 @@ function confirmScheduleCandidate(workId, candidateId) {
 function confirmTarget(t, c, resultBox, sim) {
   chooseWork("어느 업무의 기안인가요?", (w) => { if (w) { S.selectedWorkId = w.id; saveState(); nav("#draft/" + w.id); } }, false);
 }
-function createWorkFrom(t, dueText) {
+function createWorkFrom(t, dueText, rangeCandidate) {
   const w = {
     id: uid("w-new-"), seedKey: null,
     title: t.length > 38 ? t.slice(0, 38) + "…" : t,
@@ -634,7 +648,12 @@ function createWorkFrom(t, dueText) {
     todos: [{ id: uid("t"), text: "기한·완료 조건 확인", done: false, candidate: false, evidence: [] }],
     records: [], sources: [], draft: { savedAt: null, values: null },
   };
+  if (rangeCandidate) w.scheduleCandidates = [Object.assign({ id: uid("sc") }, rangeCandidate)];
   S.works.unshift(w); S.selectedWorkId = w.id; saveState();
+  if (rangeCandidate) {
+    setAction({ type: "createWork", workId: w.id }, "새 업무를 만들고 일정 후보로 남겼습니다. 날짜 범위를 확인한 뒤 확정해 주세요.");
+    return route();
+  }
   setAction({ type: "createWork", workId: w.id }, `새 업무로 만들었습니다 — 기한은 ‘${dueText || "기한 미정"}’으로 표시합니다.`);
   nav("#workbench/" + w.id);
 }

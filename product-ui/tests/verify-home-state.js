@@ -87,6 +87,9 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
     { id: undefined, kind: "date", label: "2026-02-03 운영부 일정 확정", startISO: "2026-02-03", endISO: "2026-02-03", confirmed: false },
     "a dated record stores a schedule candidate only after it is linked to work"
   );
+  homeState.undoLast();
+  assert.deepStrictEqual(plain(homeState.getState().works[0].records), [], "undo removes the linked dated record");
+  assert.deepStrictEqual(plain(homeState.getState().works[0].scheduleCandidates), [], "undo removes the linked schedule candidate");
 }
 
 {
