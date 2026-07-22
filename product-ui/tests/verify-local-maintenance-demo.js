@@ -112,6 +112,7 @@ async function run() {
     await page.fill("#omniIn", "올해 정기점검보수 기본계획을 어떻게 수립해야 해?");
     await page.locator('[data-testid="home-omni"]').evaluate((form) => form.requestSubmit());
     await page.waitForSelector('#homeResult [data-testid="grounded-answer"] .badge.grounded');
+    assert.equal(new URL(page.url()).hash, "#home", "maintenance question unexpectedly left the local question flow");
 
     const answerText = (await page.locator("#homeResult").innerText()).trim();
     for (const expected of ["작업 항목", "예산", "과거 기록", "관련 부서", "자료관리"]) {

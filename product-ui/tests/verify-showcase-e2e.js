@@ -162,6 +162,21 @@ async function run() {
     const workId = workIdFromHash(page, "workbench");
     if (!(await page.textContent("main")).includes("순환수 펌프")) throw new Error("pump deadline did not open its workbench");
 
+    const showcase = page.locator('[data-testid="workbench-showcase"]');
+    await showcase.waitFor();
+    const showcaseText = (await showcase.innerText()).trim();
+    for (const label of ["언제 해야 하는가", "무엇을 참고해야 하는가", "어떤 기준을 지켜야 하는가", "무엇을 만들어야 하는가"]) {
+      assert(showcaseText.includes(label), `workbench showcase missed: ${label}`);
+    }
+    assert(showcaseText.includes("2026.04.09"), "workbench showcase did not use the forecast due date");
+    for (const documentId of ["APPR-2024-0408", "APPR-2025-0409"]) {
+      assert(showcaseText.includes(documentId), `workbench showcase missed linked document: ${documentId}`);
+    }
+    assert(showcaseText.includes("내역서 행별 근거 원칙"), "workbench showcase missed the briefing/OKF constraint");
+    assert(showcaseText.includes("2026년 순환수 펌프 정비공사 추진 보고(안)"), "workbench showcase missed the draft deliverable");
+    assert(showcaseText.includes("결재 상신"), "workbench showcase missed the done-when condition");
+    assert.equal(await showcase.locator('[data-ev="okf:basis-per-cost-line"]').count(), 1, "workbench showcase missed an OKF evidence control");
+
     await page.fill("#wbIn", "업체 서류는 1월 8일까지 받기로 함");
     await page.locator("#wbOmni").evaluate((form) => form.requestSubmit());
     await page.waitForFunction(() => document.querySelector("main")?.textContent.includes("업체 서류는 1월 8일까지 받기로 함"));
