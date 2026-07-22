@@ -190,20 +190,24 @@ function undoLast() {
 function retarget(a) {
   if (!a || (a.type !== "addRecord" && a.type !== "addTodo")) return;
   const old = getWork(a.workId);
-  let payload = null;
-  let candidate = null;
-  if (old) {
-    if (a.type === "addRecord") { payload = old.records.find((r) => r.id === a.recId); old.records = old.records.filter((r) => r.id !== a.recId); }
-    else { payload = old.todos.find((t) => t.id === a.todoId); old.todos = old.todos.filter((t) => t.id !== a.todoId); }
-    if (a.candidateId) {
-      candidate = (old.scheduleCandidates || []).find((c) => c.id === a.candidateId) || null;
-      old.scheduleCandidates = (old.scheduleCandidates || []).filter((c) => c.id !== a.candidateId);
-    }
-  }
+  const payload = old && (a.type === "addRecord"
+    ? old.records.find((r) => r.id === a.recId)
+    : old.todos.find((t) => t.id === a.todoId));
   if (!payload) return;
-  hideToast();
   chooseWork(`‘${payload.text.slice(0, 24)}…’을(를) 어느 업무로 옮길까요?`, (w) => {
-    if (a.type === "addRecord") w.records.push(payload); else w.todos.push(payload);
+    const source = getWork(a.workId);
+    const moved = source && (a.type === "addRecord"
+      ? source.records.find((r) => r.id === a.recId)
+      : source.todos.find((t) => t.id === a.todoId));
+    if (!moved) return;
+    const candidate = a.candidateId
+      ? (source.scheduleCandidates || []).find((c) => c.id === a.candidateId) || null
+      : null;
+    if (a.type === "addRecord") source.records = source.records.filter((r) => r.id !== a.recId);
+    else source.todos = source.todos.filter((t) => t.id !== a.todoId);
+    if (candidate) source.scheduleCandidates = source.scheduleCandidates.filter((c) => c.id !== a.candidateId);
+    hideToast();
+    if (a.type === "addRecord") w.records.push(moved); else w.todos.push(moved);
     if (candidate) {
       if (!Array.isArray(w.scheduleCandidates)) w.scheduleCandidates = [];
       w.scheduleCandidates.push(candidate);

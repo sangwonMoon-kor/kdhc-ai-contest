@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, "..");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8")
   .replace(/\nboot\(\);\s*$/, "")
   + "\nroute = function () {}; toast = function () {}; hideToast = function () {};"
-  + "\nmodule.exports = { blankState, validWork, normalizeWork, loadState, seedFromForecast, applyRecordOrTodo, retarget, confirmScheduleCandidate, undoLast, setChooseWork: (next) => { chooseWork = next; }, getState: () => S, setState: (state) => { S = state; } };";
+  + "\nmodule.exports = { blankState, validWork, normalizeWork, loadState, seedFromForecast, applyRecordOrTodo, retarget, confirmScheduleCandidate, undoLast, setChooseWork: (next) => { chooseWork = next; }, getLastAction: () => lastAction, getState: () => S, setState: (state) => { S = state; } };";
 
 function loadHomeState(storedState) {
   const values = new Map();
@@ -162,6 +162,22 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
   assert.deepStrictEqual(plain(newWork.records), [], "retarget undo removes the moved record from the new work");
   assert.deepStrictEqual(plain(newWork.scheduleCandidates), [], "retarget undo removes the moved candidate from the new work");
   assert.deepStrictEqual(plain(oldWork.scheduleCandidates), [], "retarget undo does not leave the candidate on the old work");
+}
+
+{
+  const oldWork = legacyWork({ id: "old-work" });
+  const newWork = legacyWork({ id: "new-work", title: "새 업무" });
+  const homeState = loadHomeState();
+  homeState.setState({ v: 1, works: [oldWork, newWork], selectedWorkId: oldWork.id });
+  homeState.applyRecordOrTodo("2026-02-03 운영부 일정 확정", "record", oldWork, null, "2026-01-02");
+  const stateBeforeCancel = plain(homeState.getState());
+  const actionBeforeCancel = plain(homeState.getLastAction());
+  let pickerCallback = null;
+  homeState.setChooseWork((_title, onPick) => { pickerCallback = onPick; });
+  homeState.retarget(actionBeforeCancel);
+  assert.equal(typeof pickerCallback, "function", "retarget opens a picker before it changes work ownership");
+  assert.deepStrictEqual(plain(homeState.getState()), stateBeforeCancel, "cancelling the retarget picker keeps the original record and candidate");
+  assert.deepStrictEqual(plain(homeState.getLastAction()), actionBeforeCancel, "cancelling the retarget picker keeps the original undo action");
 }
 
 console.log("Home state contract passed");
