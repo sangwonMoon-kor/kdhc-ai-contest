@@ -132,11 +132,24 @@ async function run() {
     assert.equal(await page.locator("#omniIn").getAttribute("placeholder"), "지금 어떤 생각을 하시나요?", "home placeholder changed");
     const attachment = page.locator("#homeAttachment");
     await attachment.setInputFiles({ name: "정비 점검표.pdf", mimeType: "application/pdf", buffer: Buffer.from("fixture") });
-    assert((await page.locator("#homeFeedback").innerText()).includes("첨부 파일 선택: ‘정비 점검표.pdf’"), "selected attachment feedback is missing");
+    const selectedFileFeedback = await page.locator("#homeFeedback").innerText();
+    assert(selectedFileFeedback.includes("정비 점검표.pdf") && selectedFileFeedback.includes("로컬 시연에서는 첨부 파일을 처리하지 않습니다"), "selected attachment feedback is not truthful");
+    assert.equal(await page.getByRole("button", { name: "첨부 파일 선택 해제" }).count(), 1, "attachment clear control is missing");
     await page.locator("#omni").evaluate(function (form) { form.requestSubmit(); });
     const fileOnlyFeedback = await page.locator("#homeFeedback").innerText();
-    assert(fileOnlyFeedback.includes("로컬 시연") && fileOnlyFeedback.includes("지시를 함께 입력"), "file-only submit guidance is not truthful or actionable");
+    assert(fileOnlyFeedback.includes("로컬 시연에서는 첨부 파일을 처리하지 않습니다") && fileOnlyFeedback.includes("선택 해제"), "file-only submit was not explicitly rejected");
     assert.equal(await attachment.evaluate(function (input) { return input.files[0] && input.files[0].name; }), "정비 점검표.pdf", "selected filename was not retained for submit");
+    await page.locator("#omniIn").fill("이번 주 내가 해야 할 일");
+    await page.locator("#omni").evaluate(function (form) { form.requestSubmit(); });
+    assert.equal(new URL(page.url()).hash, "#home", "text-plus-file submit reached normal input handling");
+    assert((await page.locator("#homeFeedback").innerText()).includes("선택 해제"), "text-plus-file rejection does not explain how to continue");
+    await page.getByRole("button", { name: "첨부 파일 선택 해제" }).click();
+    assert.equal(await attachment.evaluate(function (input) { return input.files.length; }), 0, "attachment clear did not remove the selected file");
+    assert.equal(await page.getByRole("button", { name: "첨부 파일 선택 해제" }).count(), 0, "attachment clear control remained after clearing");
+    await page.locator("#omni").evaluate(function (form) { form.requestSubmit(); });
+    await page.waitForFunction(function () { return location.hash === "#work/list"; });
+    assert.equal(new URL(page.url()).hash, "#work/list", "normal text submission did not resume after attachment clear");
+    await goHome(page);
     assert.equal(await page.getByRole("heading", { name: "내 업무 일정" }).count(), 1, "calendar heading missing");
     assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home calendar must render exactly 14 dates");
     assert.equal(await page.locator("[data-calendar-date]").first().getAttribute("data-calendar-date"), "2025-12-28", "calendar does not start from summary.simDate week");
@@ -148,7 +161,9 @@ async function run() {
     assert.equal(await candidate.count(), 1, "schedule candidate chip missing");
     assert((await candidate.innerText()).includes("후보"), "candidate does not expose the visible Korean candidate label");
     assert((await candidate.innerText()).includes("미확인"), "candidate does not expose visible status text");
-    assert((await candidate.getAttribute("aria-label")).includes("일정 후보 미확인"), "candidate status is missing from its accessible name");
+    const candidateAriaLabel = await candidate.getAttribute("aria-label");
+    assert(candidateAriaLabel.includes("일정 후보 미확인"), "candidate status is missing from its accessible name");
+    assert(candidateAriaLabel.includes("2026.01.04") && candidateAriaLabel.includes("2026.01.10"), "candidate range accessible name omits one of its dates");
     await candidate.click();
     await page.waitForFunction(function () { return !document.querySelector('[data-calendar-kind="candidate"]'); });
     const confirmationFeedback = await page.locator("#homeFeedback").innerText();
@@ -156,6 +171,8 @@ async function run() {
     assert.equal(confirmationFeedback.includes("schedule confirmed"), false, "English schedule confirmation feedback remains");
     const confirmedRange = page.locator('[data-calendar-kind="memo"][data-event-start="2026-01-04"][data-event-end="2026-01-10"]');
     assert.equal(await confirmedRange.count(), 1, "confirmed range collapsed instead of retaining both dates");
+    const confirmedRangeAriaLabel = await confirmedRange.getAttribute("aria-label");
+    assert(confirmedRangeAriaLabel.includes("2026.01.04") && confirmedRangeAriaLabel.includes("2026.01.10"), "confirmed memo range accessible name omits one of its dates");
 
     const deadline = page.locator(`[data-calendar-kind="deadline"][data-work-id="${forecastWorkId}"]`);
     assert.equal(await deadline.count(), 1, "forecast deadline event missing");

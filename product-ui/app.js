@@ -357,20 +357,22 @@ async function vHome(main) {
   $("#homeAttachBtn").onclick = () => homeAttachment.click();
   homeAttachment.onchange = () => {
     homeAttachmentFile = homeAttachment.files && homeAttachment.files[0] ? homeAttachment.files[0] : null;
-    homeAttachmentMessage = homeAttachmentFile ? `첨부 파일 선택: ‘${homeAttachmentFile.name}’. 처리할 지시를 함께 입력해 주세요.` : "";
+    homeAttachmentMessage = homeAttachmentFile
+      ? `첨부 파일 ‘${homeAttachmentFile.name}’을 선택했습니다. 로컬 시연에서는 첨부 파일을 처리하지 않습니다. 계속하려면 선택 해제를 눌러 주세요.`
+      : "";
     refreshHomeFeedback();
   };
   $("#omni").onsubmit = (e) => {
     e.preventDefault();
     const text = $("#omniIn").value;
-    if (!String(text || "").trim() && homeAttachmentFile) {
-      homeAttachmentMessage = `첨부 파일 ‘${homeAttachmentFile.name}’을 선택했습니다. 로컬 시연에서는 첨부 파일만 처리하지 않습니다. 처리할 지시를 함께 입력해 주세요.`;
+    if (homeAttachmentFile) {
+      homeAttachmentMessage = `로컬 시연에서는 첨부 파일을 처리하지 않습니다. ‘${homeAttachmentFile.name}’ 선택 해제 후 텍스트 지시를 보내 주세요.`;
       refreshHomeFeedback();
       return;
     }
     handleOmni(text, null, $("#homeResult"), sim);
   };
-  const undo = $("#homeUndo"); if (undo) undo.onclick = undoLast;
+  bindHomeFeedbackActions();
   $("#homeCalPrev").onclick = () => { homeCalendarOffsetWeeks -= 2; route(); };
   $("#homeCalNext").onclick = () => { homeCalendarOffsetWeeks += 2; route(); };
   $$("[data-calendar-kind]", main).forEach((eventButton) => {
@@ -422,6 +424,14 @@ function homeRangeLabel(window2) {
 }
 
 function renderHomeFeedback() {
+  if (homeAttachmentFile && homeAttachmentMessage) {
+    return `<div class="home-feedback" id="homeFeedback" role="status" aria-live="polite">
+      <span class="home-feedback-attachment" aria-hidden="true">${homeIcon("attach")}</span>
+      <span>${esc(homeAttachmentMessage)}</span>
+      <span class="home-feedback-divider" aria-hidden="true"></span>
+      <button id="homeAttachmentClear" type="button" aria-label="첨부 파일 선택 해제">선택 해제</button>
+    </div>`;
+  }
   if (lastAction && lastActionMessage) {
     return `<div class="home-feedback" id="homeFeedback" role="status" aria-live="polite">
       <span class="home-feedback-check" aria-hidden="true">✓</span>
@@ -430,20 +440,27 @@ function renderHomeFeedback() {
       <button id="homeUndo" type="button">되돌리기</button>
     </div>`;
   }
-  if (homeAttachmentMessage) {
-    return `<div class="home-feedback" id="homeFeedback" role="status" aria-live="polite">
-      <span class="home-feedback-attachment" aria-hidden="true">${homeIcon("attach")}</span>
-      <span>${esc(homeAttachmentMessage)}</span>
-    </div>`;
-  }
   return `<div class="home-feedback is-empty" id="homeFeedback" role="status" aria-live="polite">입력 결과를 확인하고 필요하면 되돌릴 수 있습니다.</div>`;
+}
+
+function clearHomeAttachment() {
+  homeAttachmentFile = null;
+  homeAttachmentMessage = "";
+  const input = $("#homeAttachment");
+  if (input) input.value = "";
+  refreshHomeFeedback();
+}
+
+function bindHomeFeedbackActions() {
+  const undo = $("#homeUndo"); if (undo) undo.onclick = undoLast;
+  const clear = $("#homeAttachmentClear"); if (clear) clear.onclick = clearHomeAttachment;
 }
 
 function refreshHomeFeedback() {
   const feedback = $("#homeFeedback");
   if (!feedback) return;
   feedback.outerHTML = renderHomeFeedback();
-  const undo = $("#homeUndo"); if (undo) undo.onclick = undoLast;
+  bindHomeFeedbackActions();
 }
 
 function homeEventClass(event2) {
@@ -452,10 +469,16 @@ function homeEventClass(event2) {
   return work && work.calendarCategory === "construction" ? " is-construction" : " is-service";
 }
 
+function homeEventDateLabel(event2) {
+  return event2.startISO === event2.endISO
+    ? fmtD(event2.startISO)
+    : `${fmtD(event2.startISO)}부터 ${fmtD(event2.endISO)}까지`;
+}
+
 function homeEventLabel(event2) {
   if (event2.kind === "deadline") return `${event2.label} 마감, ${fmtD(event2.startISO)}, 업무 작업대 열기`;
-  if (event2.kind === "memo") return `확인된 메모, ${event2.label}, ${fmtD(event2.startISO)}, 업무 작업대 열기`;
-  if (event2.kind === "candidate") return `일정 후보 미확인, ${event2.label}, ${fmtD(event2.startISO)}, 눌러서 확인`;
+  if (event2.kind === "memo") return `확인된 메모, ${event2.label}, ${homeEventDateLabel(event2)}, 업무 작업대 열기`;
+  if (event2.kind === "candidate") return `일정 후보 미확인, ${event2.label}, ${homeEventDateLabel(event2)}, 눌러서 확인`;
   return `${event2.label}, ${fmtD(event2.startISO)}부터 ${fmtD(event2.endISO)}까지, 업무 작업대 열기`;
 }
 
