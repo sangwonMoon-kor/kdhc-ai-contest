@@ -20,9 +20,15 @@ if (!failures.length) {
   for (const route of ["#home", "#work/list", "#work/calendar", "#workbench/", "#draft/"]) {
     if (!app.includes(route)) failures.push(`missing route ${route}`);
   }
-  if (!/function typeIntro\(/.test(app)) failures.push("home type intro missing");
+  if (/function typeIntro\(/.test(app)) failures.push("legacy home typing intro remains");
+  if (!app.includes("window.JikmuHomeModel.buildTwoWeekWindow")) failures.push("home does not build its 14-day model window");
+  if (!app.includes("window.JikmuHomeModel.buildCalendarEvents")) failures.push("home does not render model calendar events");
+  if (!app.includes('classList.toggle("is-home"')) failures.push("home route body class contract missing");
   if (!style.includes("시각 정본: kdhc-ai-contest demo/app.html v4")) failures.push("approved UI provenance missing");
-  if (!/main\{width:min\(830px,/.test(style)) failures.push("approved 830px reading width missing");
+  if (!style.includes("main.home-main")) failures.push("home main layout scope missing");
+  if (!style.includes("body.is-home")) failures.push("home body layout scope missing");
+  if (!style.includes("@media (hover:hover) and (pointer:fine)")) failures.push("fine-pointer hover gate missing");
+  if (!style.includes("prefers-reduced-motion:reduce")) failures.push("reduced motion contract missing");
   if (!style.includes('[data-theme="dark"]')) failures.push("dark mode token set missing");
   if (baseline.repository !== "creationy/jikmu-memory") failures.push("wrong baseline repository");
   if (baseline.commit !== "13e232e") failures.push("wrong baseline commit");

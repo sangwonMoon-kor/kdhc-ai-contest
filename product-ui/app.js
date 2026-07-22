@@ -53,6 +53,8 @@ async function loadBriefing() { if (!cache.briefing) cache.briefing = await api(
 let S = null;              // {v, works[], selectedWorkId}
 let UI = null;             // {calYM, listFilter}
 let lastAction = null;     // 메모리 한정 undo (마지막 1건)
+let lastActionMessage = "";
+let homeCalendarOffsetWeeks = 0;
 let engineDown = false;
 
 function blankState() { return { v: 1, works: [], selectedWorkId: null }; }
@@ -156,10 +158,10 @@ function selectedWork() {
 }
 
 /* ---------- 행동(undo·대상 변경) ---------- */
-function setAction(a, msg) { lastAction = a; toast(msg, a); }
+function setAction(a, msg) { lastAction = a; lastActionMessage = msg; toast(msg, a); }
 function undoLast() {
   if (!lastAction) return;
-  const a = lastAction; lastAction = null;
+  const a = lastAction; lastAction = null; lastActionMessage = "";
   const w = getWork(a.workId);
   if (a.type === "addRecord" && w) w.records = w.records.filter((r) => r.id !== a.recId);
   if (a.type === "addTodo" && w) w.todos = w.todos.filter((t) => t.id !== a.todoId);
@@ -188,7 +190,8 @@ function retarget(a) {
   chooseWork(`‘${payload.text.slice(0, 24)}…’을(를) 어느 업무로 옮길까요?`, (w) => {
     if (a.type === "addRecord") w.records.push(payload); else w.todos.push(payload);
     lastAction = Object.assign({}, a, { workId: w.id });
-    saveState(); toast(`${w.title}(으)로 옮겼습니다.`, lastAction); route();
+    lastActionMessage = `${w.title}(으)로 옮겼습니다.`;
+    saveState(); toast(lastActionMessage, lastAction); route();
   });
 }
 
@@ -269,8 +272,11 @@ function parseHash() {
 function nav(hash) { if (location.hash === hash) route(); else location.hash = hash; }
 async function route() {
   const { v, a } = parseHash();
+  const isHome = v === "home";
   $$(".nav-caps a").forEach((el2) => el2.classList.toggle("on", el2.dataset.nav === (v === "home" ? "home" : v === "work" || v === "workbench" || v === "draft" ? "work" : "")));
   const main = $("#view");
+  document.body.classList.toggle("is-home", isHome);
+  main.classList.toggle("home-main", isHome);
   main.innerHTML = "";
   closeDrawer();
   try {
@@ -296,84 +302,164 @@ async function vHome(main) {
   engineDown = !sum;
   const fc = await loadForecast().catch(() => ({ items: [] }));
   if (sum) seedFromForecast(fc, sum.simDate);
-  const persona = sum && sum.persona ? sum.persona.name : "";
-  const sim = sum ? sum.simDate : null;
+  const sim = sum ? sum.simDate : fc && fc.simDate;
+  const homeModel = window.JikmuHomeModel;
+  if (!sim || !homeModel || typeof homeModel.buildTwoWeekWindow !== "function" || typeof homeModel.buildCalendarEvents !== "function") {
+    throw new Error("Home calendar model unavailable");
+  }
+  const calendarWindow = window.JikmuHomeModel.buildTwoWeekWindow(sim, homeCalendarOffsetWeeks);
+  const events = window.JikmuHomeModel.buildCalendarEvents(S.works, calendarWindow);
 
-  const EX = [
-    ["팀장님이 다음 주까지 펌프 정비계획 올리래", "업무 작업대"],
-    ["작년 펌프 정비 추진 보고 찾아줘", "근거 답변"],
-    ["운영부 일정은 5월 둘째 주로 확정", "진행 기록"],
-    ["이번 주 내가 해야 할 일", "내 업무"],
-    ["펌프 추진 보고 기안 작성해줘", "기안 집중 화면"],
-  ];
-  main.innerHTML = `<div class="view">
-    <div class="hero">
-      <h1 id="heroLine" aria-label="${esc(persona ? persona + "님, 오늘 할 일부터 챙겨드릴게요." : "무엇부터 할까요?")}"></h1>
-      <p class="tag">일한 만큼, 준비됩니다 — 지시·질문·메모를 그대로 적어 보세요.</p>
-      <form class="omni" id="omni" data-testid="home-omni">
-        <input id="omniIn" type="text" autocomplete="off" placeholder="예: 팀장님이 다음 주까지 펌프 정비계획 올리래" aria-label="만능 입력">
-        <button class="btn" type="submit">말하기</button>
-      </form>
-      <div class="examples">${EX.map((e, i) => `<button type="button" data-ex="${i}">${esc(e[0])}<span class="dest">→ ${esc(e[1])}</span></button>`).join("")}</div>
-      <a class="home-link" href="#work/list">내 업무 전체 보기 →</a>
+  main.innerHTML = `<div class="home-shell">
+    ${renderHomeRail()}
+    <div class="home-content">
+      <section class="home-compose" aria-label="생각 입력">
+        <form class="omni" id="omni" data-testid="home-omni">
+          <label class="sr-only" for="omniIn">생각 입력</label>
+          <input id="omniIn" type="text" autocomplete="off" placeholder="지금 어떤 생각을 하시나요?" aria-label="생각 입력">
+          <input id="homeAttachment" type="file" hidden>
+          <button class="home-attach" id="homeAttachBtn" type="button" aria-label="파일 첨부">${homeIcon("attach")}</button>
+          <button class="home-send" type="submit" aria-label="입력 보내기">${homeIcon("send")}<span>보내기</span></button>
+        </form>
+      </section>
+      ${renderHomeFeedback()}
+      <section class="home-calendar-panel" aria-labelledby="homeCalendarTitle">
+        <div class="home-calendar-toolbar">
+          <h1 id="homeCalendarTitle">내 업무 일정</h1>
+          <div class="home-calendar-range" aria-live="polite">${homeRangeLabel(calendarWindow)}</div>
+          <div class="home-calendar-controls">
+            <button id="homeCalPrev" type="button" aria-label="이전 2주 보기">${homeIcon("chevron-left")}</button>
+            <button id="homeCalNext" type="button" aria-label="다음 2주 보기">${homeIcon("chevron-right")}</button>
+          </div>
+          <a class="home-calendar-all" href="#work/calendar">전체 일정 ${homeIcon("chevron-right")}</a>
+        </div>
+        <div class="home-calendar-scroll" role="region" aria-label="2주 업무 달력" tabindex="0">
+          <div class="home-calendar-inner">
+            <div class="home-weekdays" aria-hidden="true">${["일", "월", "화", "수", "목", "금", "토"].map((day) => `<span>${day}</span>`).join("")}</div>
+            ${calendarWindow.weeks.map((week) => renderHomeCalendarWeek(week, events, sim)).join("")}
+          </div>
+        </div>
+        <div class="home-calendar-legend" aria-label="일정 범례">
+          <span><i class="legend-work"></i>공사·용역</span>
+          <span><i class="legend-memo"></i>내 메모</span>
+          <span><i class="legend-candidate"></i>확인 필요</span>
+        </div>
+      </section>
+      <div id="homeResult"></div>
     </div>
-    <div class="objects" id="homeObjects"></div>
-    <div id="homeResult"></div>
   </div>`;
 
-  typeIntro($("#heroLine"), persona ? `${persona}님, 오늘 할 일부터 챙겨드릴게요.` : "무엇부터 할까요?");
-  renderHomeObjects(fc, sim);
-  $$(".examples [data-ex]").forEach((b) => { b.onclick = () => { $("#omniIn").value = EX[+b.dataset.ex][0]; $("#omniIn").focus(); }; });
+  $("#homeAttachBtn").onclick = () => $("#homeAttachment").click();
   $("#omni").onsubmit = (e) => { e.preventDefault(); handleOmni($("#omniIn").value, null, $("#homeResult"), sim); };
+  const undo = $("#homeUndo"); if (undo) undo.onclick = undoLast;
+  $("#homeCalPrev").onclick = () => { homeCalendarOffsetWeeks -= 2; route(); };
+  $("#homeCalNext").onclick = () => { homeCalendarOffsetWeeks += 2; route(); };
+  $$("[data-calendar-kind]", main).forEach((eventButton) => {
+    eventButton.onclick = () => {
+      if (eventButton.dataset.calendarKind === "candidate") {
+        confirmScheduleCandidate(eventButton.dataset.workId, eventButton.dataset.eventId);
+      } else {
+        nav("#workbench/" + eventButton.dataset.workId);
+      }
+    };
+  });
 }
 
-function typeIntro(el2, text) {
-  if (!el2) return;
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduced) { el2.textContent = text; return; }
-  el2.innerHTML = `<span id="tt"></span><span class="caret" aria-hidden="true"></span>`;
-  const tt = $("#tt", el2); let i = 0;
-  (function tick() {
-    if (!document.body.contains(tt)) return;
-    tt.textContent = text.slice(0, ++i);
-    if (i < text.length) setTimeout(tick, 34);
-    else setTimeout(() => { const c = $(".caret", el2); if (c) c.remove(); }, 1200);
-  })();
+function homeIcon(name) {
+  const paths = {
+    home: '<rect x="6" y="4" width="12" height="16" rx="2"></rect><path d="M9 9h6M9 13h6"></path>',
+    folder: '<path d="M3.5 7.5h6l2-2h9v13h-17z"></path>',
+    calendar: '<rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16M8 14h.01M12 14h.01M16 14h.01"></path>',
+    bookmark: '<path d="M7 4.5h10v16l-5-3.5-5 3.5z"></path>',
+    attach: '<path d="M9.5 12.5l5.7-5.7a3.2 3.2 0 014.5 4.5l-8 8a5 5 0 01-7.1-7.1l8.4-8.4"></path>',
+    send: '<path d="M3 11.5L21 4l-7.5 18-2.2-7.3zM11.3 14.7L21 4"></path>',
+    "chevron-left": '<path d="M15 18l-6-6 6-6"></path>',
+    "chevron-right": '<path d="M9 18l6-6-6-6"></path>',
+  };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths[name] || ""}</svg>`;
 }
 
-function renderHomeObjects(fc, sim) {
-  const box = $("#homeObjects"); if (!box) return;
-  const urg = urgentWorks();
-  const u0 = urg[0];
-  const recents = S.works.flatMap((w) => w.records.map((r) => ({ w, r }))).sort((a, b) => b.r.ts - a.r.ts).slice(0, 2);
-  const sel = selectedWork();
-  const selEv = sel && sel.sources[0];
-  const fcTop = ((fc && fc.items) || []).slice(0, 2);
-  box.innerHTML = `
-    <button class="obj postit" id="obUrgent">
-      <span class="k">가장 임박한 업무</span>
-      ${u0 ? `<span class="t">${esc(u0.title)}</span><span class="d"><span class="dd">${ddayLabel(ddayOf(u0.due, sim))}</span> · 마감 ${fmtD(u0.due)} · 다음: ${esc((nextTodo(u0) || { text: "완료 조건 확인" }).text)}</span>`
-           : `<span class="t">기한이 정해진 업무가 없습니다</span><span class="d">내 업무에서 확인해 보세요</span>`}
-    </button>
-    <button class="obj fcast" id="obFcast">
-      <span class="k">도래한 반복 업무</span>
-      ${fcTop.length ? fcTop.map((it) => `<span class="d">· ${esc(it.name)} <span class="dd">${ddayLabel(it.dday)}</span></span>`).join("")
-                     : `<span class="d">지금 기준일에는 도래한 반복 업무가 없습니다</span>`}
-    </button>
-    <button class="obj notes" id="obNotes">
-      <span class="k">최근 업무 기록</span>
-      ${recents.length ? recents.map((x) => `<span class="d">· ${esc(x.r.text.slice(0, 34))} <span class="sub">(${esc(x.w.title.slice(0, 14))}…)</span></span>`).join("")
-                       : `<span class="d">아직 기록이 없습니다 — 작업대에서 결정·메모를 남겨 보세요</span>`}
-    </button>
-    <button class="obj evid" id="obEvid" ${sel && selEv ? "" : "disabled"}>
-      <span class="k">선택 업무의 대표 근거</span>
-      ${sel && selEv ? `<span class="t">${esc(sel.title)}</span><span class="d">근거 · ${esc(selEv.role || selEv.docId)} (${esc(selEv.docId)})</span>`
-                     : `<span class="d">연결된 업무 없음 — <u>내 업무 보기</u></span>`}
-    </button>`;
-  $("#obUrgent").onclick = () => (u0 ? nav("#workbench/" + u0.id) : nav("#work/list"));
-  $("#obFcast").onclick = () => { UI.listFilter = "repeat"; saveUI(); nav("#work/list"); };
-  $("#obNotes").onclick = () => (recents[0] ? nav("#workbench/" + recents[0].w.id) : nav("#work/list"));
-  $("#obEvid").onclick = () => { if (sel && selEv) { nav("#workbench/" + sel.id); setTimeout(() => { const b = $(`[data-ev="${CSS.escape(selEv.docId)}"]`); if (b) b.focus(); }, 350); } else nav("#work/list"); };
+function renderHomeRail() {
+  return `<aside class="home-rail" aria-label="홈 빠른 이동">
+    <div class="home-rail-brand">직무메모리</div>
+    <nav aria-label="홈 메뉴">
+      <a class="is-current" href="#home" aria-label="오늘의 업무" aria-current="page">${homeIcon("home")}<span>오늘의 업무</span></a>
+      <a href="#work/list" aria-label="내 업무 목록">${homeIcon("folder")}<span>내 업무 목록</span></a>
+      <a href="#work/calendar" aria-label="월간 업무 달력">${homeIcon("calendar")}<span>월간 업무 달력</span></a>
+      <a href="#vision" aria-label="서비스 소개">${homeIcon("bookmark")}<span>서비스 소개</span></a>
+    </nav>
+  </aside>`;
+}
+
+function homeISODateParts(iso) {
+  const parts = String(iso || "").split("-").map(Number);
+  return { year: parts[0], month: parts[1], day: parts[2] };
+}
+
+function homeRangeLabel(window2) {
+  const start = homeISODateParts(window2.startISO);
+  const end = homeISODateParts(window2.endISO);
+  return `${start.month}월 ${start.day}일 – ${end.month}월 ${end.day}일`;
+}
+
+function renderHomeFeedback() {
+  if (!lastAction || !lastActionMessage) {
+    return `<div class="home-feedback is-empty" id="homeFeedback" role="status" aria-live="polite">입력 결과를 확인하고 필요하면 되돌릴 수 있습니다.</div>`;
+  }
+  return `<div class="home-feedback" id="homeFeedback" role="status" aria-live="polite">
+    <span class="home-feedback-check" aria-hidden="true">✓</span>
+    <span>${esc(lastActionMessage)}</span>
+    <span class="home-feedback-divider" aria-hidden="true"></span>
+    <button id="homeUndo" type="button">되돌리기</button>
+  </div>`;
+}
+
+function homeEventClass(event2) {
+  if (event2.kind !== "work") return "";
+  const work = getWork(event2.workId);
+  return work && work.calendarCategory === "construction" ? " is-construction" : " is-service";
+}
+
+function homeEventLabel(event2) {
+  if (event2.kind === "deadline") return `${event2.label} 마감, ${fmtD(event2.startISO)}, 업무 작업대 열기`;
+  if (event2.kind === "memo") return `확인된 메모, ${event2.label}, ${fmtD(event2.startISO)}, 업무 작업대 열기`;
+  if (event2.kind === "candidate") return `일정 후보 미확인, ${event2.label}, ${fmtD(event2.startISO)}, 눌러서 확인`;
+  return `${event2.label}, ${fmtD(event2.startISO)}부터 ${fmtD(event2.endISO)}까지, 업무 작업대 열기`;
+}
+
+function renderHomeEvent(event2, column, span, row) {
+  const status = event2.kind === "candidate" ? '<span class="home-event-status">미확인</span>' : "";
+  const icon = event2.kind === "memo" ? '<span class="home-event-symbol" aria-hidden="true">▤</span>' : '<span class="home-event-dot" aria-hidden="true"></span>';
+  return `<button type="button" class="home-calendar-event home-event--${esc(event2.kind)}${homeEventClass(event2)}"
+    style="grid-column:${column} / span ${span};grid-row:${row}"
+    data-calendar-kind="${esc(event2.kind)}" data-work-id="${esc(event2.workId)}" data-event-id="${esc(event2.id)}"
+    aria-label="${esc(homeEventLabel(event2))}">${event2.kind === "work" ? "" : icon}<span class="home-event-text">${esc(event2.label)}</span>${status}</button>`;
+}
+
+function renderHomeCalendarWeek(days, events, sim) {
+  const first = days[0];
+  const last = days[days.length - 1];
+  const weekEvents = events
+    .filter((event2) => event2.startISO <= last && event2.endISO >= first)
+    .sort((a, b) => a.startISO.localeCompare(b.startISO) || a.endISO.localeCompare(b.endISO) || a.kind.localeCompare(b.kind));
+  const lanes = Math.max(3, weekEvents.length);
+  const dayCells = days.map((iso, index) => {
+    const date = homeISODateParts(iso);
+    const current = iso === sim;
+    return `<div class="home-calendar-day${index === 0 ? " is-sunday" : ""}${current ? " is-current" : ""}"
+      style="grid-column:${index + 1};grid-row:1 / span ${lanes + 1}" data-calendar-date="${iso}"
+      aria-label="${date.year}년 ${date.month}월 ${date.day}일"${current ? ' aria-current="date"' : ""}>
+      <time datetime="${iso}">${date.day}</time>
+    </div>`;
+  }).join("");
+  const eventButtons = weekEvents.map((event2, index) => {
+    const visibleStart = event2.startISO < first ? first : event2.startISO;
+    const visibleEnd = event2.endISO > last ? last : event2.endISO;
+    const column = days.indexOf(visibleStart) + 1;
+    const span = days.indexOf(visibleEnd) - days.indexOf(visibleStart) + 1;
+    return renderHomeEvent(event2, column, span, index + 2);
+  }).join("");
+  return `<div class="home-calendar-week" style="grid-template-rows:48px repeat(${lanes},38px)">${dayCells}${eventButtons}</div>`;
 }
 
 /* ---------- 만능 입력 처리 ---------- */
@@ -731,7 +817,7 @@ async function vWorkbench(main, id) {
     };
   });
   $$("[data-del]", main).forEach((b) => {
-    b.onclick = () => { w.todos = w.todos.filter((x) => x.id !== b.dataset.del); saveState(); lastAction = null; hideToast(); route(); };
+    b.onclick = () => { w.todos = w.todos.filter((x) => x.id !== b.dataset.del); saveState(); lastAction = null; lastActionMessage = ""; hideToast(); route(); };
   });
   $$("[data-hint]", main).forEach((b) => { b.onclick = () => hintFlow(w, w.records.find((r) => r.id === b.dataset.hint)); });
   const gd = $("#goDraft"); if (gd) gd.onclick = () => nav("#draft/" + w.id);
@@ -1006,7 +1092,7 @@ async function boot() {
   $("#resetBtn").onclick = () => {
     if (!confirm("저장된 업무·기록·기안 임시 저장을 지우고 기본 샘플로 복원할까요?")) return;
     storage.removeItem(SKEY); storage.removeItem(UKEY);
-    S = blankState(); UI = loadUI(); lastAction = null;
+    S = blankState(); UI = loadUI(); lastAction = null; lastActionMessage = "";
     cache.forecast = null;
     toast("기본 샘플로 복원했습니다.");
     nav("#home"); route();
