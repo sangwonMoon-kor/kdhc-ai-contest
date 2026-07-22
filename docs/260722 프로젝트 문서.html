@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>260722 프로젝트 문서</title>
+  <style>
+    :root {
+      --ink: #202124;
+      --muted: #687078;
+      --line: #e8e9ec;
+      --paper: rgba(255,255,255,.9);
+      --red: #e7272d;
+      --red-soft: #fff1f1;
+      --orange: #ff8a3d;
+      --orange-soft: #fff4e9;
+      --green: #279b50;
+      --green-soft: #eef9f1;
+      --shadow: 0 18px 50px rgba(71, 42, 32, .08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Pretendard Variable", Pretendard, "Malgun Gothic", system-ui, sans-serif;
+      line-height: 1.65;
+      background:
+        radial-gradient(circle at 8% 8%, rgba(231,39,45,.09), transparent 27rem),
+        radial-gradient(circle at 94% 24%, rgba(255,138,61,.10), transparent 24rem),
+        #fafafa;
+    }
+    main { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 56px 0 80px; }
+    .hero, section {
+      border: 1px solid rgba(255,255,255,.92);
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .hero { border-radius: 34px; padding: clamp(28px, 5vw, 56px); margin-bottom: 18px; }
+    .eyebrow { color: var(--red); font-size: .82rem; font-weight: 800; letter-spacing: .12em; }
+    h1 { margin: 8px 0 12px; font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1.12; letter-spacing: -.045em; }
+    .lead { margin: 0; color: var(--muted); font-size: 1.02rem; }
+    .meta { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: #fff; font-size: .82rem; color: var(--muted); }
+    section { border-radius: 26px; padding: clamp(22px, 4vw, 38px); margin-top: 18px; }
+    .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+    .num { color: var(--red); font-weight: 900; font-size: .82rem; }
+    h2 { margin: 0; font-size: 1.35rem; letter-spacing: -.025em; }
+    h3 { margin: 0 0 7px; font-size: 1rem; }
+    p { margin: 0; }
+    .project-title { padding: 22px 24px; border-radius: 18px; background: linear-gradient(120deg, var(--red-soft), var(--orange-soft)); font-size: 1.3rem; font-weight: 800; letter-spacing: -.025em; }
+    .intro { display: grid; gap: 7px; }
+    .intro b { display: inline-block; min-width: 104px; color: var(--red); }
+    .flow-wrap { overflow-x: auto; padding: 5px 2px 16px; }
+    .flow {
+      min-width: 980px;
+      display: grid;
+      grid-template-columns: 1fr 38px 1fr 38px 1fr 38px 1fr 38px 1fr;
+      align-items: stretch;
+    }
+    .flow-card { min-height: 172px; border: 1px solid var(--line); border-radius: 20px; padding: 18px; background: #fff; }
+    .flow-card:nth-of-type(5) { background: var(--green-soft); border-color: #d9efdf; }
+    .flow-step { color: var(--red); font-size: .74rem; font-weight: 900; letter-spacing: .08em; }
+    .flow-card h3 { margin-top: 9px; }
+    .flow-card p { color: var(--muted); font-size: .86rem; }
+    .arrow { display: grid; place-items: center; color: var(--orange); font-size: 1.4rem; font-weight: 900; }
+    .loop-note { margin-top: 10px; color: var(--green); font-weight: 750; text-align: right; font-size: .9rem; }
+    .screen { margin-top: 22px; border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: #fff; }
+    .screen img { display: block; width: 100%; height: auto; }
+    .caption { padding: 10px 14px 12px; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--line); }
+    .stack-grid, .status-grid, .problem-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+    .item { border: 1px solid var(--line); border-radius: 18px; background: #fff; padding: 18px; }
+    .item p, .item li { color: var(--muted); font-size: .9rem; }
+    ul, ol { margin: 8px 0 0; padding-left: 1.3rem; }
+    li + li { margin-top: 5px; }
+    .timeline { display: grid; grid-template-columns: repeat(6,1fr); gap: 7px; margin-bottom: 18px; }
+    .phase { padding: 11px 7px; border-radius: 13px; text-align: center; font-size: .78rem; color: var(--muted); border: 1px solid var(--line); background: #fff; }
+    .phase.done { color: var(--green); border-color: #d6eddd; background: var(--green-soft); font-weight: 700; }
+    .phase.now { color: #fff; border-color: var(--red); background: linear-gradient(135deg, var(--red), var(--orange)); font-weight: 800; box-shadow: 0 8px 20px rgba(231,39,45,.18); }
+    .callout { padding: 17px 19px; border-left: 4px solid var(--red); background: var(--red-soft); border-radius: 4px 16px 16px 4px; }
+    .callout strong { color: var(--red); }
+    .next-list { counter-reset: next; display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+    .next-list li { counter-increment: next; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; color: var(--muted); }
+    .next-list li::before { content: counter(next); display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: var(--red); color: #fff; font-size: .78rem; font-weight: 800; }
+    footer { padding-top: 22px; text-align: center; color: var(--muted); font-size: .78rem; }
+    @media (max-width: 760px) {
+      main { width: min(100% - 20px, 1080px); padding-top: 18px; }
+      .hero, section { border-radius: 22px; }
+      .stack-grid, .status-grid, .problem-grid { grid-template-columns: 1fr; }
+      .timeline { grid-template-columns: repeat(3,1fr); }
+      .intro b { min-width: 0; display: block; }
+    }
+    @media print {
+      body { background: #fff; }
+      main { width: 100%; padding: 0; }
+      .hero, section { box-shadow: none; backdrop-filter: none; break-inside: avoid; }
+      .flow-wrap { overflow: visible; transform: scale(.8); transform-origin: left top; margin-bottom: -32px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">2026.07.22 · 사내 AI 경진대회</div>
+    <h1>260722 프로젝트 문서</h1>
+    <p class="lead">회사 문서를 한 번에 바꾸는 프로젝트가 아니라, 직원이 도움을 받으며 일하는 과정이 자연스럽게 다음 업무의 데이터가 되게 만드는 AX 전환 제안입니다.</p>
+    <div class="meta">
+      <span class="pill">프로젝트 가칭 · 직무메모리</span>
+      <span class="pill">프론트엔드 · sangwonMoon-kor/kdhc-ai-contest</span>
+      <span class="pill">현재 · 통합 시연 개발·테스트</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-head"><span class="num">01</span><h2>프로젝트 제목</h2></div>
+    <div class="project-title">직무메모리 — 업무를 수행할수록 쌓이는 AI 업무 실행 메모리</div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">02</span><h2>프로젝트 소개</h2></div>
+    <div class="intro">
+      <p><b>무엇을 만드나</b> 일정·문서·기준·결과물을 한 업무 단위로 연결하고, 수행 중 메모까지 다음 업무에 재사용하는 AI 업무 도우미입니다.</p>
+      <p><b>누구를 위해</b> 한글·엑셀·전자결재 문서를 반복해서 찾고 재작성하는 유지보수 직원과 사무직원을 위한 서비스입니다.</p>
+      <p><b>왜</b> 공유폴더·개인 폴더·전자결재에 흩어진 자료 때문에 준비 시간이 길고, 담당자가 바뀔 때 업무 맥락이 사라지는 문제를 해결합니다.</p>
+      <p><b>핵심 가치</b> 사용자는 데이터 전환 작업이 아니라 자신의 업무 도움을 받으며, 그 과정 자체가 회사의 AX 데이터로 축적됩니다.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">03</span><h2>사용자 흐름</h2></div>
+    <div class="flow-wrap" aria-label="직무메모리 사용자 흐름">
+      <div class="flow">
+        <article class="flow-card"><span class="flow-step">STEP 1</span><h3>업무·자료 입력</h3><p>홈에 지시·메모를 적고, 관련된 최근 3년 문서를 업무에 연결합니다.</p></article>
+        <div class="arrow" aria-hidden="true">→</div>
+        <article class="flow-card"><span class="flow-step">STEP 2</span><h3>업무 맥락 연결</h3><p>언제, 참고자료, 적용기준, 결과물의 네 가지 요소로 구조화합니다.</p></article>
+        <div class="arrow" aria-hidden="true">→</div>
+        <article class="flow-card"><span class="flow-step">STEP 3</span><h3>일정 후보 확인</h3><p>AI가 찾은 날짜는 바로 확정하지 않고 사용자가 확인·수정합니다.</p></article>
+        <div class="arrow" aria-hidden="true">→</div>
+        <article class="flow-card"><span class="flow-step">STEP 4</span><h3>근거 기반 수행</h3><p>작업대에서 문서·기준·체크리스트·초안을 확인하며 업무를 진행합니다.</p></article>
+        <div class="arrow" aria-hidden="true">→</div>
+        <article class="flow-card"><span class="flow-step">STEP 5</span><h3>다음 메모리로 축적</h3><p>수행 중 메모·판단·결과물이 같은 업무 ID에 남아 다음 반복 업무에 재사용됩니다.</p></article>
+      </div>
+    </div>
+    <p class="loop-note">완료 결과가 다음 업무의 시작 자료가 되는 순환 구조 ↺</p>
+    <figure class="screen">
+      <img src="assets/home-ui-liquid-calendar-approved-2026-07-22.png" alt="자연어 입력창과 2주 업무 일정이 배치된 직무메모리 홈 화면 설계">
+      <figcaption class="caption">현재 홈 UI 방향: 자연어 입력을 가장 먼저 두고, 바로 아래에서 2주 업무 일정과 메모를 확인합니다.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">04</span><h2>기술 스택</h2></div>
+    <div class="stack-grid">
+      <article class="item"><h3>프론트엔드</h3><p>HTML5, CSS3, Vanilla JavaScript SPA, 반응형 리퀴드 글래스 UI, 브라우저 localStorage</p></article>
+      <article class="item"><h3>백엔드</h3><p>팀원 Node.js 18+ 내장 HTTP 엔진, 문서 파싱, OKF 온톨로지, 근거 기반 질의·예보·초안·사전점검 REST API</p></article>
+      <article class="item"><h3>데이터베이스 / 기타</h3><p>JSON 문서 코퍼스·fixture, 관계 그래프, 업무 ID 기반 컨텍스트 패킷. 운영 단계에서는 문서 저장소·벡터 인덱스·권한 저장소 연결 예정</p></article>
+      <article class="item"><h3>사용 도구·서비스</h3><p>Git·GitHub, Node.js·npm, Playwright, Microsoft Edge/Chrome, Codex·Claude. OpenAI API는 로컬 자연어 실험용이며 키와 사내 원문은 저장소에 올리지 않음</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">05</span><h2>진행 상황</h2></div>
+    <div class="timeline" aria-label="프로젝트 단계">
+      <div class="phase done">아이디어 확정</div><div class="phase done">업무·데이터 설계</div><div class="phase done">UI·UX 설계</div>
+      <div class="phase now">통합 데모 개발</div><div class="phase">발표 테스트</div><div class="phase">배포·발표</div>
+    </div>
+    <div class="status-grid">
+      <article class="item"><h3>현재 위치</h3><p>프론트엔드와 팀원 백엔드 응답 계약을 연결한 경진대회 통합 데모를 개발하고, 사용자 시연 동선을 테스트하고 있습니다.</p></article>
+      <article class="item"><h3>완료된 것</h3><ul><li>업무 수행 기반 직무메모리 아이디어와 네 가지 업무 요소 확정</li><li>fixture/live/auto API 어댑터와 유지보수 변환 데이터의 로컬 시연 반영</li><li>자연어 입력 + 2주 업무 달력 홈 UI 구현</li><li>근거 질의, 업무 작업대, 초안, 제출 전 점검 시연 경로 구현</li><li>일정 후보의 확인·되돌리기와 데스크톱·모바일 자동 테스트</li></ul></article>
+      <article class="item"><h3>진행 중인 것</h3><ul><li>업무 작업대의 네 가지 요소 요약 강화</li><li>메모 대상 변경·취소 등 예외 흐름 회귀 테스트</li><li>팀원 백엔드 최신 버전과 live 통합 확인</li><li>발표용 대표 시나리오·측정 지표·화면 캡처 정리</li></ul></article>
+      <article class="item"><h3>전체 단계</h3><p>기획 → 업무·데이터 모델링 → 화면설계 → 프론트/백엔드 계약 통합 → 시연 개발 → 자동·사용자 테스트 → 발표 배포</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">06</span><h2>현재 문제</h2></div>
+    <div class="problem-grid">
+      <article class="item"><h3>막힌 점 · 기술·기능</h3><ul><li>실제 한글·엑셀·전자결재 문서의 안전한 수집·갱신·권한 연동은 아직 프로토타입 범위 밖입니다.</li><li>회사 변환 데이터는 현재 로컬 시연용이며, 백엔드 영속 저장과 사용자별 권한 모델이 필요합니다.</li><li>유지보수·계약·일반 사무 사용자별로 실제 준비시간이 얼마나 줄어드는지 검증이 더 필요합니다.</li><li>근거가 오래되었거나 서로 충돌할 때 최신성·승인 상태를 어떻게 보여줄지 기준을 정교화해야 합니다.</li></ul></article>
+      <article class="item"><h3>강사 / 수업에 요청</h3><ul><li>HWP·Excel·PDF를 업무 ID에 안전하게 연결하는 인제스트·메타데이터 설계 피드백</li><li>RAG/온톨로지 답변의 근거성·정확성·재현성을 평가하는 실무 지표</li><li>사내 서비스용 인증·권한·감사로그·문서 보존 구조</li><li>경진대회에서 기술적 깊이와 사용자 가치를 짧게 증명하는 발표·데모 구성 조언</li></ul></article>
+    </div>
+    <div class="callout" style="margin-top:14px"><strong>중요 원칙</strong> 근거가 없으면 만들지 않고, AI가 해석한 날짜·기준·결과물은 사용자가 확인한 뒤 업무 메모리로 반영합니다.</div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">07</span><h2>다음 계획</h2></div>
+    <ol class="next-list">
+      <li>진행 중인 예외 흐름 회귀 테스트와 네 가지 업무 요소 작업대 요약을 완료합니다.</li>
+      <li>팀원 백엔드 최신 API를 live 모드로 연결하고 동일한 화면이 fixture와 live에서 작동하는지 확인합니다.</li>
+      <li>유지보수 기본계획, 공사·용역 착수서류, 사무직 반복업무의 세 가지 대표 시연 시나리오를 완성합니다.</li>
+      <li>준비시간, 근거 연결률, 메모-업무 연결 정확도, 재사용 횟수로 경진대회 효과를 측정합니다.</li>
+      <li>발표용 배포·녹화·리허설을 완료하고, 이후 실제 사용자 소규모 검증으로 운영 설계를 보완합니다.</li>
+    </ol>
+  </section>
+
+  <footer>직무메모리 · 260722 프로젝트 문서 · sangwonMoon-kor/kdhc-ai-contest</footer>
+</main>
+</body>
+</html>
