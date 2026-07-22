@@ -24,6 +24,22 @@ function response(body, ok = true, status = 200) {
   for (const [apiPath, body, expected] of reachableFixtureRoutes) {
     assert.equal(fixturePath(apiPath, body), expected, `fixture route missing for ${apiPath}`);
   }
+  assert.equal(
+    fixturePath("/api/ask", { question: "올해 정기점검보수 기본계획을 어떻게 수립해야 해?" }),
+    "local-maintenance/ask/maintenance-plan.json"
+  );
+  assert.equal(
+    fixturePath("/api/ask", { question: "유지보수 계획 수립 절차를 알려줘" }),
+    "local-maintenance/ask/maintenance-plan.json"
+  );
+  assert.equal(
+    fixturePath("/api/documents/PROC-MAINT-31100"),
+    "local-maintenance/documents/PROC-MAINT-31100.json"
+  );
+  assert.equal(
+    fixturePath("/api/ask", { question: "작년 펌프 정비 추진 보고 찾아줘" }),
+    "ask/pump-report.json"
+  );
   assert.equal(fixturePath("/api/draft", { task: "unknown-stage" }), null, "unknown draft stage used an unrelated fixture");
 
   const validShapes = [
@@ -72,6 +88,49 @@ function response(body, ok = true, status = 200) {
   }});
   await fixtureAction.request("/api/extract", { filename: "private-scan.pdf", mime: "application/pdf", dataB64: "c2Vuc2l0aXZl" });
   assert(fixtureActionCalls.every((call) => call.method === "GET" && call.body === undefined), "fixture action body was sent to the fixture host");
+
+  const localNotFound = {
+    grounded: false,
+    answer: ["관련 근거를 찾지 못했습니다."],
+    knowledge: [],
+    docs: []
+  };
+  const localFallbackCalls = [];
+  const localFallback = createApiClient({ mode: "fixture", fetchImpl: async (url, options = {}) => {
+    localFallbackCalls.push({ url, method: options.method || "GET", body: options.body });
+    if (url.endsWith("manifest.json")) return response({ contractVersion: 1 });
+    if (url.endsWith("local-maintenance/ask/maintenance-plan.json")) return response({}, false, 404);
+    if (url.endsWith("ask/not-found.json")) return response(localNotFound);
+    throw new Error(`unexpected local fallback URL: ${url}`);
+  }});
+  assert.deepEqual(
+    await localFallback.request("/api/ask", { question: "정기점검보수 기본계획 수립 절차" }),
+    localNotFound
+  );
+  assert.deepEqual(
+    localFallbackCalls.map((call) => call.url),
+    [
+      "fixtures/manifest.json",
+      "fixtures/local-maintenance/ask/maintenance-plan.json",
+      "fixtures/ask/not-found.json"
+    ]
+  );
+  assert(localFallbackCalls.every((call) => call.method === "GET" && call.body === undefined), "local fixture fallback sent a request body");
+
+  const localDocumentCalls = [];
+  const missingLocalDocument = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
+    localDocumentCalls.push(url);
+    if (url.endsWith("manifest.json")) return response({ contractVersion: 1 });
+    return response({}, false, 404);
+  }});
+  await assert.rejects(
+    () => missingLocalDocument.request("/api/documents/PROC-MAINT-31100"),
+    /HTTP 404/
+  );
+  assert.deepEqual(localDocumentCalls, [
+    "fixtures/manifest.json",
+    "fixtures/local-maintenance/documents/PROC-MAINT-31100.json"
+  ]);
 
   const invalidManifestCalls = [];
   const invalidManifest = createApiClient({ mode: "fixture", fetchImpl: async (url) => {

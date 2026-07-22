@@ -7,6 +7,8 @@
 
   const MODES = new Set(["fixture", "live", "auto"]);
   const FIXTURE_DRAFT_STAGES = new Set(["design-and-costing", "problem-recognition"]);
+  const LOCAL_MAINTENANCE_ASK = "local-maintenance/ask/maintenance-plan.json";
+  const LOCAL_MAINTENANCE_DOCUMENT_ID = "PROC-MAINT-31100";
 
   function modeFromSearch(search) {
     const mode = new URLSearchParams(String(search || "")).get("data") || "auto";
@@ -110,15 +112,26 @@
     return value;
   }
 
+  function isMaintenancePlanningQuestion(value) {
+    const question = String(value || "");
+    if (question.includes("정기점검보수")) return /(계획|수립|절차|범위|항목)/.test(question);
+    return question.includes("유지보수") && /(계획|수립|절차)/.test(question);
+  }
+
   function fixturePath(path, body) {
     if (path === "/api/summary") return "summary.json";
     if (path === "/api/forecast") return "forecast.json";
     if (path === "/api/briefing") return "briefing.json";
     if (path === "/api/graph") return "graph.json";
     if (path === "/api/documents") return "documents/index.json";
+    if (path === `/api/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}`) return `local-maintenance/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}.json`;
     if (path.startsWith("/api/documents/")) return `documents/${fixtureId(path, "/api/documents/")}.json`;
     if (path.startsWith("/api/okf/")) return `okf/${fixtureId(path, "/api/okf/")}.json`;
-    if (path === "/api/ask") return /펌프|정비|추진\s*보고/.test(String(body && body.question || "")) ? "ask/pump-report.json" : "ask/not-found.json";
+    if (path === "/api/ask") {
+      const question = String(body && body.question || "");
+      if (isMaintenancePlanningQuestion(question)) return LOCAL_MAINTENANCE_ASK;
+      return /펌프|정비|추진\s*보고/.test(question) ? "ask/pump-report.json" : "ask/not-found.json";
+    }
     if (path === "/api/draft" && body && FIXTURE_DRAFT_STAGES.has(body.task)) return `draft/${body.task}.json`;
     if (path === "/api/check") return /확인\s*필요|그대로\s*준용|특정\s*모델|구두\s*지시|검수\s*전/.test(String(body && body.text || "")) ? "check/pump-risky-draft.json" : "check/clean-draft.json";
     if (path === "/api/hint/stage") return "hint/stage.json";
@@ -194,7 +207,14 @@
         const rel = fixturePath(path, body);
         if (!rel) throw new Error(`No fixture route for ${path}`);
         await ensureManifest();
-        const data = normalizeResponse(path, await getJSON(`${fixtureBase}/${rel}`));
+        let value;
+        try {
+          value = await getJSON(`${fixtureBase}/${rel}`);
+        } catch (error) {
+          if (rel !== LOCAL_MAINTENANCE_ASK || error.message !== "HTTP 404") throw error;
+          value = await getJSON(`${fixtureBase}/ask/not-found.json`);
+        }
+        const data = normalizeResponse(path, value);
         activeMode = "fixture";
         source = "fixture";
         lastError = null;
