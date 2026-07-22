@@ -1,4 +1,4 @@
-# ON_메모리 홈·2주 업무지도 통합 Implementation Plan
+# 직무메모리 홈·2주 업무지도 통합 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -158,5 +158,5 @@
 - [ ] fixture 모드로 홈을 1920×1080과 390×844에서 캡처한다.
 - [ ] 캡처에서 한글 글꼴, 14일 구조, 홈 배경 강도, 적색/주황 포인트, 업무 이벤트 가독성, 내부/전체 overflow를 확인한다.
 - [ ] 실제 엔진이 없어도 fixture 시연이 가능하고, live/auto 모드 표시는 사실대로 유지되는지 확인한다.
-- [ ] 변경 파일만 커밋하고 커밋 메시지를 `feat: ON_메모리 2주 업무 홈 통합`으로 남긴다.
+- [ ] 변경 파일만 커밋하고 커밋 메시지를 `feat: 직무메모리 2주 업무 홈 통합`으로 남긴다.
 

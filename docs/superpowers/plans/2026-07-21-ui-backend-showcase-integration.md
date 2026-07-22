@@ -1,4 +1,4 @@
-# UI·UX 정본과 ON_메모리 엔진 쇼케이스 통합 Implementation Plan
+# UI·UX 정본과 직무 메모리 엔진 쇼케이스 통합 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -365,7 +365,7 @@ cd /Users/openclaw/projects/jikmu-memory/service
 node server.js
 ```
 
-Expected: `ON_메모리 서비스 → http://localhost:8343  (docs=19, edges=938)`.
+Expected: `직무 메모리 서비스 → http://localhost:8343  (docs=19, edges=938)`.
 
 Terminal B:
 
@@ -1302,7 +1302,7 @@ Expected: FAIL with `Missing script: "test:product-ui"`.
 Create `product-ui/README.md` with exactly these sections and commands:
 
 ````markdown
-# ON_메모리 Product UI
+# 직무 메모리 Product UI
 
 이 폴더가 UI·UX 정본이다. `demo/`는 발표·과거 프로토타입 보존본이며 최종 엔진 UI를 직접 수정하는 위치가 아니다.
 
@@ -1341,7 +1341,7 @@ node tools/sync-product-ui.js --target /path/to/jikmu-memory --write
 Create `docs/showcase-recording-checklist.md`:
 
 ```markdown
-# ON_메모리 쇼케이스 녹화 체크리스트
+# 직무 메모리 쇼케이스 녹화 체크리스트
 
 ## 녹화 전
 
@@ -1360,7 +1360,7 @@ Create `docs/showcase-recording-checklist.md`:
 - [ ] 근거 기반 질문
 - [ ] 올해 기안 초안
 - [ ] 제출 전 위험 점검
-- [ ] 다음 담당자에게 남는 ON_메모리 메시지
+- [ ] 다음 담당자에게 남는 직무 메모리 메시지
 
 ## 녹화 후
 
@@ -1420,7 +1420,7 @@ git commit -m "통합 UI 작업과 녹화 절차 문서화"
 - [ ] **Step 8: 최종 승인 뒤 UI 버전 태그와 원격 브랜치 게시**
 
 ```bash
-git tag -a ui-v1.0.0 -m "ON_메모리 통합 쇼케이스 UI v1.0.0"
+git tag -a ui-v1.0.0 -m "직무 메모리 통합 쇼케이스 UI v1.0.0"
 git push -u origin feature/product-ui-source
 git push origin ui-v1.0.0
 ```

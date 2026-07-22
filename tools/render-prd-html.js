@@ -206,7 +206,7 @@ const html = `<!doctype html>
 </style>
 </head>
 <body>
-<header class="top"><div class="top-inner"><div class="brand">ON_메모리 PRD</div><span class="badge">HTML · ${generated}</span></div></header>
+<header class="top"><div class="top-inner"><div class="brand">직무 메모리 PRD</div><span class="badge">HTML · ${generated}</span></div></header>
 <div class="layout">
 <nav class="toc" aria-label="목차"><div class="toc-title">Contents</div>${tocHtml}</nav>
 <main class="doc">

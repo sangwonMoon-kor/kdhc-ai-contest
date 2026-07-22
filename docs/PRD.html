@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PRD — ON_메모리 (AI 업무 승계 비서)</title>
+<title>PRD — 직무 메모리 (AI 업무 승계 비서)</title>
 <style>
 :root{color-scheme:light;--bg:#f4f5f7;--paper:#fff;--ink:#1d2126;--muted:#68717d;--line:#e3e6ea;--accent:#e8590c;--accent-soft:#fff2e9;--ok:#15803d;--warn:#b45309;--shadow:0 16px 48px rgba(20,26,34,.10)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(180deg,#f8fafc,#eef1f5);color:var(--ink);font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;line-height:1.72;font-size:16px}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
@@ -14,9 +14,9 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="top-inner"><div class="brand">ON_메모리 PRD</div><span class="badge">HTML · 2026-07-08</span></div></header>
+<header class="top"><div class="top-inner"><div class="brand">직무 메모리 PRD</div><span class="badge">HTML · 2026-07-08</span></div></header>
 <div class="layout">
-<nav class="toc" aria-label="목차"><div class="toc-title">Contents</div><a class="toc-l1" href="#prd-직무-메모리-ai-업무-승계-비서">PRD — ON_메모리 (AI 업무 승계 비서)</a>
+<nav class="toc" aria-label="목차"><div class="toc-title">Contents</div><a class="toc-l1" href="#prd-직무-메모리-ai-업무-승계-비서">PRD — 직무 메모리 (AI 업무 승계 비서)</a>
 <a class="toc-l2" href="#1-제품-개요">1. 제품 개요</a>
 <a class="toc-l3" href="#11-한-줄-정의">1.1 한 줄 정의</a>
 <a class="toc-l3" href="#12-목표-우선순위-순">1.2 목표 (우선순위 순)</a>
@@ -50,9 +50,9 @@
 <a class="toc-l3" href="#알려진-이슈">알려진 이슈</a></nav>
 <main class="doc">
 <div class="meta"><span class="pill">Product Requirements Document</span><span class="pill">Hello JARVIS</span><span class="pill">2026-07-08</span></div>
-<h1 id="prd-직무-메모리-ai-업무-승계-비서">PRD — ON_메모리 (AI 업무 승계 비서)<a class="anchor" href="#prd-직무-메모리-ai-업무-승계-비서" aria-label="section link">#</a></h1>
+<h1 id="prd-직무-메모리-ai-업무-승계-비서">PRD — 직무 메모리 (AI 업무 승계 비서)<a class="anchor" href="#prd-직무-메모리-ai-업무-승계-비서" aria-label="section link">#</a></h1>
 <blockquote>&quot;사람은 떠나도, 업무는 남게.&quot;</blockquote>
-<div class="table-wrap"><table><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody><tr><td>문서 성격</td><td>제품 요구사항 정의서 (Product Requirements Document)</td></tr><tr><td>버전</td><td>v1.2 (2026-07-08) — 기획서 v2.0 + 데모 구현 현황 + <strong>Hello JARVIS 검색 진입점·관리자 콘솔·기반층·S5 신규 개념</strong> 통합</td></tr><tr><td>원본 문서</td><td><code>docs/ON_메모리_AI업무승계비서_기획서_v2.docx</code> (상세 명세), <code>README.md</code> (구현 현황)</td></tr><tr><td>기반 환경</td><td>사내 LLM(Gemma 4) · 사내 RAG 플랫폼</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody><tr><td>문서 성격</td><td>제품 요구사항 정의서 (Product Requirements Document)</td></tr><tr><td>버전</td><td>v1.2 (2026-07-08) — 기획서 v2.0 + 데모 구현 현황 + <strong>Hello JARVIS 검색 진입점·관리자 콘솔·기반층·S5 신규 개념</strong> 통합</td></tr><tr><td>원본 문서</td><td><code>docs/직무메모리_AI업무승계비서_기획서_v2.docx</code> (상세 명세), <code>README.md</code> (구현 현황)</td></tr><tr><td>기반 환경</td><td>사내 LLM(Gemma 4) · 사내 RAG 플랫폼</td></tr></tbody></table></div>
 <p><strong>이 문서와 기획서 v2.0의 관계</strong>: 기획서 v2.0 작성 이후 결정된 사항(<span class="star">⭐</span> 표시)이 이 PRD에는 반영되어 있고 기획서에는 아직 없다 — ① 직원 대표 진입점 &quot;Hello JARVIS?&quot; 검색 목업, ② 기반층 &quot;개인별 업무 분류&quot; 격상, ③ 관리자 콘솔(숨은 엔진/AX 전환 가시화), ④ 데모 S5 &quot;내 업무 매뉴얼&quot; 화면, ⑤ 데모 화면 7개 체계(비전 S5→S6), ⑥ S0 영상 오프닝과 JARVIS 진입 CTA. 기획서 갱신 시 이 PRD가 기준.</p>
 <hr>
 <h2 id="1-제품-개요">1. 제품 개요<a class="anchor" href="#1-제품-개요" aria-label="section link">#</a></h2>
