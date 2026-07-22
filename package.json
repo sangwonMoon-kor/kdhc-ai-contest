@@ -7,6 +7,7 @@
     "test:workbench:e2e": "node demo/tests/verify-app-workbench-e2e.js",
     "product-ui:serve": "node tools/serve-product-ui.js",
     "test:product-ui:api": "node product-ui/tests/verify-api-client.js",
+    "test:product-ui:home-model": "node product-ui/tests/verify-home-model.js",
     "test:product-ui:source": "node product-ui/tests/verify-source-contract.js",
     "test:product-ui:fixtures": "node product-ui/tests/verify-fixtures.js",
     "test:product-ui:data-mode": "node product-ui/tests/verify-app-data-mode.js && PRODUCT_UI_TEST_CLIENT=1 node product-ui/tests/verify-app-data-mode-browser.js",
@@ -14,7 +15,7 @@
     "test:product-ui:capture": "node tools/tests/verify-capture-product-fixtures.js",
     "test:product-ui:e2e": "node product-ui/tests/verify-showcase-e2e.js",
     "test:product-ui:sync": "node tools/test-sync-product-ui.js",
-    "test:product-ui": "npm run test:product-ui:source && npm run test:product-ui:fixtures && npm run test:product-ui:api && npm run test:product-ui:data-mode && npm run test:product-ui:fixture-flows && npm run test:product-ui:capture && npm run test:product-ui:sync && npm run test:product-ui:e2e"
+    "test:product-ui": "npm run test:product-ui:source && npm run test:product-ui:home-model && npm run test:product-ui:fixtures && npm run test:product-ui:api && npm run test:product-ui:data-mode && npm run test:product-ui:fixture-flows && npm run test:product-ui:capture && npm run test:product-ui:sync && npm run test:product-ui:e2e"
   },
   "devDependencies": {
     "playwright": "1.61.1"

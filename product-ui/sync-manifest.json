@@ -5,6 +5,7 @@
     "favicon.svg",
     "style.css",
     "app.js",
+    "home-model.js",
     "api-client.js",
     "intent.js",
     "extract.js",
