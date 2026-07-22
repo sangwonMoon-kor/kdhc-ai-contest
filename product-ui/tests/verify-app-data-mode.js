@@ -15,6 +15,9 @@ if (!/const isLiveError\s*=\s*status\.error\s*&&\s*status\.activeMode\s*!==\s*["
 if (!/let askSeq\s*=\s*0/.test(app) || !/const seq\s*=\s*\+\+askSeq/.test(app)) failures.push("stale ask guard missing");
 if (/api\(["']\/api\/reset/.test(app)) failures.push("UI reset calls server reset");
 if (!css.includes(".data-status")) failures.push("data status style missing");
+if (!app.includes("window.JikmuHomeModel.parseScheduleCandidate")) failures.push("app does not use the home model for schedule candidates");
+if (!/function confirmScheduleCandidate\(workId, candidateId\)/.test(app)) failures.push("schedule candidate confirmation action missing");
+if (!/calendarStatus:\s*["']confirmed["']/.test(app)) failures.push("schedule confirmation record status missing");
 
 if (failures.length) { console.error("App data-mode contract failed:\n- " + failures.join("\n- ")); process.exit(1); }
 console.log("App data-mode contract passed");

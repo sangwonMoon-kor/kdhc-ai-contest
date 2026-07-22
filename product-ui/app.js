@@ -60,13 +60,46 @@ function validWork(w) {
   return w && typeof w === "object" && typeof w.id === "string" && typeof w.title === "string"
     && Array.isArray(w.todos) && Array.isArray(w.records) && Array.isArray(w.sources);
 }
+function normalizeRecord(record) {
+  if (!record || typeof record !== "object") return record;
+  const normalized = Object.assign({}, record);
+  if ("dateISO" in normalized && typeof normalized.dateISO !== "string") delete normalized.dateISO;
+  if ("calendarStatus" in normalized && typeof normalized.calendarStatus !== "string") delete normalized.calendarStatus;
+  return normalized;
+}
+function normalizeScheduleCandidate(candidate) {
+  if (!candidate || typeof candidate !== "object") return null;
+  if (typeof candidate.kind !== "string" || typeof candidate.label !== "string"
+    || typeof candidate.startISO !== "string" || typeof candidate.endISO !== "string") return null;
+  const normalized = {
+    kind: candidate.kind,
+    label: candidate.label,
+    startISO: candidate.startISO,
+    endISO: candidate.endISO,
+    confirmed: candidate.confirmed === true,
+  };
+  if (typeof candidate.id === "string") normalized.id = candidate.id;
+  return normalized;
+}
+function normalizeWork(w) {
+  const normalized = Object.assign({}, w);
+  if (typeof normalized.calendarStart !== "string") delete normalized.calendarStart;
+  if (typeof normalized.calendarCategory !== "string") delete normalized.calendarCategory;
+  normalized.records = normalized.records.map(normalizeRecord);
+  if (Array.isArray(normalized.scheduleCandidates)) {
+    normalized.scheduleCandidates = normalized.scheduleCandidates.map(normalizeScheduleCandidate).filter(Boolean);
+  } else {
+    delete normalized.scheduleCandidates;
+  }
+  return normalized;
+}
 function loadState() {
   try {
     const raw = storage.getItem(SKEY);
     if (!raw) return blankState();
     const j = JSON.parse(raw);
     if (!j || j.v !== 1 || !Array.isArray(j.works) || !j.works.every(validWork)) return blankState(); // 스키마 불일치 → 안전 복구
-    return j;
+    return Object.assign({}, j, { works: j.works.map(normalizeWork) });
   } catch (e) { return blankState(); }
 }
 function saveState() { try { storage.setItem(SKEY, JSON.stringify(S)); } catch (e) { /* 저장 불가 환경 — 메모리로 계속 */ } }
@@ -134,6 +167,11 @@ function undoLast() {
   if (a.type === "promoteTodo" && w) { const t = w.todos.find((x) => x.id === a.todoId); if (t) t.candidate = true; }
   if (a.type === "createWork") S.works = S.works.filter((x) => x.id !== a.workId);
   if (a.type === "attachSource" && w) w.sources = w.sources.filter((s) => s.docId !== a.docId);
+  if (a.type === "confirmScheduleCandidate" && w) {
+    const candidate = (w.scheduleCandidates || []).find((c) => c.id === a.candidateId);
+    if (candidate) candidate.confirmed = a.prevConfirmed;
+    w.records = w.records.filter((r) => r.id !== a.recId);
+  }
   saveState(); hideToast(); route();
 }
 /* 대상 변경: 방금 입력으로 생긴 변경만 원래 업무에서 되돌리고 새 대상에 한 번 적용 */
@@ -372,7 +410,7 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
     return createWorkFrom(t, extractDueText(t));
   }
 
-  if (c.intent === "record" || c.intent === "todo") return applyRecordOrTodo(t, c.intent, fixedWork, target);
+  if (c.intent === "record" || c.intent === "todo") return applyRecordOrTodo(t, c.intent, fixedWork, target, sim);
 
   // unclear — 모르는 것(의도)만 한 번 확인
   if (resultBox) {
@@ -388,17 +426,28 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
         const as = b.dataset.as;
         resultBox.innerHTML = "";
         if (as === "question") renderAsk(resultBox, t, target);
-        else applyRecordOrTodo(t, as, fixedWork, target);
+        else applyRecordOrTodo(t, as, fixedWork, target, sim);
       };
     });
   }
 }
-function applyRecordOrTodo(t, kind, fixedWork, target) {
+function addScheduleCandidate(work, text, sim) {
+  if (!window.JikmuHomeModel || typeof window.JikmuHomeModel.parseScheduleCandidate !== "function") return null;
+  const parsed = window.JikmuHomeModel.parseScheduleCandidate(text, sim);
+  if (!parsed) return null;
+  const candidate = Object.assign({ id: uid("sc") }, parsed);
+  if (!Array.isArray(work.scheduleCandidates)) work.scheduleCandidates = [];
+  work.scheduleCandidates.push(candidate);
+  return candidate;
+}
+function applyRecordOrTodo(t, kind, fixedWork, target, sim) {
   const apply = (w) => {
     if (!w) return;
     if (kind === "record") {
       const rec = { id: uid("r"), ts: Date.now(), kind: "decision", text: t };
-      w.records.push(rec); saveState();
+      w.records.push(rec);
+      addScheduleCandidate(w, t, sim);
+      saveState();
       setAction({ type: "addRecord", workId: w.id, recId: rec.id }, `${w.title}에 결정 기록을 추가했습니다.`);
     } else {
       const td = { id: uid("t"), text: t, done: false, candidate: true, evidence: [] };
@@ -410,6 +459,24 @@ function applyRecordOrTodo(t, kind, fixedWork, target) {
   if (fixedWork) return apply(fixedWork);
   if (target) return chooseWork(`이 내용을 ‘${target.title}’에 붙일까요? 다른 업무를 골라도 됩니다.`, apply);
   return chooseWork("어느 업무에 붙일까요?", apply);
+}
+function confirmScheduleCandidate(workId, candidateId) {
+  const work = getWork(workId);
+  const candidate = work && (work.scheduleCandidates || []).find((item) => item.id === candidateId);
+  if (!candidate || candidate.confirmed) return;
+  candidate.confirmed = true;
+  const record = {
+    id: uid("r"),
+    ts: Date.now(),
+    kind: "schedule",
+    text: candidate.label,
+    dateISO: candidate.startISO,
+    calendarStatus: "confirmed",
+  };
+  work.records.push(record);
+  saveState();
+  setAction({ type: "confirmScheduleCandidate", workId, candidateId, prevConfirmed: false, recId: record.id }, `${work.title} schedule confirmed.`);
+  route();
 }
 function confirmTarget(t, c, resultBox, sim) {
   chooseWork("어느 업무의 기안인가요?", (w) => { if (w) { S.selectedWorkId = w.id; saveState(); nav("#draft/" + w.id); } }, false);
