@@ -22,3 +22,21 @@
 
 - Task 5 소유인 네 가지 업무 차원 작업대 요약은 변경하지 않았다.
 - Windows 환경에서 기존 8410 포트를 사용하는 로컬 서버가 있어, showcase E2E는 격리한 8947 서버를 `PRODUCT_UI_URL`로 지정해 실행했다.
+
+## Fix Report — retarget 일정 후보 소유권
+
+### 수정 내용
+
+- `retarget()`가 날짜가 연결된 기록·할 일을 옮길 때 `candidateId`의 일정 후보도 원래 업무에서 제거하고 새 업무에 같은 ID로 이동하도록 수정했다.
+- 이동 후 `lastAction.workId`와 `candidateId`는 새 업무의 후보를 계속 가리킨다. 따라서 새 업무에서 후보 확정과 되돌리기가 정확히 동작한다.
+- 날짜 없는 할 일의 기존 대상 변경 동작은 유지하며 일정 후보를 새로 만들지 않는다.
+
+### TDD 및 검증 결과
+
+- RED: `verify-home-state.js`의 retarget 회귀가 이전 업무에 `dated-candidate`가 남았다는 assertion으로 실패했다.
+- GREEN: 같은 회귀는 후보 이동, 대상 변경 직후의 정확한 되돌리기, 새 업무에서의 확정·되돌리기, 날짜 없는 할 일 이동을 모두 통과했다.
+- `node product-ui/tests/verify-home-state.js` — passed
+- `node product-ui/tests/verify-home-browser.js` — passed
+- `node product-ui/tests/verify-showcase-e2e.js` — passed (격리 서버 `http://127.0.0.1:8947/?data=fixture`)
+- `node product-ui/tests/verify-home-model.js` — passed
+- `git diff --check` — passed

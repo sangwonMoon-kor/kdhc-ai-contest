@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, "..");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8")
   .replace(/\nboot\(\);\s*$/, "")
   + "\nroute = function () {}; toast = function () {}; hideToast = function () {};"
-  + "\nmodule.exports = { blankState, validWork, normalizeWork, loadState, seedFromForecast, applyRecordOrTodo, confirmScheduleCandidate, undoLast, getState: () => S, setState: (state) => { S = state; } };";
+  + "\nmodule.exports = { blankState, validWork, normalizeWork, loadState, seedFromForecast, applyRecordOrTodo, retarget, confirmScheduleCandidate, undoLast, setChooseWork: (next) => { chooseWork = next; }, getState: () => S, setState: (state) => { S = state; } };";
 
 function loadHomeState(storedState) {
   const values = new Map();
@@ -109,6 +109,59 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
   homeState.undoLast();
   assert.equal(confirmed.scheduleCandidates[0].confirmed, false, "undo restores the candidate confirmation state");
   assert.deepStrictEqual(plain(confirmed.records), [], "undo removes the confirmation record");
+}
+
+{
+  const oldWork = legacyWork({
+    id: "old-work",
+    records: [{ id: "dated-record", kind: "decision", text: "2026-02-03 운영부 일정 확정" }],
+    scheduleCandidates: [{ id: "dated-candidate", kind: "date", label: "2026-02-03 운영부 일정 확정", startISO: "2026-02-03", endISO: "2026-02-03", confirmed: false }],
+  });
+  const newWork = legacyWork({ id: "new-work", title: "새 업무" });
+  const homeState = loadHomeState();
+  homeState.setState({ v: 1, works: [oldWork, newWork], selectedWorkId: oldWork.id });
+  homeState.setChooseWork((_title, onPick) => onPick(newWork));
+  homeState.retarget({ type: "addRecord", workId: oldWork.id, recId: "dated-record", candidateId: "dated-candidate" });
+  assert.deepStrictEqual(plain(oldWork.records), [], "retarget removes the dated record from the old work");
+  assert.deepStrictEqual(plain(oldWork.scheduleCandidates), [], "retarget removes the linked candidate from the old work");
+  assert.deepStrictEqual(plain(newWork.records.map((record) => record.id)), ["dated-record"], "retarget adds the dated record to the new work");
+  assert.deepStrictEqual(plain(newWork.scheduleCandidates.map((candidate) => candidate.id)), ["dated-candidate"], "retarget moves the linked candidate to the new work");
+  homeState.confirmScheduleCandidate(newWork.id, "dated-candidate");
+  assert.equal(newWork.scheduleCandidates[0].confirmed, true, "the moved candidate confirms on the new work");
+  assert.equal(oldWork.records.length, 0, "confirmation does not create a schedule record on the old work");
+  assert.equal(newWork.records.filter((record) => record.kind === "schedule").length, 1, "confirmation creates its schedule record on the new work");
+  homeState.undoLast();
+  assert.equal(newWork.scheduleCandidates[0].confirmed, false, "undo restores the moved candidate on the new work");
+  assert.equal(newWork.records.filter((record) => record.kind === "schedule").length, 0, "undo removes the new work confirmation record");
+}
+
+{
+  const oldWork = legacyWork({ id: "old-work", todos: [{ id: "undated-todo", text: "업체에 확인하기", done: false, candidate: true, evidence: [] }] });
+  const newWork = legacyWork({ id: "new-work", title: "새 업무" });
+  const homeState = loadHomeState();
+  homeState.setState({ v: 1, works: [oldWork, newWork], selectedWorkId: oldWork.id });
+  homeState.setChooseWork((_title, onPick) => onPick(newWork));
+  homeState.retarget({ type: "addTodo", workId: oldWork.id, todoId: "undated-todo" });
+  assert.deepStrictEqual(plain(oldWork.todos), [], "undated retarget removes the todo from the old work");
+  assert.deepStrictEqual(plain(newWork.todos.map((todo) => todo.id)), ["undated-todo"], "undated retarget keeps moving the todo to the new work");
+  assert.equal(newWork.scheduleCandidates, undefined, "undated retarget does not invent a schedule candidate");
+}
+
+{
+  const oldWork = legacyWork({
+    id: "old-work",
+    records: [{ id: "dated-record", kind: "decision", text: "2026-02-03 운영부 일정 확정" }],
+    scheduleCandidates: [{ id: "dated-candidate", kind: "date", label: "2026-02-03 운영부 일정 확정", startISO: "2026-02-03", endISO: "2026-02-03", confirmed: false }],
+  });
+  const newWork = legacyWork({ id: "new-work", title: "새 업무" });
+  const homeState = loadHomeState();
+  homeState.setState({ v: 1, works: [oldWork, newWork], selectedWorkId: oldWork.id });
+  homeState.setChooseWork((_title, onPick) => onPick(newWork));
+  homeState.retarget({ type: "addRecord", workId: oldWork.id, recId: "dated-record", candidateId: "dated-candidate" });
+  homeState.undoLast();
+  assert.deepStrictEqual(plain(newWork.records), [], "retarget undo removes the moved record from the new work");
+  assert.deepStrictEqual(plain(newWork.scheduleCandidates), [], "retarget undo removes the moved candidate from the new work");
+  assert.deepStrictEqual(plain(oldWork.scheduleCandidates), [], "retarget undo does not leave the candidate on the old work");
 }
 
 console.log("Home state contract passed");

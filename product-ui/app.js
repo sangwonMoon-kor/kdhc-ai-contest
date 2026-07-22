@@ -191,14 +191,23 @@ function retarget(a) {
   if (!a || (a.type !== "addRecord" && a.type !== "addTodo")) return;
   const old = getWork(a.workId);
   let payload = null;
+  let candidate = null;
   if (old) {
     if (a.type === "addRecord") { payload = old.records.find((r) => r.id === a.recId); old.records = old.records.filter((r) => r.id !== a.recId); }
     else { payload = old.todos.find((t) => t.id === a.todoId); old.todos = old.todos.filter((t) => t.id !== a.todoId); }
+    if (a.candidateId) {
+      candidate = (old.scheduleCandidates || []).find((c) => c.id === a.candidateId) || null;
+      old.scheduleCandidates = (old.scheduleCandidates || []).filter((c) => c.id !== a.candidateId);
+    }
   }
   if (!payload) return;
   hideToast();
   chooseWork(`‘${payload.text.slice(0, 24)}…’을(를) 어느 업무로 옮길까요?`, (w) => {
     if (a.type === "addRecord") w.records.push(payload); else w.todos.push(payload);
+    if (candidate) {
+      if (!Array.isArray(w.scheduleCandidates)) w.scheduleCandidates = [];
+      w.scheduleCandidates.push(candidate);
+    }
     lastAction = Object.assign({}, a, { workId: w.id });
     lastActionMessage = `${w.title}(으)로 옮겼습니다.`;
     saveState(); toast(lastActionMessage, lastAction); route();
