@@ -206,7 +206,8 @@ function assertSafeOutput(value) {
 }
 
 function buildMaintenanceFixture(markdown, options = {}) {
-  const source = validateSource(markdown);
+  const source = String(markdown || "");
+  validateSource(source);
   const generatedAt = options.generatedAt || new Date().toISOString();
   if (Number.isNaN(new Date(generatedAt).getTime())) throw new Error("generatedAt이 유효한 ISO 날짜가 아닙니다.");
   const sha256 = crypto.createHash("sha256").update(source, "utf8").digest("hex");

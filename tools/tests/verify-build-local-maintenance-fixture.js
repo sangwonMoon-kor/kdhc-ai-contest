@@ -92,6 +92,17 @@ function assertDocumentContract(value) {
   );
   assert.deepEqual(Object.keys(built.manifest.source), ["sha256"]);
 
+  const mixedNewlineSource = syntheticSource.replace(
+    "# 가. 기본계획 수립\n",
+    "# 가. 기본계획 수립\r\n"
+  );
+  const mixedNewlineBuilt = buildMaintenanceFixture(mixedNewlineSource, { generatedAt });
+  assert.equal(
+    mixedNewlineBuilt.manifest.source.sha256,
+    crypto.createHash("sha256").update(mixedNewlineSource, "utf8").digest("hex"),
+    "manifest hash did not preserve the original source bytes"
+  );
+
   const serialized = JSON.stringify(built);
   for (const forbidden of ["테스트기관", "[ORG_001]", "image_001.png", "C:\\Users", "sanitized.md"]) {
     assert(!serialized.includes(forbidden), `generated fixture leaked forbidden source text: ${forbidden}`);
