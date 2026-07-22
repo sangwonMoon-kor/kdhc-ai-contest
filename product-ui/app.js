@@ -231,7 +231,9 @@ function parseHash() {
 function nav(hash) { if (location.hash === hash) route(); else location.hash = hash; }
 async function route() {
   const { v, a } = parseHash();
-  $$(".nav-caps a").forEach((el2) => el2.classList.toggle("on", el2.dataset.nav === (v === "home" ? "home" : v === "work" || v === "workbench" || v === "draft" ? "work" : "")));
+  const navKey = v === "work" && a === "calendar" ? "calendar" : v === "home" ? "home" : v === "work" || v === "workbench" || v === "draft" || v === "check" ? "work" : "";
+  $$(".nav-caps a").forEach((el2) => el2.classList.toggle("on", el2.dataset.nav === navKey));
+  document.body.classList.toggle("at-entry", v === "home");
   const main = $("#view");
   main.innerHTML = "";
   closeDrawer();
@@ -241,6 +243,7 @@ async function route() {
     else if (v === "work") await vList(main);
     else if (v === "workbench") await vWorkbench(main, a);
     else if (v === "draft") await vDraft(main, a);
+    else if (v === "check") await vDraft(main, a, true);
     else if (v === "graph") await vGraph(main);
     else if (v === "vision") vVision(main);
     else vNotFound(main, "화면을 찾을 수 없습니다.");
@@ -249,7 +252,22 @@ async function route() {
       <div class="card"><p>엔진에 연결하지 못했습니다. 로컬에서는 <code>cd service && npm start</code>로 서버를 켜 주세요.</p></div></div>`;
   }
   const h1 = $("h1.pg", main) || $("h1", main);
-  if (h1) { h1.setAttribute("tabindex", "-1"); h1.focus({ preventScroll: false }); }
+  if (h1 && v !== "home") { h1.setAttribute("tabindex", "-1"); h1.focus({ preventScroll: false }); }
+}
+
+function jarvisFlowTabs(active, work) {
+  const target = work || selectedWork();
+  const targetId = target ? encodeURIComponent(target.id) : "";
+  const draftHref = targetId ? `#draft/${targetId}` : "#work/list";
+  const checkHref = targetId ? `#check/${targetId}` : "#work/list";
+  const tabs = [
+    ["today", "오늘", "#work/calendar"],
+    ["brief", "브리핑북", "#work/list"],
+    ["draft", "초안", draftHref],
+    ["check", "사전점검", checkHref],
+  ];
+  return `<nav class="flow-tabs" aria-label="JARVIS 업무 화면">${tabs.map(([key, label, href]) =>
+    `<a class="flow-tab${active === key ? " on" : ""}" href="${href}"${active === key ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</nav>`;
 }
 
 /* ---------- 홈 ---------- */
@@ -258,48 +276,78 @@ async function vHome(main) {
   engineDown = !sum;
   const fc = await loadForecast().catch(() => ({ items: [] }));
   if (sum) seedFromForecast(fc, sum.simDate);
-  const persona = sum && sum.persona ? sum.persona.name : "";
   const sim = sum ? sum.simDate : null;
+  const target = selectedWork();
+  const targetId = target ? encodeURIComponent(target.id) : "";
 
   const EX = [
-    ["팀장님이 다음 주까지 펌프 정비계획 올리래", "업무 작업대"],
-    ["작년 펌프 정비 추진 보고 찾아줘", "근거 답변"],
-    ["운영부 일정은 5월 둘째 주로 확정", "진행 기록"],
-    ["이번 주 내가 해야 할 일", "내 업무"],
-    ["펌프 추진 보고 기안 작성해줘", "기안 집중 화면"],
+    ["이번 주 뭐 해야 해?", "오늘 · 업무 일기예보", "#work/calendar", "↗"],
+    ["지금 맡은 업무를 정리해줘", "브리핑북", "#work/list", "→"],
+    ["펌프 추진 보고 초안 준비해줘", "초안 스튜디오", targetId ? `#draft/${targetId}` : "#work/list", "✎"],
+    ["제출 전에 빠진 근거를 점검해줘", "사전점검", targetId ? `#check/${targetId}` : "#work/list", "✓"],
   ];
-  main.innerHTML = `<div class="view">
-    <div class="hero">
-      <h1 id="heroLine" aria-label="${esc(persona ? persona + "님, 오늘 할 일부터 챙겨드릴게요." : "무엇부터 할까요?")}"></h1>
-      <p class="tag">일한 만큼, 준비됩니다 — 지시·질문·메모를 그대로 적어 보세요.</p>
-      <form class="omni" id="omni" data-testid="home-omni">
-        <input id="omniIn" type="text" autocomplete="off" placeholder="예: 팀장님이 다음 주까지 펌프 정비계획 올리래" aria-label="만능 입력">
-        <button class="btn" type="submit">말하기</button>
-      </form>
-      <div class="examples">${EX.map((e, i) => `<button type="button" data-ex="${i}">${esc(e[0])}<span class="dest">→ ${esc(e[1])}</span></button>`).join("")}</div>
-      <a class="home-link" href="#work/list">내 업무 전체 보기 →</a>
-    </div>
-    <div class="objects" id="homeObjects"></div>
-    <div id="homeResult"></div>
+  main.innerHTML = `<div class="view jarvis-entry">
+    <section class="hero-canvas" aria-labelledby="heroLine">
+      <div class="home-objects" id="homeObjects"></div>
+      <div class="hero-center">
+        <div class="logo-tile" aria-hidden="true"><div class="mark-lg"><i></i></div></div>
+        <h1 class="display" id="heroLine" aria-label="Hello, JARVIS?"></h1>
+        <div class="display-sub rise" id="subLine">일한 만큼, 준비됩니다.</div>
+        <p class="lead rise" id="leadLine">오늘의 나에게도, 내일의 나에게도.</p>
+        <div class="search rise" id="searchWrap">
+          <div class="ai-glow" aria-hidden="true"></div>
+          <form class="field omni" id="omni" data-testid="home-omni">
+            <span class="search-ico" aria-hidden="true">⌕</span>
+            <input id="omniIn" type="text" autocomplete="off" placeholder="예: 이번 주 뭐 해야 해?" aria-label="JARVIS에게 묻기">
+            <button class="search-go" type="submit">묻기</button>
+          </form>
+        </div>
+        <a class="home-link rise" id="homeWorkLink" href="#work/list">브리핑북 열기 <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+    <section class="entry-below rise" id="entryBelow" aria-labelledby="exampleTitle">
+      <div class="ex-label" id="exampleTitle">이렇게 물어보세요 — 질문은 네 개의 업무 화면으로 이어집니다</div>
+      <div class="ex-grid">${EX.map((e, i) => `<button class="example-tile" type="button" data-ex="${i}">
+        <span class="example-icon" aria-hidden="true">${e[3]}</span><span class="example-question">${esc(e[0])}</span><span class="example-dest">${esc(e[1])}</span>
+      </button>`).join("")}</div>
+    </section>
+    <div class="jarvis-result" id="homeResult"></div>
   </div>`;
 
-  typeIntro($("#heroLine"), persona ? `${persona}님, 오늘 할 일부터 챙겨드릴게요.` : "무엇부터 할까요?");
+  typeIntro($("#heroLine"), "Hello, JARVIS?");
   renderHomeObjects(fc, sim);
-  $$(".examples [data-ex]").forEach((b) => { b.onclick = () => { $("#omniIn").value = EX[+b.dataset.ex][0]; $("#omniIn").focus(); }; });
+  $$(".example-tile[data-ex]").forEach((b) => { b.onclick = () => { $("#omniIn").value = EX[+b.dataset.ex][0]; $("#omni").requestSubmit(); }; });
   $("#omni").onsubmit = (e) => { e.preventDefault(); handleOmni($("#omniIn").value, null, $("#homeResult"), sim); };
 }
 
 function typeIntro(el2, text) {
   if (!el2) return;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduced) { el2.textContent = text; return; }
-  el2.innerHTML = `<span id="tt"></span><span class="caret" aria-hidden="true"></span>`;
-  const tt = $("#tt", el2); let i = 0;
+  const seqEls = [$("#subLine"), $("#leadLine"), $("#searchWrap"), $("#homeWorkLink"), $("#entryBelow")];
+  el2.innerHTML = `<span class="d3" id="ttHello"></span> <span class="d3 accent" id="ttJarvis"></span><span class="type-caret" aria-hidden="true"></span>`;
+  const hello = $("#ttHello", el2);
+  const jarvis = $("#ttJarvis", el2);
+  const caret = $(".type-caret", el2);
+  const showAll = () => {
+    hello.textContent = "Hello,";
+    jarvis.textContent = "JARVIS?";
+    if (caret) caret.remove();
+    seqEls.forEach((node) => node && node.classList.add("in"));
+  };
+  if (reduced) { showAll(); return; }
+  let i = 0;
   (function tick() {
-    if (!document.body.contains(tt)) return;
-    tt.textContent = text.slice(0, ++i);
-    if (i < text.length) setTimeout(tick, 34);
-    else setTimeout(() => { const c = $(".caret", el2); if (c) c.remove(); }, 1200);
+    if (!document.body.contains(hello)) return;
+    const full = text || "Hello, JARVIS?";
+    const typed = full.slice(0, ++i);
+    const parts = typed.split(" ");
+    hello.textContent = parts[0] || "";
+    jarvis.textContent = parts.slice(1).join(" ");
+    if (i < full.length) setTimeout(tick, 100);
+    else {
+      setTimeout(() => { if (caret) { caret.classList.add("off"); setTimeout(() => caret.remove(), 600); } }, 1200);
+      seqEls.forEach((node, idx) => node && setTimeout(() => node.classList.add("in"), 420 + idx * 320));
+    }
   })();
 }
 
@@ -311,31 +359,83 @@ function renderHomeObjects(fc, sim) {
   const sel = selectedWork();
   const selEv = sel && sel.sources[0];
   const fcTop = ((fc && fc.items) || []).slice(0, 2);
+  const recentWorks = S.works.slice().sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999")).slice(0, 2);
   box.innerHTML = `
-    <button class="obj postit" id="obUrgent">
-      <span class="k">가장 임박한 업무</span>
-      ${u0 ? `<span class="t">${esc(u0.title)}</span><span class="d"><span class="dd">${ddayLabel(ddayOf(u0.due, sim))}</span> · 마감 ${fmtD(u0.due)} · 다음: ${esc((nextTodo(u0) || { text: "완료 조건 확인" }).text)}</span>`
-           : `<span class="t">기한이 정해진 업무가 없습니다</span><span class="d">내 업무에서 확인해 보세요</span>`}
+    <button class="home-paper home-note" id="obUrgent">
+      <span class="paper-pin" aria-hidden="true"></span>
+      ${u0 ? `<span>${esc((nextTodo(u0) || { text: "완료 조건 확인" }).text)}</span><strong>${ddayLabel(ddayOf(u0.due, sim)) || "기한 확인"}</strong><small>${esc(u0.title)}</small>`
+           : `<span>다가오는 업무를 확인해 주세요</span><strong>기한 확인</strong><small>브리핑북에서 업무를 선택할 수 있어요</small>`}
     </button>
-    <button class="obj fcast" id="obFcast">
-      <span class="k">도래한 반복 업무</span>
-      ${fcTop.length ? fcTop.map((it) => `<span class="d">· ${esc(it.name)} <span class="dd">${ddayLabel(it.dday)}</span></span>`).join("")
-                     : `<span class="d">지금 기준일에는 도래한 반복 업무가 없습니다</span>`}
+    <button class="home-paper home-forecast" id="obFcast">
+      <span class="paper-label">업무 일기예보</span>
+      ${fcTop.length ? `<span class="forecast-title">${esc(fcTop[0].name)}</span><span class="forecast-meta">과거 문서 ${fcTop[0].docCount || 0}건 근거</span><strong>${ddayLabel(fcTop[0].dday)}</strong>`
+                     : `<span class="forecast-title">도래한 반복 업무 없음</span><span class="forecast-meta">현재 기준일에는 새 예보가 없습니다</span>`}
     </button>
-    <button class="obj notes" id="obNotes">
-      <span class="k">최근 업무 기록</span>
-      ${recents.length ? recents.map((x) => `<span class="d">· ${esc(x.r.text.slice(0, 34))} <span class="sub">(${esc(x.w.title.slice(0, 14))}…)</span></span>`).join("")
-                       : `<span class="d">아직 기록이 없습니다 — 작업대에서 결정·메모를 남겨 보세요</span>`}
+    <button class="home-paper home-tasks" id="obNotes">
+      <span class="paper-label">지금 맡은 업무</span>
+      ${recentWorks.length ? recentWorks.map((w, i) => `<span class="task-row"><i class="task-dot ${i ? "blue" : "green"}"></i><span><b>${esc(w.title)}</b><small>${progress(w)}% 진행 · ${esc((nextTodo(w) || { text: w.doneWhen }).text)}</small></span><em><s style="width:${progress(w)}%"></s></em></span>`).join("")
+                          : `<span class="paper-empty">아직 업무가 없습니다 — 질문으로 시작해 보세요</span>`}
     </button>
-    <button class="obj evid" id="obEvid" ${sel && selEv ? "" : "disabled"}>
-      <span class="k">선택 업무의 대표 근거</span>
-      ${sel && selEv ? `<span class="t">${esc(sel.title)}</span><span class="d">근거 · ${esc(selEv.role || selEv.docId)} (${esc(selEv.docId)})</span>`
-                     : `<span class="d">연결된 업무 없음 — <u>내 업무 보기</u></span>`}
+    <button class="home-paper home-evidence" id="obEvid" ${sel && selEv ? "" : "disabled"}>
+      <span class="paper-label">근거 문서 연결</span>
+      <span class="document-icons" aria-hidden="true"><i>📄</i><i>📋</i><i>📑</i></span>
+      ${sel && selEv ? `<span class="evidence-copy">${esc(selEv.role || "대표 근거")} · ${esc(sel.title)}</span>`
+                     : `<span class="evidence-copy">전자결재 · 회의록 · 규정 — 모든 답에 원문 링크</span>`}
     </button>`;
   $("#obUrgent").onclick = () => (u0 ? nav("#workbench/" + u0.id) : nav("#work/list"));
   $("#obFcast").onclick = () => { UI.listFilter = "repeat"; saveUI(); nav("#work/list"); };
-  $("#obNotes").onclick = () => (recents[0] ? nav("#workbench/" + recents[0].w.id) : nav("#work/list"));
+  $("#obNotes").onclick = () => (recents[0] ? nav("#workbench/" + recents[0].w.id) : recentWorks[0] ? nav("#workbench/" + recentWorks[0].id) : nav("#work/list"));
   $("#obEvid").onclick = () => { if (sel && selEv) { nav("#workbench/" + sel.id); setTimeout(() => { const b = $(`[data-ev="${CSS.escape(selEv.docId)}"]`); if (b) b.focus(); }, 350); } else nav("#work/list"); };
+}
+
+const JARVIS_SURFACE_PATTERNS = {
+  today: [/이번 ?주/, /다음 ?주/, /이번 ?달/, /오늘/, /내일/, /일정/, /달력/, /스케줄/, /마감/, /디데이|D-?\d/i, /예보/, /반복/, /도래/, /언제/, /뭐 ?해야/],
+  brief: [/어떻게/, /절차/, /순서/, /누구/, /담당/, /연락/, /협조/, /협의/, /인수인계/, /처음이/, /매뉴얼/, /브리핑/, /업무 ?지도/, /지침/, /규정/, /뭐부터/, /주의/, /위험/, /조심/, /맡은.*업무/, /업무.*정리/, /진행 ?상황/],
+  draft: [/초안/, /기안 ?써/, /써 ?줘/, /작성해/, /만들어/, /양식/, /골격/, /서식/, /보고서 ?써/, /품의 ?써/],
+  check: [/반려/, /점검/, /검토/, /올려도/, /올리기 ?전/, /결재 ?전/, /감사/, /지적/, /누락/, /리스크/, /괜찮/, /문제 ?없/, /선시공/, /제출.*(점검|검토)/, /빠진.*(근거|내용)/],
+};
+function classifyJarvisSurface(text, legacyIntent) {
+  if (["instruction", "record", "todo"].includes(legacyIntent)) return null;
+  const t = String(text || "").trim().replace(/\s+/g, " ");
+  let best = null; let bestScore = 0; let tie = false;
+  for (const key of ["today", "brief", "draft", "check"]) {
+    const score = JARVIS_SURFACE_PATTERNS[key].reduce((count, pattern) => count + (pattern.test(t) ? 1 : 0), 0);
+    if (score > bestScore) { best = key; bestScore = score; tie = false; }
+    else if (score === bestScore && score > 0) tie = true;
+  }
+  if (!bestScore) return null;
+  return tie ? "ambiguous" : best;
+}
+
+function openJarvisSurface(surface, text, matchedWork) {
+  if (surface === "today") return nav("#work/calendar");
+  if (surface === "brief") return nav("#work/list");
+  const target = matchedWork || selectedWork();
+  const open = (work) => {
+    if (!work) return nav("#work/list");
+    S.selectedWorkId = work.id;
+    saveState();
+    nav(`#${surface === "check" ? "check" : "draft"}/${encodeURIComponent(work.id)}`);
+  };
+  if (target) return open(target);
+  if (!S.works.length) {
+    toast("먼저 브리핑북에서 업무를 만든 뒤 초안·사전점검을 시작해 주세요.");
+    return nav("#work/list");
+  }
+  return chooseWork(surface === "check" ? "어느 업무의 초안을 점검할까요?" : "어느 업무의 초안을 준비할까요?", open, false);
+}
+
+function renderJarvisClarify(resultBox, text, matchedWork) {
+  if (!resultBox) return;
+  const choices = [
+    ["today", "오늘", "일정과 다가오는 반복 업무"],
+    ["brief", "브리핑북", "맡은 업무와 다음 할 일"],
+    ["draft", "초안", "과거 양식에 맞춘 문서 작성"],
+    ["check", "사전점검", "제출 전 누락·감사 위험 확인"],
+  ];
+  resultBox.innerHTML = `<div class="card jarvis-clarify"><div class="blk-k">어느 화면으로 열어 드릴까요? — 한 번만 확인합니다</div>
+    <div class="clarify-grid">${choices.map(([key, label, desc]) => `<button type="button" data-surface="${key}"><b>${label}</b><span>${desc}</span></button>`).join("")}</div></div>`;
+  $$('[data-surface]', resultBox).forEach((button) => { button.onclick = () => openJarvisSurface(button.dataset.surface, text, matchedWork); });
 }
 
 /* ---------- 만능 입력 처리 ---------- */
@@ -350,6 +450,10 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
   const { classifyIntent, matchWork, extractDueText } = window.JikmuIntent;
   const c = classifyIntent(t);
   const target = fixedWork || matchWork(t, S.works);
+  const surface = !fixedWork && classifyJarvisSurface(t, c.intent);
+
+  if (surface === "ambiguous") return renderJarvisClarify(resultBox, t, target);
+  if (surface) return openJarvisSurface(surface, t, target);
 
   if (!fixedWork && c.intent === "list") return nav("#work/list");
 
@@ -374,7 +478,10 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
 
   if (c.intent === "record" || c.intent === "todo") return applyRecordOrTodo(t, c.intent, fixedWork, target);
 
-  // unclear — 모르는 것(의도)만 한 번 확인
+  // 홈의 애매한 질문은 JARVIS의 네 화면 중 하나만 고르게 한다.
+  if (!fixedWork) return renderJarvisClarify(resultBox, t, target);
+
+  // 작업대의 애매한 입력은 기존 업무 기록 방식 중 하나만 고르게 한다.
   if (resultBox) {
     resultBox.innerHTML = `<div class="card" style="margin-top:18px">
       <div class="blk-k">어떻게 처리할까요? — 한 번만 확인합니다</div>
@@ -466,8 +573,10 @@ async function vList(main) {
   if (filtered) works = works.filter((w) => w.repeat);
   works.sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
 
-  main.innerHTML = `<div class="view">
+  main.innerHTML = `<div class="view app-view">
+    <p class="screen-kicker">브리핑북</p>
     <h1 class="pg" tabindex="-1">내 업무</h1>
+    ${jarvisFlowTabs("brief")}
     <div class="list-tools">
       <div class="cap-tabs" role="tablist">
         <button class="on" role="tab" aria-selected="true">목록 보기</button>
@@ -531,8 +640,10 @@ async function vCalendar(main) {
     cells += `<div class="cal-day${iso === today ? " today" : ""}">${d}
       ${(byDay.get(d) || []).map((w) => `<button class="cal-chip" data-w="${esc(w.id)}" title="${esc(w.title)}">${esc(w.title)}</button>`).join("")}</div>`;
   }
-  main.innerHTML = `<div class="view">
-    <h1 class="pg" tabindex="-1">내 업무</h1>
+  main.innerHTML = `<div class="view app-view">
+    <p class="screen-kicker">오늘</p>
+    <h1 class="pg" tabindex="-1">업무 일기예보</h1>
+    ${jarvisFlowTabs("today")}
     <div class="list-tools"><div class="cap-tabs" role="tablist">
       <button role="tab" aria-selected="false" id="toList">목록 보기</button>
       <button class="on" role="tab" aria-selected="true">달력 보기</button>
@@ -570,8 +681,9 @@ async function vWorkbench(main, id) {
   const nt = nextTodo(w);
   const cautions = bf ? bf.cautions.slice(0, 2) : [];
 
-  main.innerHTML = `<div class="view" data-testid="workbench">
+  main.innerHTML = `<div class="view app-view" data-testid="workbench">
     <a class="wb-back" href="#work/list">← 내 업무</a>
+    ${jarvisFlowTabs("brief", w)}
     <section class="card wb-context">
       <h1 tabindex="-1" class="pg" style="margin:0 0 4px">${esc(w.title)}
         ${w.repeat ? `<span class="badge repeat">반복</span>` : ""}</h1>
@@ -800,13 +912,14 @@ async function ingestFlow(w, file, pastedText) {
 }
 
 /* ---------- 기안 집중 화면 ---------- */
-async function vDraft(main, id) {
+async function vDraft(main, id, autoCheck) {
   const w = getWork(id);
   if (!w) return vNotFound(main, "업무를 찾을 수 없습니다", id, true);
   S.selectedWorkId = w.id; saveState();
-  main.innerHTML = `<div class="view">
+  main.innerHTML = `<div class="view app-view">
     <a class="wb-back" href="#workbench/${esc(w.id)}">← 같은 업무 작업대로</a>
-    <h1 class="pg" tabindex="-1">기안 집중 — ${esc(w.title)}</h1>
+    ${jarvisFlowTabs(autoCheck ? "check" : "draft", w)}
+    <h1 class="pg" tabindex="-1">${autoCheck ? "제출 전 사전점검" : "기안 집중"} — ${esc(w.title)}</h1>
     <div id="draftBody"><div class="card"><p class="sub">작년 양식을 불러오는 중…</p></div></div>
   </div>`;
   const body = $("#draftBody");
@@ -818,6 +931,7 @@ async function vDraft(main, id) {
       <div id="checkOut" data-testid="precheck-results"></div></div>`;
     $("#dSave").onclick = () => { w.draft = { savedAt: Date.now(), freeText: $("#freeDraft").value }; saveState(); toast("임시 저장했습니다."); };
     $("#dCheck").onclick = () => runCheck($("#freeDraft").value, $("#checkOut"));
+    if (autoCheck) $("#dCheck").click();
     return;
   }
   try {
@@ -859,14 +973,20 @@ async function vDraft(main, id) {
       }).join("")).join("\n");
       runCheck(text, $("#checkOut"));
     };
+    if (autoCheck) $("#dCheck").click();
   } catch (e) {
     body.innerHTML = `<div class="card"><p>엔진 연결을 확인해 주세요.</p></div>`;
   }
 }
 async function runCheck(text, out) {
+  const draftText = String(text || "").trim();
+  if (!draftText) {
+    out.innerHTML = `<div class="f-item precheck-empty">점검할 문안을 먼저 입력해 주세요. 빈 문서는 안전하다고 판정하지 않습니다.</div>`;
+    return;
+  }
   out.innerHTML = `<p class="sub" style="margin-top:12px">과거 반려·감사 이력과 대조하는 중…</p>`;
   try {
-    const r = await api("/api/check", { text });
+    const r = await api("/api/check", { text: draftText });
     out.innerHTML = r.count === 0
       ? `<div class="f-item" style="border-color:var(--mint);background:var(--mint-soft)">지적 이력과 겹치는 위험 표현이 없습니다.</div>`
       : r.findings.map((f) => `<div class="f-item ${f.cls === "r" ? "r" : ""}"><b>${esc(f.name)}</b> <span class="sub">${esc(f.level)}</span>
