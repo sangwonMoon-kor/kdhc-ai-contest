@@ -26,7 +26,7 @@ if (!failures.length) {
   }
   if (/function typeIntro\(/.test(app)) failures.push("legacy home typing intro remains");
   if (!app.includes("window.JikmuHomeModel.buildTwoWeekWindow")) failures.push("home does not build its 14-day model window");
-  if (!app.includes("window.JikmuHomeModel.buildCalendarEvents")) failures.push("home does not render model calendar events");
+  if (!app.includes("workspaceModel.selectHomeEvents")) failures.push("home does not apply the current-person event scope");
   if (!app.includes('classList.toggle("is-home"')) failures.push("home route body class contract missing");
   if (!style.includes("시각 정본: kdhc-ai-contest demo/app.html v4")) failures.push("approved UI provenance missing");
   if (!style.includes("main.home-main")) failures.push("home main layout scope missing");

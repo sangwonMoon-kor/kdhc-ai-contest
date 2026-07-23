@@ -174,6 +174,9 @@ function undoLast() {
     if (candidate) candidate.confirmed = a.prevConfirmed;
     w.records = w.records.filter((r) => r.id !== a.recId);
   }
+  if (a.type === "addPersonalSchedule") {
+    S.personalSchedules = (S.personalSchedules || []).filter((item) => item.id !== a.personalId);
+  }
   saveState(); hideToast(); route();
 }
 /* 대상 변경: 방금 입력으로 생긴 변경만 원래 업무에서 되돌리고 새 대상에 한 번 적용 */
@@ -240,6 +243,57 @@ function chooseWork(title, onPick, allowNew) {
 /* ---------- 근거 서랍 ---------- */
 function openDrawerRaw() { $("#drawer").hidden = false; $("#drawerVeil").hidden = false; $("#drawerClose").focus(); }
 function closeDrawer() { $("#drawer").hidden = true; $("#drawerVeil").hidden = true; }
+function isValidISODate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+  if (!match) return false;
+  const date = new Date(Date.UTC(+match[1], +match[2] - 1, +match[3]));
+  return date.getUTCFullYear() === +match[1] && date.getUTCMonth() === +match[2] - 1 && date.getUTCDate() === +match[3];
+}
+function openPersonalScheduleDrawer(personalId, initialISO) {
+  const existing = (S.personalSchedules || []).find((item) => item.id === personalId) || null;
+  const startISO = existing ? existing.startISO : initialISO || "";
+  const endISO = existing ? existing.endISO || existing.startISO : initialISO || "";
+  $("#drawerTitle").textContent = existing ? "개인 일정 수정" : "개인 일정 추가";
+  $("#drawerBody").innerHTML = `<form class="personal-schedule-form" id="personalScheduleForm">
+    <label>일정 제목<input id="personalTitle" type="text" required maxlength="80" value="${esc(existing ? existing.title : "")}"></label>
+    <div class="personal-schedule-dates">
+      <label>시작일<input id="personalStart" type="date" required value="${esc(startISO)}"></label>
+      <label>종료일<input id="personalEnd" type="date" required value="${esc(endISO)}"></label>
+    </div>
+    <p class="form-error" id="personalScheduleError" role="alert"></p>
+    <div class="candidate-actions">
+      <button class="btn small" type="submit">저장</button>
+      ${existing ? '<button class="btn ghost small" id="deletePersonalSchedule" type="button">삭제</button>' : ""}
+    </div>
+  </form>`;
+  openDrawerRaw();
+  $("#personalTitle").focus();
+  $("#personalScheduleForm").onsubmit = (event) => {
+    event.preventDefault();
+    const title = $("#personalTitle").value.trim();
+    const nextStartISO = $("#personalStart").value;
+    const nextEndISO = $("#personalEnd").value;
+    const error = $("#personalScheduleError");
+    if (!title || !isValidISODate(nextStartISO) || !isValidISODate(nextEndISO) || nextStartISO > nextEndISO) {
+      error.textContent = "제목과 날짜를 확인해 주세요. 종료일은 시작일보다 빠를 수 없습니다.";
+      return;
+    }
+    if (existing) {
+      existing.title = title;
+      existing.startISO = nextStartISO;
+      existing.endISO = nextEndISO;
+    } else {
+      if (!Array.isArray(S.personalSchedules)) S.personalSchedules = [];
+      S.personalSchedules.push({ id: uid("personal-"), title, startISO: nextStartISO, endISO: nextEndISO, ownerId: S.currentPersonId, status: "active" });
+    }
+    saveState(); closeDrawer(); route();
+  };
+  const remove = $("#deletePersonalSchedule");
+  if (remove) remove.onclick = () => {
+    S.personalSchedules = S.personalSchedules.filter((item) => item.id !== existing.id);
+    saveState(); closeDrawer(); route();
+  };
+}
 async function openEvidence(ref) {
   const body = $("#drawerBody");
   $("#drawerTitle").textContent = "근거";
@@ -332,7 +386,7 @@ async function vHome(main) {
     throw new Error("Home calendar model unavailable");
   }
   const calendarWindow = window.JikmuHomeModel.buildTwoWeekWindow(sim, homeCalendarOffsetWeeks);
-  const events = window.JikmuHomeModel.buildCalendarEvents(S.works, calendarWindow);
+  const events = workspaceModel.selectHomeEvents(S, calendarWindow);
 
   main.innerHTML = `<div class="home-content">
       <section class="home-compose" aria-label="생각 입력">
@@ -363,7 +417,7 @@ async function vHome(main) {
         </div>
         <div class="home-calendar-legend" aria-label="일정 범례">
           <span><i class="legend-work"></i>공사·용역</span>
-          <span><i class="legend-memo"></i>내 메모</span>
+          <span><i class="legend-memo"></i>개인 일정·내 메모</span>
           <span><i class="legend-candidate"></i>확인 필요</span>
         </div>
       </section>
@@ -398,6 +452,8 @@ async function vHome(main) {
     eventButton.onclick = () => {
       if (eventButton.dataset.calendarKind === "candidate") {
         confirmScheduleCandidate(eventButton.dataset.workId, eventButton.dataset.eventId);
+      } else if (eventButton.dataset.calendarKind === "personal") {
+        openPersonalScheduleDrawer(eventButton.dataset.eventId);
       } else {
         nav("#workbench/" + eventButton.dataset.workId);
       }
@@ -506,6 +562,7 @@ function homeEventLabel(event2) {
   if (event2.kind === "deadline") return `${event2.label} 마감, ${fmtD(event2.startISO)}, 업무 작업대 열기`;
   if (event2.kind === "memo") return `확인된 메모, ${event2.label}, ${homeEventDateLabel(event2)}, 업무 작업대 열기`;
   if (event2.kind === "candidate") return `일정 후보 미확인, ${event2.label}, ${homeEventDateLabel(event2)}, 눌러서 확인`;
+  if (event2.kind === "personal") return `개인 일정, ${event2.label}, ${homeEventDateLabel(event2)}, 눌러서 수정`;
   return `${event2.label}, ${fmtD(event2.startISO)}부터 ${fmtD(event2.endISO)}까지, 업무 작업대 열기`;
 }
 
@@ -557,10 +614,15 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
   const { classifyIntent, matchWork, extractDueText } = window.JikmuIntent;
   const c = classifyIntent(t);
   const target = fixedWork || matchWork(t, S.works);
+  const personalCandidate = !fixedWork && !target ? parseScheduleCandidate(t, sim) : null;
 
   if (!fixedWork && c.intent === "list") return nav("#work/list");
 
   if (c.intent === "question") return renderAsk(resultBox, t, target);
+
+  if (personalCandidate && c.intent !== "draft") {
+    return renderPersonalScheduleCandidate(resultBox, personalCandidate);
+  }
 
   if (c.intent === "draft") {
     const w = target || fixedWork;
@@ -806,6 +868,34 @@ async function vCalendar(main) {
   $("#calNext").onclick = () => { const d2 = new Date(Y, M, 1); UI.calYM = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, "0")}`; saveUI(); route(); };
   $$("#yGrid [data-m]").forEach((b) => { b.onclick = () => { UI.calYM = `${Y}-${String(+b.dataset.m).padStart(2, "0")}`; saveUI(); route(); }; });
   $$(".cal-chip").forEach((b) => { b.onclick = () => { S.selectedWorkId = b.dataset.w; saveState(); nav("#workbench/" + b.dataset.w); }; });
+}
+function renderPersonalScheduleCandidate(resultBox, candidate) {
+  if (!resultBox) return;
+  resultBox.innerHTML = `<div class="card personal-candidate" role="status">
+    <div class="blk-k">개인 일정 후보 · 확인 전</div>
+    <p><b>${esc(candidate.label)}</b></p>
+    <p class="sub">${esc(homeEventDateLabel(candidate))}</p>
+    <div class="candidate-actions">
+      <button class="btn small" id="confirmPersonalSchedule" type="button">개인 일정으로 확정</button>
+      <button class="btn ghost small" id="cancelPersonalSchedule" type="button">취소</button>
+    </div>
+  </div>`;
+  $("#confirmPersonalSchedule", resultBox).onclick = () => {
+    const personal = {
+      id: uid("personal-"),
+      title: candidate.label,
+      startISO: candidate.startISO,
+      endISO: candidate.endISO,
+      ownerId: S.currentPersonId,
+      status: "active",
+    };
+    if (!Array.isArray(S.personalSchedules)) S.personalSchedules = [];
+    S.personalSchedules.push(personal);
+    saveState();
+    setAction({ type: "addPersonalSchedule", personalId: personal.id }, "개인 일정을 확정했습니다.");
+    route();
+  };
+  $("#cancelPersonalSchedule", resultBox).onclick = () => { resultBox.innerHTML = ""; };
 }
 
 /* ---------- 클라우드 ---------- */

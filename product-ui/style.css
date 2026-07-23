@@ -207,10 +207,10 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-event--work.is-construction{background:linear-gradient(90deg,#ffe8e5,#ffdcd9);color:var(--home-red-deep)}
 .home-event--work.is-service{background:linear-gradient(90deg,#efefff,#e9e8fb)}
 .home-event--deadline{color:#22252b}
-.home-event--memo{background:var(--home-green-soft);border-color:rgba(19,151,40,.09);color:#117f25}
+.home-event--memo,.home-event--personal{background:var(--home-green-soft);border-color:rgba(19,151,40,.09);color:#117f25}
 .home-event--candidate{border-style:dashed;color:#815e05;background:#fffaf0}
 .home-event-dot{width:8px;height:8px;border-radius:50%;background:var(--home-red);flex:none}
-.home-event--memo .home-event-dot,.home-event--candidate .home-event-dot{background:var(--home-green)}
+.home-event--memo .home-event-dot,.home-event--personal .home-event-dot,.home-event--candidate .home-event-dot{background:var(--home-green)}
 .home-event-symbol{font-weight:900;color:var(--home-green);flex:none}
 .home-event-status{margin-left:auto;color:#8a680e;font-size:.66rem;font-weight:750;white-space:nowrap}
 .home-calendar-legend{display:flex;align-items:center;gap:28px;padding:15px 26px 0;color:#343943;font-size:.82rem}
@@ -243,6 +243,13 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .list-tools{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
 .filter-chip{font-size:.78rem;background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:3px 11px}
 .filter-chip button{color:inherit;margin-left:5px}
+.candidate-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.personal-schedule-form{display:flex;flex-direction:column;gap:14px}
+.personal-schedule-form label{display:flex;flex-direction:column;gap:5px;color:var(--ink-2);font-size:.82rem;font-weight:650}
+.personal-schedule-form input{width:100%;border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:9px 11px;background:var(--surface);color:var(--ink);font:inherit}
+.personal-schedule-form input:focus{outline:2px solid var(--blue);outline-offset:2px}
+.personal-schedule-dates{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-error{min-height:1.4em;color:var(--red);font-size:.82rem}
 
 /* ---- 달력 ---- */
 .cal-head{display:flex;align-items:center;gap:12px;margin:6px 0 12px}

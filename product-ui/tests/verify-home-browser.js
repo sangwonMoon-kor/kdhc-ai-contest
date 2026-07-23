@@ -31,8 +31,16 @@ function contrastRatio(first, second) {
 }
 
 const seededState = {
-  v: 1,
+  v: 2,
   selectedWorkId: "calendar-work",
+  personalSchedules: [{
+    id: "personal-review",
+    title: "개인 검토 일정",
+    startISO: "2026-01-03",
+    endISO: "2026-01-03",
+    ownerId: "person-kim-hannan",
+    status: "active"
+  }],
   works: [{
     id: "calendar-work",
     title: "냉각수 펌프 정비공사",
@@ -41,6 +49,9 @@ const seededState = {
     due: "2026-01-04",
     calendarStart: "2025-12-29",
     calendarCategory: "construction",
+    departmentId: "dept-plant",
+    sectionId: "section-maintenance",
+    relations: [{ personId: "person-kim-hannan", kind: "owner" }],
     repeat: false,
     todos: [],
     records: [{
@@ -61,6 +72,30 @@ const seededState = {
     }],
     sources: [],
     draft: { savedAt: null, values: null }
+  }, {
+    id: "participant-work",
+    title: "내 참여 업무",
+    departmentId: "dept-plant",
+    sectionId: "section-maintenance",
+    relations: [{ personId: "person-kim-hannan", kind: "participant" }],
+    schedule: { startISO: "2026-01-05", endISO: "2026-01-06", milestones: [] },
+    todos: [], records: [], sources: [], draft: { savedAt: null, values: null }
+  }, {
+    id: "section-only-work",
+    title: "같은 과 다른 담당 업무",
+    departmentId: "dept-plant",
+    sectionId: "section-maintenance",
+    relations: [{ personId: "person-other", kind: "owner" }],
+    schedule: { startISO: "2026-01-05", endISO: "2026-01-06", milestones: [] },
+    todos: [], records: [], sources: [], draft: { savedAt: null, values: null }
+  }, {
+    id: "department-only-work",
+    title: "타 과 부서 업무",
+    departmentId: "dept-plant",
+    sectionId: "section-other",
+    relations: [{ personId: "person-other", kind: "owner" }],
+    schedule: { startISO: "2026-01-05", endISO: "2026-01-06", milestones: [] },
+    todos: [], records: [], sources: [], draft: { savedAt: null, values: null }
   }]
 };
 
@@ -214,6 +249,20 @@ async function run() {
     assert.equal(await page.locator('[data-calendar-date="2026-01-02"]').getAttribute("aria-current"), "date", "simulation date is not exposed as current date");
 
     assert((await page.locator('[data-calendar-kind="work"]').count()) >= 1, "multi-day work bar missing");
+    assert.equal(await page.getByText("내 참여 업무", { exact: true }).count(), 1, "participant work is missing from home");
+    assert.equal(await page.getByText("개인 검토 일정", { exact: true }).count(), 1, "personal schedule is missing from home");
+    assert.equal(await page.getByText("같은 과 다른 담당 업무", { exact: true }).count(), 0, "unrelated section work leaked into home");
+    assert.equal(await page.getByText("타 과 부서 업무", { exact: true }).count(), 0, "department-only work leaked into home");
+    await page.getByText("개인 검토 일정", { exact: true }).click();
+    assert.equal(await page.getByRole("heading", { name: "개인 일정 수정" }).count(), 1, "personal schedule does not open the edit drawer");
+    await page.getByRole("button", { name: "근거 닫기" }).click();
+    await page.locator("#omniIn").fill("1월 8일 치과 예약");
+    await page.locator("#omni").evaluate(function (form) { form.requestSubmit(); });
+    assert.equal(await page.getByRole("button", { name: "개인 일정으로 확정" }).count(), 1, "undirected dated input does not remain a personal schedule candidate");
+    assert.equal(await page.locator('[data-calendar-kind="personal"][data-event-start="2026-01-08"]').count(), 0, "unconfirmed personal schedule appeared in the calendar");
+    await page.getByRole("button", { name: "개인 일정으로 확정" }).click();
+    await page.locator('[data-calendar-kind="personal"][data-event-start="2026-01-08"]').waitFor();
+    assert.equal(await page.locator('[data-calendar-kind="personal"][data-event-start="2026-01-08"]').count(), 1, "confirmed personal schedule did not appear in the calendar");
     assert.equal(await page.locator('[data-calendar-kind="memo"]').count(), 1, "confirmed memo missing");
     const candidate = page.locator('[data-calendar-kind="candidate"]');
     assert.equal(await candidate.count(), 1, "schedule candidate chip missing");
