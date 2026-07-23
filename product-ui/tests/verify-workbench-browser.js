@@ -132,6 +132,119 @@ async function run() {
 
     const progress = page.locator('[data-workbench-section="progress"]');
     assert((await progress.innerText()).includes("첫 메모"));
+    const progressInput = page.locator("[data-progress-input]");
+    assert.equal(await progressInput.count(), 1, "dedicated progress-note input is missing");
+    assert.notEqual(await progressInput.getAttribute("id"), "omniIn", "progress-note input reused the global omni input");
+
+    const rawText = "7월 30일까지 도면을 발송하고 담당자에게 확인 요청";
+    const headlineDateBefore = await page.locator("[data-date-iso]").getAttribute("datetime");
+    const milestonesBefore = await page.locator("[data-work-milestone]").count();
+    const todosBefore = await page.locator("#todoList .todo").count();
+    await progressInput.fill(rawText);
+    await page.locator("[data-save-progress]").click();
+    const savedNote = page.locator("[data-progress-note]").filter({ hasText: rawText }).first();
+    await savedNote.waitFor();
+    assert((await savedNote.innerText()).includes(rawText), "saved progress note lost its raw text");
+
+    const scheduleProposal = savedNote.locator('[data-progress-candidate][data-candidate-type="schedule"]');
+    const followupProposal = savedNote.locator('[data-progress-candidate][data-candidate-type="followup"]');
+    assert.equal(await scheduleProposal.getAttribute("data-status"), "proposed");
+    assert.equal(await followupProposal.getAttribute("data-status"), "proposed");
+    assert.equal(await page.locator("[data-date-iso]").getAttribute("datetime"), headlineDateBefore,
+      "proposed schedule changed the headline date");
+    assert.equal(await page.locator("[data-work-milestone]").count(), milestonesBefore,
+      "proposed schedule was applied before confirmation");
+    assert.equal(await page.locator("#todoList .todo").count(), todosBefore,
+      "proposed follow-up was applied before confirmation");
+
+    await scheduleProposal.locator("[data-confirm-candidate]").click();
+    const confirmedSchedule = page.locator("[data-progress-note]").filter({ hasText: rawText }).first()
+      .locator('[data-progress-candidate][data-candidate-type="schedule"]');
+    await confirmedSchedule.waitFor();
+    assert.equal(await confirmedSchedule.getAttribute("data-status"), "confirmed");
+    assert.equal(await page.locator("[data-date-iso]").getAttribute("datetime"), headlineDateBefore,
+      "confirmed schedule changed the headline date");
+    assert.equal(await page.locator("[data-work-milestone]").count(), milestonesBefore + 1,
+      "confirmed schedule was not added as a milestone");
+
+    const proposedFollowupAfterRender = page.locator("[data-progress-note]").filter({ hasText: rawText }).first()
+      .locator('[data-progress-candidate][data-candidate-type="followup"]');
+    await proposedFollowupAfterRender.locator("[data-confirm-candidate]").click();
+    const confirmedFollowup = page.locator("[data-progress-note]").filter({ hasText: rawText }).first()
+      .locator('[data-progress-candidate][data-candidate-type="followup"]');
+    assert.equal(await confirmedFollowup.getAttribute("data-status"), "confirmed");
+    assert.equal(await page.locator("#todoList .todo").count(), todosBefore + 1,
+      "confirmed follow-up was not added to the checklist");
+
+    const decisionText = "검토 범위를 변경하기로 결정";
+    await page.locator("[data-progress-input]").fill(decisionText);
+    await page.locator("[data-save-progress]").click();
+    const decisionNote = page.locator("[data-progress-note]").filter({ hasText: decisionText }).first();
+    assert.equal(await decisionNote.locator('[data-candidate-type="decision"]').getAttribute("data-status"), "proposed");
+    assert.equal(await decisionNote.locator('[data-candidate-type="change"]').getAttribute("data-status"), "proposed");
+
+    const referenceText = "배관 규격 참고 메모";
+    await page.locator("[data-progress-input]").fill(referenceText);
+    await page.locator("[data-save-progress]").click();
+    const referenceCandidate = page.locator("[data-progress-note]").filter({ hasText: referenceText }).first()
+      .locator('[data-progress-candidate][data-candidate-type="reference"]');
+    await referenceCandidate.locator("[data-dismiss-candidate]").click();
+    const dismissedReference = page.locator("[data-progress-note]").filter({ hasText: referenceText }).first()
+      .locator('[data-progress-candidate][data-candidate-type="reference"]');
+    assert.equal(await dismissedReference.getAttribute("data-status"), "dismissed");
+    assert((await page.locator("[data-progress-note]").filter({ hasText: referenceText }).first().innerText()).includes(referenceText),
+      "dismissing a candidate removed the raw progress note");
+
+    await page.evaluate(() => {
+      window.__originalProgressAnalyzer = window.OnMemoryWorkbenchModel.analyzeProgressText;
+      window.OnMemoryWorkbenchModel.analyzeProgressText = () => [];
+    });
+    const emptyText = "분석 후보 없이 남길 원문";
+    await page.locator("[data-progress-input]").fill(emptyText);
+    await page.locator("[data-save-progress]").click();
+    const emptyNote = page.locator("[data-progress-note]").filter({ hasText: emptyText }).first();
+    await emptyNote.waitFor();
+    assert.equal(await emptyNote.locator("[data-progress-candidate]").count(), 0);
+    const emptyAnalysis = await page.evaluate((text) => {
+      const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      return stored.works[0].records.find((record) => record.text === text).analysis;
+    }, emptyText);
+    assert.equal(emptyAnalysis.status, "empty");
+
+    await page.evaluate(() => {
+      window.OnMemoryWorkbenchModel.analyzeProgressText = () => { throw new Error("forced browser analysis failure"); };
+    });
+    const failedText = "분석 실패에도 남길 원문";
+    await page.locator("[data-progress-input]").fill(failedText);
+    await page.locator("[data-save-progress]").click();
+    const failedNote = page.locator("[data-progress-note]").filter({ hasText: failedText }).first();
+    await failedNote.waitFor();
+    assert((await failedNote.innerText()).includes(failedText), "failed analysis lost the raw progress note");
+    const failedAnalysis = await page.evaluate((text) => {
+      const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      return stored.works[0].records.find((record) => record.text === text).analysis;
+    }, failedText);
+    assert.equal(failedAnalysis.status, "failed");
+    assert.equal(failedAnalysis.error, "forced browser analysis failure");
+    await page.evaluate(() => {
+      window.OnMemoryWorkbenchModel.analyzeProgressText = window.__originalProgressAnalyzer;
+      delete window.__originalProgressAnalyzer;
+    });
+
+    const storedAfterCandidates = await page.evaluate((text) => {
+      const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      const work = stored.works[0];
+      const note = work.records.find((record) => record.text === text);
+      return {
+        headlineDate: work.lifecycle.designDeadlineISO,
+        milestone: work.schedule.milestones.find((item) => item.sourceNoteId === note.id),
+        statuses: note.analysis.candidates.map((candidate) => candidate.status)
+      };
+    }, rawText);
+    assert.equal(storedAfterCandidates.headlineDate, headlineDateBefore);
+    assert(storedAfterCandidates.milestone, "confirmed schedule milestone was not persisted");
+    assert.deepStrictEqual(storedAfterCandidates.statuses, ["confirmed", "confirmed"]);
+    await assertSectionOrder(page);
 
     await page.goto(`${baseURL}/?data=fixture#workbench/work-maintenance-contract-2026`, { waitUntil: "networkidle" });
     await assertSectionOrder(page);
@@ -141,6 +254,23 @@ async function run() {
     const memoryEmpty = page.locator('[data-workbench-section="memory"]');
     assert((await memoryEmpty.innerText()).includes("처음 진행하는 업무"));
     assert((await memoryEmpty.innerText()).includes("신규 초안"));
+
+    const completedState = fixtureState();
+    const completedWork = completedState.works.find((item) => item.id === "work-maintenance-contract-2026");
+    completedWork.lifecycle.phase = "done";
+    completedWork.lifecycle.completedAtISO = "2026-07-23T12:00:00.000Z";
+    completedWork.lifecycle.completedBy = completedState.currentPersonId;
+    const completedPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    await completedPage.addInitScript((fixture) => {
+      localStorage.setItem("jikmu.workbench.v1", JSON.stringify(fixture));
+      localStorage.removeItem("jikmu.ui.v1");
+    }, completedState);
+    await completedPage.goto(`${baseURL}/?data=fixture#workbench/work-maintenance-contract-2026`, { waitUntil: "networkidle" });
+    assert.equal(await completedPage.locator("[data-progress-input]").count(), 0,
+      "completed work exposes the progress-note input");
+    assert.equal(await completedPage.locator("[data-save-progress]").count(), 0,
+      "completed work exposes the progress-note mutation action");
+    await completedPage.close();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${baseURL}/?data=fixture#workbench/work-maintenance-plan-2026`, { waitUntil: "networkidle" });

@@ -61,6 +61,48 @@ const followedUp = model.confirmProgressCandidate(progressing, progressing.recor
 assert.equal(followedUp.todos.length, 1);
 assert.equal(followedUp.todos[0].candidate, false);
 
+const headlineBeforeCandidate = {
+  phase: "design",
+  designDeadlineISO: "2026-08-14",
+  completionDateISO: null
+};
+const scheduleOnlyWork = {
+  id: "work-schedule-only",
+  lifecycle: headlineBeforeCandidate,
+  records: [model.createProgressNote("7월 30일까지 도면을 발송", "2026-07-23T10:30:00.000Z", [scheduleCandidate])],
+  schedule: { milestones: [] },
+  todos: []
+};
+assert.equal(scheduleOnlyWork.schedule.milestones.length, 0, "proposed schedule changed work before confirmation");
+const scheduleOnlyConfirmed = model.confirmProgressCandidate(
+  scheduleOnlyWork,
+  scheduleOnlyWork.records[0].id,
+  scheduleCandidate.id
+);
+assert.deepStrictEqual(scheduleOnlyConfirmed.lifecycle, headlineBeforeCandidate, "schedule candidate changed the headline date");
+assert.equal(scheduleOnlyConfirmed.schedule.milestones.length, 1, "confirmed schedule was not added as a milestone");
+assert.equal(scheduleOnlyWork.schedule.milestones.length, 0, "confirmation mutated the original work");
+
+const failedRawText = "분석 실패에도 원문은 저장";
+let failedNote;
+try {
+  model.analyzeProgressText(failedRawText, {
+    parseScheduleCandidate: () => { throw new Error("forced analysis failure"); }
+  });
+  assert.fail("forced progress analysis did not fail");
+} catch (error) {
+  failedNote = model.createProgressNote(failedRawText, "2026-07-23T10:45:00.000Z", []);
+  failedNote.analysis = {
+    status: "failed",
+    error: String(error.message || error),
+    candidates: [],
+    confirmedCandidateIds: []
+  };
+}
+assert.equal(failedNote.text, failedRawText);
+assert.equal(failedNote.analysis.status, "failed");
+assert.equal(failedNote.analysis.error, "forced analysis failure");
+
 const state = {
   v: 3,
   currentPersonId: "person-kim-hannan",

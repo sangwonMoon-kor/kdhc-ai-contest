@@ -391,6 +391,31 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .rec.hint .dot{background:var(--mint)}
 .rec .ts{color:var(--muted);font-size:.75rem}
 .rec .ops{margin-left:auto;flex:none}
+.progress-note__body{min-width:0;flex:1}
+.progress-analysis-state{margin-top:7px;color:var(--muted);font-size:.78rem}
+.progress-analysis-state.is-failed{color:var(--red)}
+.progress-candidate-list{display:grid;gap:8px;margin-top:12px}
+.progress-candidate{min-width:0;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}
+.progress-candidate[data-status="confirmed"]{border-color:color-mix(in srgb,var(--mint) 35%,var(--line));background:var(--mint-soft)}
+.progress-candidate[data-status="dismissed"]{opacity:.66}
+.progress-candidate__header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.progress-candidate__tag{display:inline-flex;padding:3px 8px;border-radius:999px;background:var(--blue-soft);
+  color:var(--blue);font-size:.7rem;font-weight:750}
+.progress-candidate__status{color:var(--muted);font-size:.72rem}
+.progress-candidate>strong{display:block;font-size:.85rem}
+.progress-candidate>p{margin-top:4px;color:var(--muted);font-size:.78rem}
+.progress-candidate__actions{display:flex;gap:7px;margin-top:10px}
+.workbench-milestones{display:grid;gap:7px}
+.workbench-milestone{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:9px 11px;
+  border-radius:var(--r-sm);background:var(--surface-2);font-size:.84rem}
+.workbench-milestone time{color:var(--blue);font-weight:700}
+.progress-compose{margin-top:18px;padding:15px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2)}
+.progress-compose>label{display:block;margin-bottom:9px;font-size:.84rem;font-weight:750}
+.progress-compose>label span{margin-left:5px;color:var(--muted);font-size:.76rem;font-weight:500}
+.progress-compose__controls{display:flex;align-items:stretch;gap:8px}
+.progress-compose textarea{min-width:0;flex:1;padding:10px 12px;border:1px solid var(--line-strong);border-radius:var(--r-sm);
+  background:var(--surface);color:var(--ink);font:inherit;line-height:1.5;resize:vertical}
+.progress-compose textarea:focus{outline:2px solid var(--blue);outline-offset:1px}
 .wb-input{display:flex;gap:8px;margin-top:16px}
 .wb-input input{min-width:0;flex:1;border:1px solid var(--line-strong);border-radius:999px;padding:10px 16px;
   font-family:inherit;font-size:.92rem;background:var(--surface);color:var(--ink)}
@@ -520,6 +545,8 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
   .todo{min-width:0;flex-wrap:wrap}
   .todo .tx{min-width:0}
   .todo .ops{width:100%;padding-left:31px}
+  .progress-note{flex-wrap:wrap}
+  .progress-note>.ops{width:100%;padding-left:18px}
   .schedule-title-row{align-items:flex-start;margin-bottom:14px}
   .schedule-title-row>.btn{display:none}
   .schedule-toolbar{align-items:flex-start;gap:12px}
@@ -537,6 +564,9 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
   .workbench-deadline{min-width:0;align-items:flex-start}
   .workbench-section__header{align-items:flex-start;flex-wrap:wrap}
   .reference-details>div{grid-template-columns:64px minmax(0,1fr)}
+  .progress-compose__controls{flex-direction:column}
+  .progress-compose__controls .btn{justify-content:center}
+  .progress-compose>label span{display:block;margin:3px 0 0}
   .wb-input{align-items:stretch;flex-direction:column}
   .wb-input .btn{justify-content:center}
 }

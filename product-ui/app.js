@@ -145,7 +145,9 @@ function seedFromForecast(fc, sim) {
 }
 function getWork(id) { return S.works.find((w) => w.id === id) || null; }
 function isCompletedWork(work) {
-  return Boolean(work && workbenchModel.headlineFor(work, null).isComplete);
+  return Boolean(work && (workbenchModel
+    ? workbenchModel.headlineFor(work, null).isComplete
+    : work.lifecycle && work.lifecycle.phase === "done"));
 }
 function guardCompletedWork(work, resultBox) {
   if (!isCompletedWork(work)) return false;
@@ -1095,6 +1097,116 @@ function renderMemoryReference(reference) {
   </article>`;
 }
 
+function progressCandidateTypeLabel(type) {
+  return {
+    schedule: "일정",
+    decision: "결정",
+    change: "변경",
+    followup: "후속 작업",
+    reference: "참고 메모"
+  }[type] || "참고 메모";
+}
+function progressCandidateStatusLabel(status) {
+  return {
+    proposed: "확인 필요",
+    confirmed: "확인됨",
+    dismissed: "건너뜀"
+  }[status] || "확인 필요";
+}
+function renderProgressCandidate(candidate, noteId, readOnly) {
+  const status = ["proposed", "confirmed", "dismissed"].includes(candidate.status)
+    ? candidate.status : "proposed";
+  return `<article class="progress-candidate" data-progress-candidate="${esc(candidate.id)}"
+    data-candidate-type="${esc(candidate.type)}" data-status="${esc(status)}">
+    <div class="progress-candidate__header">
+      <span class="progress-candidate__tag">${esc(progressCandidateTypeLabel(candidate.type))}</span>
+      <span class="progress-candidate__status">${esc(progressCandidateStatusLabel(status))}</span>
+    </div>
+    <strong>${esc(candidate.label)}</strong>
+    <p>해석 근거 · ${esc(candidate.basis)}</p>
+    ${readOnly || status !== "proposed" ? "" : `<div class="progress-candidate__actions">
+      <button class="btn small" type="button" data-confirm-candidate="${esc(candidate.id)}" data-note-id="${esc(noteId)}">확인</button>
+      <button class="btn ghost small" type="button" data-dismiss-candidate="${esc(candidate.id)}" data-note-id="${esc(noteId)}">건너뛰기</button>
+    </div>`}
+  </article>`;
+}
+function renderProgressRecord(record, readOnly) {
+  const analysis = record && record.analysis;
+  const candidates = analysis && Array.isArray(analysis.candidates) ? analysis.candidates : [];
+  if (record && record.kind === "progress-note") {
+    const analysisMessage = analysis && analysis.status === "failed"
+      ? `<p class="progress-analysis-state is-failed">분석에 실패했지만 원문은 저장했습니다.</p>`
+      : (!candidates.length ? '<p class="progress-analysis-state">해석 후보 없이 원문을 저장했습니다.</p>' : "");
+    return `<article class="rec progress-note" data-progress-note="${esc(record.id)}">
+      <span class="dot"></span>
+      <div class="progress-note__body">
+        <div>${esc(record.text)}</div>
+        <span class="ts">${fmtTs(record.ts)}</span>
+        ${analysisMessage}
+        ${candidates.length ? `<div class="progress-candidate-list">${candidates.map((candidate) =>
+          renderProgressCandidate(candidate, record.id, readOnly)).join("")}</div>` : ""}
+      </div>
+      ${readOnly ? "" : `<div class="ops"><button class="btn ghost small" data-hint="${esc(record.id)}">다음 담당자에게</button></div>`}
+    </article>`;
+  }
+  return `<div class="rec ${esc(record.kind)}"><span class="dot"></span>
+    <div><div>${esc(record.text)}</div><span class="ts">${fmtTs(record.ts)}${record.kind === "hint" ? " · 다음 담당자 메모로 남김" : ""}</span></div>
+    ${!readOnly && record.kind !== "hint" ? `<div class="ops"><button class="btn ghost small" data-hint="${esc(record.id)}">다음 담당자에게</button></div>` : ""}
+  </div>`;
+}
+function saveProgressNote(work, rawText, simISO) {
+  if (guardCompletedWork(work)) return;
+  const text = String(rawText || "").trim();
+  if (!text) {
+    toast("진행 메모를 입력해 주세요.");
+    return;
+  }
+  let candidates = [];
+  let analysisError = null;
+  try {
+    candidates = workbenchModel.analyzeProgressText(text, {
+      simISO,
+      parseScheduleCandidate: (candidateText) => parseScheduleCandidate(candidateText, simISO)
+    });
+  } catch (error) {
+    analysisError = String(error && (error.message || error));
+  }
+  const note = workbenchModel.createProgressNote(text, new Date().toISOString(), candidates);
+  if (analysisError) {
+    note.analysis = {
+      status: "failed",
+      error: analysisError,
+      candidates: [],
+      confirmedCandidateIds: []
+    };
+  }
+  work.records.unshift(note);
+  saveState();
+  route();
+}
+function confirmProgressNoteCandidate(work, noteId, candidateId) {
+  if (guardCompletedWork(work)) return;
+  const index = S.works.findIndex((item) => item.id === work.id);
+  if (index < 0) return;
+  S.works[index] = workbenchModel.confirmProgressCandidate(work, noteId, candidateId);
+  saveState();
+  route();
+}
+function dismissProgressNoteCandidate(work, noteId, candidateId) {
+  if (guardCompletedWork(work)) return;
+  const note = work.records.find((record) => record && record.id === noteId);
+  const candidates = note && note.analysis && Array.isArray(note.analysis.candidates)
+    ? note.analysis.candidates : [];
+  const candidate = candidates.find((item) => item && item.id === candidateId);
+  if (!candidate || candidate.status !== "proposed") return;
+  candidate.status = "dismissed";
+  const stillProposed = candidates.some((item) => item && item.status === "proposed");
+  const hasConfirmed = candidates.some((item) => item && item.status === "confirmed");
+  note.analysis.status = stillProposed ? "proposed" : (hasConfirmed ? "confirmed" : "dismissed");
+  saveState();
+  route();
+}
+
 async function vWorkbench(main, id) {
   const sum = await loadSummary().catch(() => null);
   const fc = await loadForecast().catch(() => ({ items: [] }));
@@ -1183,14 +1295,28 @@ async function vWorkbench(main, id) {
         </div>
         <div class="workbench-subsection">
           <div class="blk-k">진행 기록</div>
-          <div id="recList">${w.records.length ? w.records.slice().sort((a, b) => b.ts - a.ts).map((r) => `
-            <div class="rec ${esc(r.kind)}"><span class="dot"></span>
-              <div><div>${esc(r.text)}</div><span class="ts">${fmtTs(r.ts)}${r.kind === "hint" ? " · 다음 담당자 메모로 남김" : ""}</span></div>
-              ${!headline.isComplete && r.kind !== "hint" ? `<div class="ops"><button class="btn ghost small" data-hint="${esc(r.id)}">다음 담당자에게</button></div>` : ""}
-            </div>`).join("") : `<div class="workbench-empty"><strong>첫 메모를 입력해 보세요</strong><p>결정·변경·확인 내용을 남기면 이 업무의 진행 기록이 됩니다.</p></div>`}</div>
+          <div id="recList">${w.records.length ? w.records.slice().sort((a, b) =>
+            new Date(b.ts).getTime() - new Date(a.ts).getTime()).map((record) =>
+              renderProgressRecord(record, headline.isComplete)).join("")
+            : `<div class="workbench-empty"><strong>첫 메모를 입력해 보세요</strong><p>결정·변경·확인 내용을 남기면 이 업무의 진행 기록이 됩니다.</p></div>`}</div>
           <div id="hintFlow"></div>
         </div>
-        ${headline.isComplete ? "" : `<form class="wb-input" id="wbOmni">
+        ${(w.schedule && Array.isArray(w.schedule.milestones) && w.schedule.milestones.length) ? `<div class="workbench-subsection">
+          <div class="blk-k">일정 마일스톤</div>
+          <div class="workbench-milestones">${w.schedule.milestones.map((milestone) =>
+            `<div class="workbench-milestone" data-work-milestone="${esc(milestone.id)}">
+              <time datetime="${esc(milestone.dateISO)}">${fmtD(milestone.dateISO)}</time>
+              <span>${esc(milestone.label)}</span>
+            </div>`).join("")}</div>
+        </div>` : ""}
+        ${headline.isComplete ? "" : `<form class="progress-compose" data-progress-form>
+          <label for="progressIn">진행 메모 <span>원문을 먼저 저장하고 해석 후보를 확인합니다.</span></label>
+          <div class="progress-compose__controls">
+            <textarea id="progressIn" data-progress-input rows="2" placeholder="결정·변경·일정·후속 작업을 기록하세요"></textarea>
+            <button class="btn" type="submit" data-save-progress>저장</button>
+          </div>
+        </form>
+        <form class="wb-input" id="wbOmni">
           <input id="wbIn" type="text" autocomplete="off" placeholder="이 업무에 이어서 말하기 — 질문·결정·할 일" aria-label="이 업무에 이어서 말하기">
           <button class="btn" type="submit">말하기</button>
         </form>`}
@@ -1285,9 +1411,21 @@ async function vWorkbench(main, id) {
     b.onclick = () => { w.todos = w.todos.filter((x) => x.id !== b.dataset.del); saveState(); lastAction = null; lastActionMessage = ""; hideToast(); route(); };
   });
   $$("[data-hint]", main).forEach((b) => { b.onclick = () => hintFlow(w, w.records.find((r) => r.id === b.dataset.hint)); });
+  $$("[data-confirm-candidate]", main).forEach((button) => {
+    button.onclick = () => confirmProgressNoteCandidate(w, button.dataset.noteId, button.dataset.confirmCandidate);
+  });
+  $$("[data-dismiss-candidate]", main).forEach((button) => {
+    button.onclick = () => dismissProgressNoteCandidate(w, button.dataset.noteId, button.dataset.dismissCandidate);
+  });
   const gd = $("#goDraft"); if (gd) gd.onclick = () => nav("#draft/" + w.id);
   const gd1 = $("#goDraft1"); if (gd1) gd1.onclick = () => nav("#draft/" + w.id);
   const gc1 = $("#goCheck1"); if (gc1) gc1.onclick = () => nav("#draft/" + w.id);
+  const progressForm = $("[data-progress-form]", main);
+  if (progressForm) progressForm.onsubmit = (event) => {
+    event.preventDefault();
+    const input = $("[data-progress-input]", progressForm);
+    saveProgressNote(w, input && input.value, sim);
+  };
   const wbOmni = $("#wbOmni");
   if (wbOmni) wbOmni.onsubmit = (e) => {
       e.preventDefault();
