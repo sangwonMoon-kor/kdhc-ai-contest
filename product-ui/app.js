@@ -113,7 +113,16 @@ function loadState() {
   } catch (e) { return blankState(); }
 }
 function saveState() { try { storage.setItem(SKEY, JSON.stringify(S)); } catch (e) { /* 저장 불가 환경 — 메모리로 계속 */ } }
-function loadUI() { try { return Object.assign({ calYM: null, listFilter: null }, JSON.parse(storage.getItem(UKEY) || "{}")); } catch (e) { return { calYM: null, listFilter: null }; } }
+function loadUI() {
+  const defaults = { calYM: null, listFilter: null, scheduleScopes: [workspaceModel.SCOPE.MINE] };
+  try {
+    const parsed = JSON.parse(storage.getItem(UKEY) || "{}");
+    const loaded = Object.assign({}, defaults, parsed);
+    if (!Array.isArray(parsed.scheduleScopes)) loaded.scheduleScopes = defaults.scheduleScopes.slice();
+    else loaded.scheduleScopes = parsed.scheduleScopes.filter((scope) => Object.values(workspaceModel.SCOPE).includes(scope));
+    return loaded;
+  } catch (e) { return defaults; }
+}
 function saveUI() { try { storage.setItem(UKEY, JSON.stringify(UI)); } catch (e) {} }
 
 /* 시드: 엔진 반복 업무(forecast) → 업무 건 파생. seedKey 중복은 만들지 않아 사용자 변경을 보존 */
@@ -814,60 +823,126 @@ async function vList(main) {
   const clr = $("#clrF"); if (clr) clr.onclick = () => { UI.listFilter = null; saveUI(); route(); };
 }
 
-/* ---------- 내 업무: 달력 ---------- */
+/* ---------- 일정: 월간 조직 레이어 ---------- */
+function scheduleAddDays(iso, amount) {
+  if (!isValidISODate(iso)) return null;
+  const parts = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + amount, 12));
+  return date.toISOString().slice(0, 10);
+}
+function scheduleMonthWindow(year, month) {
+  const monthISO = `${year}-${String(month).padStart(2, "0")}`;
+  const firstISO = `${monthISO}-01`;
+  const first = new Date(Date.UTC(year, month - 1, 1, 12));
+  const last = new Date(Date.UTC(year, month, 0, 12));
+  const lastISO = last.toISOString().slice(0, 10);
+  const startISO = scheduleAddDays(firstISO, -first.getUTCDay());
+  const endISO = scheduleAddDays(lastISO, 6 - last.getUTCDay());
+  const days = [];
+  for (let iso = startISO; iso <= endISO; iso = scheduleAddDays(iso, 1)) days.push(iso);
+  return { startISO, endISO, days, weeks: Array.from({ length: days.length / 7 }, (_, index) => days.slice(index * 7, index * 7 + 7)) };
+}
+function scheduleEventLabel(event2) {
+  const prefix = event2.kind === "personal" ? "개인 일정" : "업무 일정";
+  return `${prefix}, ${event2.label}, ${homeEventDateLabel(event2)}`;
+}
+function renderScheduleEvent(event2, days, row, firstMarkers) {
+  const first = days[0];
+  const last = days[6];
+  const visibleStart = event2.startISO < first ? first : event2.startISO;
+  const visibleEnd = event2.endISO > last ? last : event2.endISO;
+  const column = days.indexOf(visibleStart) + 1;
+  const span = days.indexOf(visibleEnd) - days.indexOf(visibleStart) + 1;
+  const isFirst = !firstMarkers.has(event2.id);
+  if (isFirst) firstMarkers.add(event2.id);
+  const milestones = (event2.milestones || []).filter((item) => item.dateISO >= visibleStart && item.dateISO <= visibleEnd);
+  return `<button type="button" class="schedule-event schedule-event--${esc(event2.kind)} scope-${esc(event2.primaryScope)}"
+    style="grid-column:${column} / span ${span};grid-row:${row}"
+    ${isFirst ? `data-schedule-event="${esc(event2.id)}"` : `data-schedule-continuation="${esc(event2.id)}"`}
+    data-event-kind="${esc(event2.kind)}" data-event-id="${esc(event2.id)}" data-work-id="${esc(event2.workId || "")}"
+    data-primary-scope="${esc(event2.primaryScope)}" data-visible-scopes="${esc((event2.visibleScopes || []).join(" "))}"
+    aria-label="${esc(scheduleEventLabel(event2))}" title="${esc(event2.label)}">
+    <span class="schedule-event-label">${esc(event2.label)}</span>
+    ${milestones.map((item) => `<span class="schedule-milestone" title="${esc(`${fmtD(item.dateISO)} · ${item.label}`)}"><i aria-hidden="true"></i>${esc(item.label)}</span>`).join("")}
+  </button>`;
+}
+function renderScheduleWeek(days, events, monthPrefix, sim, firstMarkers) {
+  const first = days[0];
+  const last = days[6];
+  const weekEvents = events
+    .filter((event2) => event2.startISO <= last && event2.endISO >= first)
+    .sort((a, b) => a.startISO.localeCompare(b.startISO) || b.endISO.localeCompare(a.endISO) || a.label.localeCompare(b.label));
+  const lanes = Math.max(2, weekEvents.length);
+  const dayCells = days.map((iso, index) => {
+    const date = homeISODateParts(iso);
+    const isOutside = !iso.startsWith(monthPrefix);
+    return `<div class="schedule-day${isOutside ? " is-outside" : ""}${iso === sim ? " is-current" : ""}" style="grid-column:${index + 1};grid-row:1 / span ${lanes + 1}" data-schedule-date="${iso}">
+      <time datetime="${iso}"${iso === sim ? ' aria-current="date"' : ""}>${date.day}</time>
+      <button class="schedule-add-personal" type="button" data-add-personal="${iso}" aria-label="${date.year}년 ${date.month}월 ${date.day}일에 개인 일정 추가">+</button>
+    </div>`;
+  }).join("");
+  const bars = weekEvents.map((event2, index) => renderScheduleEvent(event2, days, index + 2, firstMarkers)).join("");
+  return `<div class="schedule-week" style="grid-template-rows:52px repeat(${lanes},38px)">${dayCells}${bars}</div>`;
+}
 async function vCalendar(main) {
   const sum = await loadSummary().catch(() => null);
   const fc = await loadForecast().catch(() => ({ items: [] }));
   if (sum) seedFromForecast(fc, sum.simDate);
   const sim = sum ? sum.simDate : "2026-01-02";
   if (!UI.calYM) UI.calYM = sim.slice(0, 7);
+  if (!Array.isArray(UI.scheduleScopes)) UI.scheduleScopes = [workspaceModel.SCOPE.MINE];
   const [Y, M] = UI.calYM.split("-").map(Number);
+  const calendarWindow = scheduleMonthWindow(Y, M);
+  const events = workspaceModel.selectScheduleEvents(S, calendarWindow, UI.scheduleScopes);
+  const firstMarkers = new Set();
+  const scopeItems = [
+    { value: workspaceModel.SCOPE.MINE, label: "내 업무" },
+    { value: workspaceModel.SCOPE.SECTION, label: "우리 과" },
+    { value: workspaceModel.SCOPE.DEPARTMENT, label: "부서 전체" },
+  ];
 
-  const byDay = new Map();
-  for (const w of S.works) {
-    if (!w.due || !w.due.startsWith(UI.calYM)) continue;
-    const d = +w.due.slice(8, 10);
-    if (!byDay.has(d)) byDay.set(d, []);
-    byDay.get(d).push(w);
-  }
-  const hotMonths = new Set(S.works.filter((w) => w.due && w.due.startsWith(String(Y))).map((w) => +w.due.slice(5, 7)));
-
-  const first = new Date(Y, M - 1, 1);
-  const startDow = first.getDay();
-  const dim = new Date(Y, M, 0).getDate();
-  const today = sim;
-
-  let cells = "";
-  for (let i = 0; i < startDow; i++) cells += `<div class="cal-day out"></div>`;
-  for (let d = 1; d <= dim; d++) {
-    const iso = `${Y}-${String(M).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    cells += `<div class="cal-day${iso === today ? " today" : ""}">${d}
-      ${(byDay.get(d) || []).map((w) => `<button class="cal-chip" data-w="${esc(w.id)}" title="${esc(w.title)}">${esc(w.title)}</button>`).join("")}</div>`;
-  }
-  main.innerHTML = `<div class="view">
-    <h1 class="pg" tabindex="-1">일정</h1>
-    <div class="list-tools"><div class="cap-tabs" role="tablist">
-      <button role="tab" aria-selected="false" id="toList">내 업무 보기</button>
-      <button class="on" role="tab" aria-selected="true">월간 일정</button>
-    </div></div>
-    <div class="cal-head">
-      <button class="icon-btn" id="calPrev" aria-label="이전 달">‹</button>
-      <h2>${Y}년 ${M}월 <span class="sub">· 업무 건 마감 기준</span></h2>
-      <button class="icon-btn" id="calNext" aria-label="다음 달">›</button>
+  main.innerHTML = `<div class="view schedule-view">
+    <div class="schedule-title-row">
+      <div><h1 class="pg" tabindex="-1">일정</h1><p class="sub">업무는 전체 기간으로, 개인 일정은 녹색으로 표시합니다.</p></div>
+      <a class="btn ghost small" href="#work/list">내 업무 목록</a>
     </div>
-    <div class="cal">
-      ${["일", "월", "화", "수", "목", "금", "토"].map((d) => `<div class="dow">${d}</div>`).join("")}
-      ${cells}
+    <div class="schedule-toolbar">
+      <fieldset class="schedule-layers" aria-label="표시 범위">
+        <legend class="sr-only">표시 범위</legend>
+        ${scopeItems.map((item) => `<label><input type="checkbox" value="${item.value}"${UI.scheduleScopes.includes(item.value) ? " checked" : ""}><span>${item.label}</span></label>`).join("")}
+      </fieldset>
+      <div class="schedule-month-controls">
+        <button class="icon-btn" id="calPrev" type="button" aria-label="이전 달">‹</button>
+        <h2>${Y}년 ${M}월</h2>
+        <button class="icon-btn" id="calNext" type="button" aria-label="다음 달">›</button>
+      </div>
     </div>
-    <div class="year-grid" id="yGrid">
-      ${Array.from({ length: 12 }, (_, i) => i + 1).map((m) => `<button data-m="${m}" class="${hotMonths.has(m) ? "hot" : ""}${m === M ? " cur" : ""}">${m}월</button>`).join("")}
+    ${UI.scheduleScopes.length ? `<div class="schedule-scroll" role="region" aria-label="${Y}년 ${M}월 조직 일정" tabindex="0">
+      <div class="schedule-calendar">
+        <div class="schedule-weekdays" aria-hidden="true">${["일", "월", "화", "수", "목", "금", "토"].map((day) => `<span>${day}</span>`).join("")}</div>
+        ${calendarWindow.weeks.map((week) => renderScheduleWeek(week, events, UI.calYM, sim, firstMarkers)).join("")}
+      </div>
+    </div>` : '<div class="empty schedule-empty">표시할 범위를 선택하세요</div>'}
+    <div class="schedule-legend" aria-label="일정 색상 안내">
+      <span><i class="legend-mine"></i>내 업무</span><span><i class="legend-section"></i>우리 과</span><span><i class="legend-department"></i>부서 전체</span><span><i class="legend-personal"></i>개인 일정</span>
     </div>
   </div>`;
-  $("#toList").onclick = () => nav("#work/list");
-  $("#calPrev").onclick = () => { const d2 = new Date(Y, M - 2, 1); UI.calYM = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, "0")}`; saveUI(); route(); };
-  $("#calNext").onclick = () => { const d2 = new Date(Y, M, 1); UI.calYM = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, "0")}`; saveUI(); route(); };
-  $$("#yGrid [data-m]").forEach((b) => { b.onclick = () => { UI.calYM = `${Y}-${String(+b.dataset.m).padStart(2, "0")}`; saveUI(); route(); }; });
-  $$(".cal-chip").forEach((b) => { b.onclick = () => { S.selectedWorkId = b.dataset.w; saveState(); nav("#workbench/" + b.dataset.w); }; });
+
+  $$(".schedule-layers input", main).forEach((input) => {
+    input.onchange = () => {
+      UI.scheduleScopes = workspaceModel.toggleScheduleScope(UI.scheduleScopes, input.value);
+      saveUI(); route();
+    };
+  });
+  $("#calPrev", main).onclick = () => { const date = new Date(Date.UTC(Y, M - 2, 1)); UI.calYM = date.toISOString().slice(0, 7); saveUI(); route(); };
+  $("#calNext", main).onclick = () => { const date = new Date(Date.UTC(Y, M, 1)); UI.calYM = date.toISOString().slice(0, 7); saveUI(); route(); };
+  $$("[data-add-personal]", main).forEach((button) => { button.onclick = () => openPersonalScheduleDrawer(null, button.dataset.addPersonal); });
+  $$(".schedule-event", main).forEach((button) => {
+    button.onclick = () => {
+      if (button.dataset.eventKind === "personal") openPersonalScheduleDrawer(button.dataset.eventId);
+      else { S.selectedWorkId = button.dataset.workId; saveState(); nav("#workbench/" + button.dataset.workId); }
+    };
+  });
 }
 function renderPersonalScheduleCandidate(resultBox, candidate) {
   if (!resultBox) return;

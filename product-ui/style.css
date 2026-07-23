@@ -27,6 +27,9 @@
 html{font-size:16px}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.6;
   display:flex;flex-direction:column;min-height:100vh}
+html:not([data-theme="dark"]) body{background:
+  radial-gradient(circle at 4% 20%,rgba(255,183,160,.11),transparent 28rem),
+  radial-gradient(circle at 98% 48%,rgba(255,111,89,.07),transparent 32rem),#fbfaf9}
 button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:0;cursor:pointer}
 a{color:var(--blue);text-decoration:none}
 a:hover{text-decoration:underline}
@@ -101,10 +104,11 @@ h1.pg{font-size:1.5rem;letter-spacing:-.02em;margin:6px 0 18px;outline:none}
 .app-sidebar nav{display:flex;flex-direction:column;gap:9px}
 .app-sidebar nav a{min-height:54px;padding:12px 14px;border-radius:16px;display:flex;align-items:center;gap:12px;
   color:var(--ink-2);font-size:.92rem;font-weight:650;transition:transform .14s ease,color .16s ease,background-color .16s ease,box-shadow .16s ease}
-.app-sidebar nav a:hover{color:var(--blue-dark);background:var(--blue-soft);text-decoration:none;transform:translateY(-1px)}
-.app-sidebar nav a:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.app-sidebar nav a:hover{color:#a80610;background:#fff0ef;text-decoration:none;transform:translateY(-1px)}
+.app-sidebar nav a:focus-visible{outline:3px solid #c60712;outline-offset:3px}
 .app-sidebar nav a svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.app-sidebar nav a.is-current{color:#fff;background:var(--blue);box-shadow:0 8px 20px rgba(23,105,224,.18)}
+.app-sidebar nav a.is-current{color:#a80610;background:#ffe8e6;box-shadow:0 8px 20px rgba(198,7,18,.10),inset 0 0 0 1px rgba(198,7,18,.06)}
+[data-theme="dark"] .app-sidebar nav a.is-current{color:#ffb3b8;background:#461d25}
 .app-content{min-width:0;padding:4px 0 60px}
 .shell-utilities{min-height:36px;margin-bottom:16px;display:flex;align-items:center;justify-content:flex-end;gap:8px}
 .shell-utilities .home-data-status{position:static;top:auto;right:auto;box-shadow:none;white-space:nowrap}
@@ -269,6 +273,53 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .year-grid button.hot{background:var(--blue-soft);color:var(--blue);border-color:transparent;font-weight:600}
 .year-grid button.cur{outline:2px solid var(--blue);outline-offset:-1px}
 
+/* ---- 조직 일정 ---- */
+.app-view>.schedule-view{width:100%;max-width:none}
+.schedule-title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+.schedule-title-row h1.pg{margin-bottom:2px}
+.schedule-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:14px;flex-wrap:wrap}
+.schedule-layers{display:flex;align-items:center;gap:8px;border:0;min-width:0;flex-wrap:wrap}
+.schedule-layers label{cursor:pointer}
+.schedule-layers input{position:absolute;opacity:0;pointer-events:none}
+.schedule-layers span{min-height:38px;padding:7px 14px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);
+  color:var(--ink-2);display:flex;align-items:center;font-size:.84rem;font-weight:650;transition:background-color .15s ease,color .15s ease,border-color .15s ease}
+.schedule-layers input:checked+span{border-color:transparent;background:var(--navy);color:var(--bg)}
+[data-theme="dark"] .schedule-layers input:checked+span{background:var(--blue-soft);color:var(--blue)}
+.schedule-layers input:focus-visible+span{outline:3px solid var(--blue);outline-offset:2px}
+.schedule-month-controls{display:grid;grid-template-columns:34px minmax(120px,auto) 34px;align-items:center;gap:10px}
+.schedule-month-controls h2{text-align:center;font-size:1.06rem}
+.schedule-scroll{width:100%;max-width:100%;overflow:auto;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-sm);scrollbar-width:thin}
+.schedule-scroll:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.schedule-calendar{min-width:920px}
+.schedule-weekdays{height:42px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.schedule-weekdays span{display:grid;place-items:center;border-right:1px solid var(--line);color:var(--muted);font-size:.78rem;font-weight:700}
+.schedule-weekdays span:last-child{border-right:0}
+.schedule-week{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.schedule-week:last-child{border-bottom:0}
+.schedule-day{z-index:0;min-width:0;padding:8px 8px 0;border-right:1px solid var(--line);color:var(--ink-2)}
+.schedule-day:nth-of-type(7){border-right:0}
+.schedule-day.is-outside{background:var(--surface-2);color:var(--muted)}
+.schedule-day time{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:.78rem}
+.schedule-day.is-current time{background:var(--blue);color:#fff;font-weight:750}
+.schedule-add-personal{position:absolute;right:7px;top:10px;z-index:3;width:24px;height:24px;border-radius:8px;color:var(--muted);font-size:1rem;line-height:1}
+.schedule-add-personal:hover{background:var(--blue-soft);color:var(--blue)}
+.schedule-add-personal:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.schedule-event{z-index:2;height:31px;min-width:0;margin:3px 5px;padding:0 10px;border:1px solid transparent;border-radius:9px;
+  display:flex;align-items:center;gap:8px;text-align:left;font-size:.74rem;overflow:hidden;box-shadow:0 3px 8px rgba(23,32,51,.05)}
+.schedule-event:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.schedule-event-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:680}
+.schedule-event--work.scope-mine{background:#ffe7e4;color:#9d0710}
+.schedule-event--work.scope-section{background:#eeedff;color:#4a428f}
+.schedule-event--work.scope-department{background:#e7f0ff;color:#1859a9}
+.schedule-event--personal{background:#e3f7e4;color:#126f25;border-color:#c8ebca}
+.schedule-milestone{margin-left:auto;min-width:0;display:flex;align-items:center;gap:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.67rem;font-weight:700}
+.schedule-milestone i{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.schedule-empty{min-height:360px;border:1px dashed var(--line-strong);border-radius:var(--r-lg);display:grid;place-items:center;background:var(--surface)}
+.schedule-legend{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:12px 4px 0;color:var(--muted);font-size:.75rem}
+.schedule-legend span{display:flex;align-items:center;gap:6px}
+.schedule-legend i{width:12px;height:12px;border-radius:4px}
+.legend-mine{background:#f3aaa5}.legend-section{background:#bbb7ee}.legend-department{background:#a9c9f4}.legend-personal{background:#9edba4}
+
 /* ---- 업무 작업대 ---- */
 .wb-back{font-size:.85rem;margin-bottom:10px;display:inline-block}
 .wb-context h1{font-size:1.3rem;letter-spacing:-.02em;margin-bottom:8px;outline:none}
@@ -416,6 +467,15 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
   .shell-utilities .data-status{font-size:.69rem}
   .shell-utilities .icon-btn{width:32px;height:32px}
   .cloud-empty{padding:44px 18px}
+  .schedule-title-row{align-items:flex-start;margin-bottom:14px}
+  .schedule-title-row>.btn{display:none}
+  .schedule-toolbar{align-items:flex-start;gap:12px}
+  .schedule-layers{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+  .schedule-layers span{min-height:36px;padding:6px 5px;justify-content:center;font-size:.75rem;white-space:nowrap}
+  .schedule-month-controls{margin-left:auto}
+  .schedule-calendar{min-width:840px}
+  .schedule-legend{gap:11px}
+  .personal-schedule-dates{grid-template-columns:1fr}
 }
 @media (max-width:420px){
   .app-sidebar{grid-template-columns:minmax(0,1fr);gap:6px}
