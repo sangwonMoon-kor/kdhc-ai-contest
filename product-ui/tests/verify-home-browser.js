@@ -40,6 +40,13 @@ const seededState = {
     endISO: "2026-01-03",
     ownerId: "person-kim-hannan",
     status: "active"
+  }, {
+    id: "personal-long-label",
+    title: "2026년 정기점검보수 개인 검토 일정",
+    startISO: "2026-01-06",
+    endISO: "2026-01-06",
+    ownerId: "person-kim-hannan",
+    status: "active"
   }],
   works: [{
     id: "calendar-work",
@@ -68,6 +75,13 @@ const seededState = {
       label: "다음 주 업체 서류 확인",
       startISO: "2026-01-04",
       endISO: "2026-01-10",
+      confirmed: false
+    }, {
+      id: "single-day-candidate-long-label",
+      kind: "date",
+      label: "2026년 정기점검보수 확인 필요 일정",
+      startISO: "2026-01-06",
+      endISO: "2026-01-06",
       confirmed: false
     }],
     sources: [],
@@ -165,7 +179,7 @@ async function run() {
   try {
     server = await startServer();
     browser = await launchBrowser();
-    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
     page.on("pageerror", function (error) { errors.push(`pageerror: ${error.message}`); });
     page.on("console", function (message) {
       if (message.type() === "error") errors.push(`console: ${message.text()}`);
@@ -266,11 +280,29 @@ async function run() {
       `desktop section gap is not 36px: ${desktopHierarchy.sectionGap}`);
     assert(desktopHierarchy.composeHeight >= 106 && desktopHierarchy.composeHeight <= 120,
       `desktop capture card is not visually secondary: ${desktopHierarchy.composeHeight}`);
-    assert.equal(await page.locator('[data-calendar-kind="personal"] .home-event-checkbox').count(), 1,
-      "personal schedule lacks its to-do indicator");
+    assert.equal(await page.locator('[data-calendar-kind="personal"] .home-event-checkbox').count(), 2,
+      "personal schedules lack their to-do indicators");
     assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home calendar must render exactly 14 dates");
     assert.equal(await page.locator("[data-calendar-date]").first().getAttribute("data-calendar-date"), "2025-12-28", "calendar does not start from summary.simDate week");
     assert.equal(await page.locator('[data-calendar-date="2026-01-02"]').getAttribute("aria-current"), "date", "simulation date is not exposed as current date");
+    for (const eventId of ["personal-long-label", "single-day-candidate-long-label"]) {
+      const chip = page.locator(`[data-event-id="${eventId}"]`);
+      const layout = await chip.evaluate(function (element) {
+        const label = element.querySelector(".home-event-text");
+        const status = element.querySelector(".home-event-status");
+        const chipRect = element.getBoundingClientRect();
+        const statusRect = status && status.getBoundingClientRect();
+        return {
+          labelClipped: label.scrollWidth > label.clientWidth || label.scrollHeight > label.clientHeight,
+          statusClipped: Boolean(status && (status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight)),
+          statusContained: Boolean(!status || (statusRect.left >= chipRect.left && statusRect.right <= chipRect.right
+            && statusRect.top >= chipRect.top && statusRect.bottom <= chipRect.bottom))
+        };
+      });
+      assert.equal(layout.labelClipped, false, `${eventId} label is clipped in the 1920px home calendar`);
+      assert.equal(layout.statusClipped, false, `${eventId} status is clipped in the 1920px home calendar`);
+      assert.equal(layout.statusContained, true, `${eventId} status escapes its 1920px home calendar chip`);
+    }
 
     assert((await page.locator('[data-calendar-kind="work"]').count()) >= 1, "multi-day work bar missing");
     assert.equal(await page.getByText("내 참여 업무", { exact: true }).count(), 1, "participant work is missing from home");
@@ -288,7 +320,7 @@ async function run() {
     await page.locator('[data-calendar-kind="personal"][data-event-start="2026-01-08"]').waitFor();
     assert.equal(await page.locator('[data-calendar-kind="personal"][data-event-start="2026-01-08"]').count(), 1, "confirmed personal schedule did not appear in the calendar");
     assert.equal(await page.locator('[data-calendar-kind="memo"]').count(), 1, "confirmed memo missing");
-    const candidate = page.locator('[data-calendar-kind="candidate"]');
+    const candidate = page.locator('[data-calendar-kind="candidate"][data-event-id="schedule-candidate"]');
     assert.equal(await candidate.count(), 1, "schedule candidate chip missing");
     assert((await candidate.innerText()).includes("후보"), "candidate does not expose the visible Korean candidate label");
     assert((await candidate.innerText()).includes("미확인"), "candidate does not expose visible status text");
@@ -296,7 +328,7 @@ async function run() {
     assert(candidateAriaLabel.includes("일정 후보 미확인"), "candidate status is missing from its accessible name");
     assert(candidateAriaLabel.includes("2026.01.04") && candidateAriaLabel.includes("2026.01.10"), "candidate range accessible name omits one of its dates");
     await candidate.click();
-    await page.waitForFunction(function () { return !document.querySelector('[data-calendar-kind="candidate"]'); });
+    await page.waitForFunction(function () { return !document.querySelector('[data-calendar-kind="candidate"][data-event-id="schedule-candidate"]'); });
     const confirmationFeedback = await page.locator("#homeFeedback").innerText();
     assert(confirmationFeedback.includes("냉각수 펌프 정비공사 일정을 확정했습니다."), "schedule confirmation feedback is not cohesive Korean copy");
     assert.equal(confirmationFeedback.includes("schedule confirmed"), false, "English schedule confirmation feedback remains");

@@ -670,7 +670,7 @@ function renderHomeEvent(event2, column, span, row) {
     : event2.kind === "memo"
       ? '<span class="home-event-symbol" aria-hidden="true">▤</span>'
       : '<span class="home-event-dot" aria-hidden="true"></span>';
-  return `<button type="button" class="home-calendar-event home-event--${esc(event2.kind)}${homeEventClass(event2)}"
+  return `<button type="button" class="home-calendar-event home-event--${esc(event2.kind)}${homeEventClass(event2)}${span === 1 ? " is-single-day" : ""}"
     style="grid-column:${column} / span ${span};grid-row:${row}"
     data-calendar-kind="${esc(event2.kind)}" data-work-id="${esc(event2.workId)}" data-event-id="${esc(event2.id)}"
     data-event-start="${esc(event2.startISO)}" data-event-end="${esc(event2.endISO)}"
@@ -700,7 +700,14 @@ function renderHomeCalendarWeek(days, events, sim) {
     const span = days.indexOf(visibleEnd) - days.indexOf(visibleStart) + 1;
     return renderHomeEvent(event2, column, span, index + 2);
   }).join("");
-  return `<div class="home-calendar-week" style="grid-template-rows:48px repeat(${lanes},38px)">${dayCells}${eventButtons}</div>`;
+  const laneRows = Array.from({ length: lanes }, (_, index) => {
+    const event2 = weekEvents[index];
+    if (!event2) return "38px";
+    const visibleStart = event2.startISO < first ? first : event2.startISO;
+    const visibleEnd = event2.endISO > last ? last : event2.endISO;
+    return visibleStart === visibleEnd ? "60px" : "38px";
+  }).join(" ");
+  return `<div class="home-calendar-week" style="grid-template-rows:48px ${laneRows}">${dayCells}${eventButtons}</div>`;
 }
 
 /* ---------- 만능 입력 처리 ---------- */

@@ -220,6 +220,13 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
   text-align:left;font-size:.79rem;line-height:1;color:#20242b;background:rgba(255,255,255,.88);border:1px solid rgba(44,53,69,.10);
   overflow:hidden;transition:transform 140ms cubic-bezier(.23,1,.32,1),border-color 160ms ease,box-shadow 160ms ease,background-color 160ms ease}
 .home-event-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-calendar-event.is-single-day{height:54px;padding:6px 10px;align-items:center;line-height:1.15}
+.home-calendar-event.is-single-day .home-event-text{overflow:visible;text-overflow:clip;white-space:normal}
+.home-calendar-event.is-single-day.home-event--candidate{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;
+  align-content:center;column-gap:7px;row-gap:2px}
+.home-calendar-event.is-single-day.home-event--candidate .home-event-dot{grid-column:1;grid-row:1 / span 2;align-self:start;margin-top:3px}
+.home-calendar-event.is-single-day.home-event--candidate .home-event-text{grid-column:2;grid-row:1}
+.home-calendar-event.is-single-day.home-event--candidate .home-event-status{grid-column:2;grid-row:2;margin-left:0}
 .home-event--work{border-color:transparent;background:var(--home-purple-soft);font-weight:600}
 .home-event--work.is-construction{background:linear-gradient(90deg,#ffe8e5,#ffdcd9);color:var(--home-red-deep)}
 .home-event--work.is-service{background:linear-gradient(90deg,#efefff,#e9e8fb)}
