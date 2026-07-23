@@ -149,6 +149,7 @@
     if (path === "/api/hint/commit" && !(typeof value.ok === "boolean" && (value.ok ? value.hint && typeof value.hint === "object" : typeof value.reason === "string"))) throw new Error("hint commit contract mismatch");
     if (path === "/api/ingest" && !(value.doc && typeof value.doc.id === "string" && Array.isArray(value.triples) && (value.caseProposal == null || typeof value.caseProposal === "object"))) throw new Error("ingest contract mismatch");
     if (path === "/api/ingest/commit" && !(typeof value.ok === "boolean" && (value.ok ? value.doc && typeof value.doc.id === "string" : typeof value.reason === "string"))) throw new Error("ingest commit contract mismatch");
+    if (path === "/api/ingest/web" && !(Number.isInteger(value.added) && value.added >= 0 && typeof value.tier === "string")) throw new Error("web ingest contract mismatch");
     if (path === "/api/extract" && !(typeof value.ok === "boolean" && (value.ok ? typeof value.text === "string" : typeof value.reason === "string"))) throw new Error("extract contract mismatch");
     return value;
   }
@@ -179,6 +180,7 @@
     if (path === "/api/hint/commit") return "hint/commit.json";
     if (path === "/api/ingest") return "ingest/stage.json";
     if (path === "/api/ingest/commit") return "ingest/commit.json";
+    if (path === "/api/ingest/web") return "ingest/web.json";
     if (path === "/api/extract") return "extract/scanned-pdf.json";
     return null;
   }

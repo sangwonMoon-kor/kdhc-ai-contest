@@ -15,6 +15,8 @@ const useTestClient = process.env.PRODUCT_UI_TEST_CLIENT === "1";
 const testClient = String.raw`
 (function () {
   const pending = [];
+  const webSaves = [];
+  let rejectNextWebSave = false;
   let onStatus = function () {};
   let status = null;
   const summary = {
@@ -57,6 +59,14 @@ const testClient = String.raw`
               pending.push({ question: body.question, resolve: resolve, reject: reject });
             });
           }
+          if (apiPath === "/api/ingest/web") {
+            webSaves.push(JSON.parse(JSON.stringify(body)));
+            if (rejectNextWebSave) {
+              rejectNextWebSave = false;
+              return Promise.reject(new Error("web save failed"));
+            }
+            return Promise.resolve({ added: 2, tier: "웹출처" });
+          }
           if (Object.prototype.hasOwnProperty.call(fixtures, apiPath)) return Promise.resolve(fixtures[apiPath]);
           return Promise.resolve({});
         },
@@ -70,9 +80,19 @@ const testClient = String.raw`
     resolveAsk: function (question, answer) {
       take(question).resolve({ grounded: true, answer: [answer], docs: [] });
     },
+    resolveWebAsk: function (question, answer, evidence, results) {
+      take(question).resolve({
+        grounded: false,
+        answer: [],
+        docs: [],
+        web: { used: true, composed: { answer: answer, evidence: evidence }, results: results }
+      });
+    },
     rejectAsk: function (question, message) {
       take(question).reject(new Error(message));
-    }
+    },
+    webSaves: function () { return JSON.parse(JSON.stringify(webSaves)); },
+    rejectNextWebSave: function () { rejectNextWebSave = true; }
   };
 })();
 `;
@@ -266,6 +286,51 @@ async function run() {
     await settleAsk(askPage, "rejectAsk", oldFailure, "old request failed");
     await askPage.waitForTimeout(20);
     assert.equal(await askPage.locator("#homeResult").innerText().then(function (text) { return text.includes("답변을 가져오지 못했습니다"); }), false, "older rejection overwrote newer answer");
+
+    const webQuestion = "웹에서 절연저항 기준 찾아줘";
+    const webResults = [
+      { title: "안전한 출처", url: "https://example.com/safe", snippet: "안전한 웹 근거" },
+      { title: "위험한 출처", url: "javascript:alert(1)", snippet: "위험한 웹 근거" }
+    ];
+    await ask(askPage, webQuestion);
+    await askPage.evaluate(function (args) {
+      window.__appBoundaryTest.resolveWebAsk(
+        args.question,
+        "웹 합성 답변입니다 [W1].",
+        [
+          { tag: "웹", title: "안전한 출처", text: "안전한 웹 근거", url: "https://example.com/safe" },
+          { tag: "웹", title: "위험한 출처", text: "위험한 웹 근거", url: "javascript:alert(1)" }
+        ],
+        args.results
+      );
+    }, { question: webQuestion, results: webResults });
+    const webPanel = askPage.locator('[data-testid="web-reference"]');
+    await webPanel.waitFor();
+    assert.equal(await webPanel.getByText("웹 참고", { exact: true }).count(), 1, "web answer is not clearly labeled");
+    assert.equal(await webPanel.getByText("미검증 · 사업소 실무 아님", { exact: true }).count(), 1, "web answer lacks its verification warning");
+    assert.equal(await webPanel.getByText("웹 합성 답변입니다 [W1].", { exact: true }).count(), 1, "composed web answer was not rendered");
+    assert.equal(await webPanel.locator('a[href="https://example.com/safe"]').count(), 1, "safe web evidence URL was not linked");
+    assert.equal(await webPanel.locator('a[href^="javascript:"]').count(), 0, "unsafe web evidence URL was rendered as a link");
+
+    const saveButton = webPanel.getByRole("button", { name: "OKF에 저장(웹출처)" });
+    await saveButton.click();
+    await webPanel.getByText("웹출처 2건을 OKF에 저장했습니다.", { exact: true }).waitFor();
+    assert.deepStrictEqual(await askPage.evaluate(function () { return window.__appBoundaryTest.webSaves(); }), [{
+      question: webQuestion,
+      results: webResults
+    }], "web save request did not preserve the exact question and search results");
+
+    const failedWebQuestion = "웹에서 저장 실패 근거 찾아줘";
+    await ask(askPage, failedWebQuestion);
+    await askPage.evaluate(function (args) {
+      window.__appBoundaryTest.resolveWebAsk(args.question, "실패 확인 답변 [W1].", [{
+        tag: "웹", title: "안전한 출처", text: "안전한 웹 근거", url: "https://example.com/safe"
+      }], args.results);
+      window.__appBoundaryTest.rejectNextWebSave();
+    }, { question: failedWebQuestion, results: webResults.slice(0, 1) });
+    const failedWebPanel = askPage.locator('[data-testid="web-reference"]');
+    await failedWebPanel.getByRole("button", { name: "OKF에 저장(웹출처)" }).click();
+    await failedWebPanel.getByText("웹출처를 저장하지 못했습니다. 다시 시도해 주세요.", { exact: true }).waitFor();
 
     const detachedSuccess = "다섯 번째 근거 찾아줘";
     await ask(askPage, detachedSuccess);

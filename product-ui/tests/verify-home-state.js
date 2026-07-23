@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, "..");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8")
   .replace(/\nboot\(\);\s*$/, "")
   + "\nroute = function () {}; toast = function () {}; hideToast = function () {};"
-  + "\nmodule.exports = { blankState, validWork, normalizeWork, loadState, seedFromForecast, applyRecordOrTodo, retarget, confirmScheduleCandidate, undoLast, setChooseWork: (next) => { chooseWork = next; }, getLastAction: () => lastAction, getState: () => S, setState: (state) => { S = state; } };";
+  + "\nmodule.exports = { fmtD, blankState, validWork, normalizeWork, loadState, seedFromForecast, applyRecordOrTodo, retarget, confirmScheduleCandidate, undoLast, setChooseWork: (next) => { chooseWork = next; }, getLastAction: () => lastAction, getState: () => S, setState: (state) => { S = state; } };";
 
 function loadHomeState(storedState) {
   const values = new Map();
@@ -47,6 +47,12 @@ function legacyWork(overrides) {
   }, overrides);
 }
 function plain(value) { return JSON.parse(JSON.stringify(value)); }
+
+{
+  const homeState = loadHomeState();
+  assert.equal(homeState.fmtD("not-a-date"), "날짜 확인 필요", "malformed persisted dates do not leak raw storage text");
+  assert.equal(homeState.fmtD("2026-02-31"), "날짜 확인 필요", "impossible persisted calendar dates are rejected");
+}
 
 {
   const legacy = { v: 1, works: [legacyWork()], selectedWorkId: "work-1" };

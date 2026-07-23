@@ -12,7 +12,26 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); }
 function uid(p) { return (p || "x") + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function fmtD(iso) { if (!iso) return "기한 미정"; const m = String(iso).match(/(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[1]}.${m[2]}.${m[3]}` : String(iso); }
+function fmtD(iso) {
+  if (!iso) return "기한 미정";
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})(?=$|[T\s])/);
+  if (!m) return "날짜 확인 필요";
+  const date = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if (
+    date.getUTCFullYear() !== +m[1] ||
+    date.getUTCMonth() !== +m[2] - 1 ||
+    date.getUTCDate() !== +m[3]
+  ) return "날짜 확인 필요";
+  return `${m[1]}.${m[2]}.${m[3]}`;
+}
+function safeExternalUrl(value) {
+  try {
+    const parsed = new URL(String(value || ""));
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : null;
+  } catch (error) {
+    return null;
+  }
+}
 function fmtTs(ts) { const d = new Date(ts); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; }
 function localBusinessDateISO(date) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -884,11 +903,31 @@ async function renderAsk(box, q, target) {
   try {
     const r = await api("/api/ask", { question: q });
     if (seq !== askSeq || !document.body.contains(box)) return;
-    const ans = (r.llm && r.llm.answer) ? [r.llm.answer] : (r.answer || []); // r.llm = LLM 합성(있을 때만), 없으면 템플릿
+    const web = r.web && r.web.used && r.web.composed && typeof r.web.composed.answer === "string"
+      ? r.web
+      : null;
+    const ans = web ? [web.composed.answer] : ((r.llm && r.llm.answer) ? [r.llm.answer] : (r.answer || [])); // r.llm = LLM 합성(있을 때만), 없으면 템플릿
+    const webEvidence = web && Array.isArray(web.composed.evidence) ? web.composed.evidence : [];
     box.innerHTML = `<div class="card ask-panel" data-testid="grounded-answer">
       <div class="blk-k">근거 답변 ${r.grounded ? `<span class="badge grounded">근거 있음</span>` : `<span class="badge warn">근거 없음</span>`}
         ${target ? `<span class="sub"> · 관련 업무: ${esc(target.title)}</span>` : ""}</div>
-      <div class="ans">${ans.map((a) => `<p>${esc(a)}</p>`).join("") || "<p>답을 찾지 못했습니다.</p>"}</div>
+      ${web ? "" : `<div class="ans">${ans.map((a) => `<p>${esc(a)}</p>`).join("") || "<p>답을 찾지 못했습니다.</p>"}</div>`}
+      ${web ? `<section class="k-item" data-testid="web-reference">
+        <div class="blk-k"><span>웹 참고</span> <span class="badge warn">미검증 · 사업소 실무 아님</span></div>
+        <div class="ans">${ans.map((a) => `<p>${esc(a)}</p>`).join("")}</div>
+        ${webEvidence.slice(0, 6).map((evidence) => {
+          const href = safeExternalUrl(evidence && evidence.url);
+          const title = evidence && (evidence.title || evidence.url) || "웹 출처";
+          const label = `<span>${esc(title)}</span>`;
+          return `<div class="web-evidence">${href
+            ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+            : label}${evidence && evidence.text ? `<p class="sub">${esc(evidence.text)}</p>` : ""}</div>`;
+        }).join("")}
+        <div style="margin-top:12px">
+          <button class="btn ghost small" type="button" data-save-web>OKF에 저장(웹출처)</button>
+          <span class="sub" data-web-save-status role="status"></span>
+        </div>
+      </section>` : ""}
       ${(r.knowledge || []).slice(0, 6).map((k) => `<div class="k-item">${esc(k.text)}<span class="st">${esc(k.status || "")} ${k.confidence ? (k.confidence * 100 | 0) + "%" : ""}</span>
         ${(k.evidence || []).slice(0, 2).map(evBtn).join("")}</div>`).join("")}
       ${(r.docs || []).length ? `<div class="blk-k" style="margin-top:12px">관련 문서</div>` + r.docs.slice(0, 3).map((d) => evBtn({ docId: d.id, label: d.title })).join("") : ""}
@@ -896,6 +935,25 @@ async function renderAsk(box, q, target) {
     </div>`;
     bindEvidence(box);
     const g = $("#askGoWb", box); if (g) g.onclick = () => nav("#workbench/" + target.id);
+    const saveWeb = $("[data-save-web]", box);
+    if (saveWeb) saveWeb.onclick = async () => {
+      const status = $("[data-web-save-status]", box);
+      saveWeb.disabled = true;
+      if (status) status.textContent = " 저장 중…";
+      try {
+        const saved = await api("/api/ingest/web", {
+          question: q,
+          results: Array.isArray(web.results) ? web.results : []
+        });
+        if (seq !== askSeq || !document.body.contains(box)) return;
+        const added = Number.isFinite(saved && saved.added) ? saved.added : 0;
+        if (status) status.textContent = ` 웹출처 ${added}건을 OKF에 저장했습니다.`;
+      } catch (error) {
+        if (seq !== askSeq || !document.body.contains(box)) return;
+        saveWeb.disabled = false;
+        if (status) status.textContent = " 웹출처를 저장하지 못했습니다. 다시 시도해 주세요.";
+      }
+    };
   } catch (e) {
     if (seq !== askSeq || !document.body.contains(box)) return;
     box.innerHTML = `<div class="card ask-panel" data-testid="grounded-answer"><p>답변을 가져오지 못했습니다 — 엔진 연결을 확인해 주세요.</p></div>`;

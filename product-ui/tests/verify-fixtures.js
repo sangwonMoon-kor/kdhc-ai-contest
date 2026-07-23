@@ -9,7 +9,7 @@ const required = [
   "manifest.json", "summary.json", "forecast.json", "briefing.json", "graph.json", "documents/index.json",
   "ask/pump-report.json", "ask/not-found.json", "draft/design-and-costing.json", "draft/problem-recognition.json",
   "check/pump-risky-draft.json", "check/clean-draft.json", "hint/stage.json", "hint/commit.json",
-  "ingest/stage.json", "ingest/commit.json", "extract/scanned-pdf.json", "documents/DOC-FIXTURE-001.json"
+  "ingest/stage.json", "ingest/commit.json", "ingest/web.json", "extract/scanned-pdf.json", "documents/DOC-FIXTURE-001.json"
 ];
 const failures = required.filter((rel) => !fs.existsSync(path.join(root, rel))).map((rel) => `missing ${rel}`);
 
@@ -79,6 +79,7 @@ if (!failures.length) {
     ["/api/hint/commit", { triple: {}, text: "운영부 일정 확인" }],
     ["/api/ingest", { text: "순환수 펌프 정비 계획 보고와 산출근거" }],
     ["/api/ingest/commit", { doc: {}, triples: [] }],
+    ["/api/ingest/web", { question: "절연저항 기준?", results: [] }],
     ["/api/extract", { filename: "scan.pdf", mime: "application/pdf", dataB64: "AA==" }]
   ];
   for (const item of forecast.items || []) {
