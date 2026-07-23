@@ -12,6 +12,23 @@ const port = 8410;
 const origin = `http://127.0.0.1:${port}`;
 const output = path.join(repoRoot, "product-ui", "screenshots", "home-two-week-context.png");
 const mobileOutput = path.join(os.tmpdir(), "kdhc-home-two-week-mobile.png");
+const captureCalendarFixture = {
+  personalSchedule: {
+    id: "personal-long-label",
+    title: "2026년 정기점검보수 개인 검토 일정",
+    startISO: "2026-01-06",
+    endISO: "2026-01-06",
+    status: "active"
+  },
+  scheduleCandidate: {
+    id: "single-day-candidate-long-label",
+    kind: "date",
+    label: "2026년 정기점검보수 확인 필요 일정",
+    startISO: "2026-01-06",
+    endISO: "2026-01-06",
+    confirmed: false
+  }
+};
 
 function stopServer(server) {
   if (!server || server.exitCode !== null) return Promise.resolve();
@@ -64,10 +81,44 @@ async function capture(page, viewport, file) {
   });
   await page.reload({ waitUntil: "networkidle" });
   await page.locator('[data-testid="home-omni"]').waitFor();
+  await page.evaluate((fixture) => {
+    const storageKey = "jikmu.workbench.v1";
+    const state = JSON.parse(localStorage.getItem(storageKey));
+    const work = state && Array.isArray(state.works)
+      ? state.works.find((item) => item.id === state.selectedWorkId) || state.works[0]
+      : null;
+    if (!state || !work) throw new Error("home capture could not resolve a valid workspace state");
+    state.personalSchedules = (state.personalSchedules || [])
+      .filter((item) => item.id !== fixture.personalSchedule.id);
+    state.personalSchedules.push(Object.assign({}, fixture.personalSchedule, { ownerId: state.currentPersonId }));
+    work.scheduleCandidates = (work.scheduleCandidates || [])
+      .filter((item) => item.id !== fixture.scheduleCandidate.id);
+    work.scheduleCandidates.push(fixture.scheduleCandidate);
+    state.works.filter((item) => item.seedKey).forEach((item) => { item.repeat = false; });
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  }, captureCalendarFixture);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.locator('[data-testid="home-omni"]').waitFor();
   await page.evaluate(async () => { if (document.fonts) await document.fonts.ready; });
   const status = (await page.locator("#dataStatus").innerText()).trim();
   assert.equal(status, "시연용 샘플 데이터", "fixture capture data-mode label is not truthful");
   assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home capture did not render 14 dates");
+  assert.equal(await page.locator('[data-event-id="personal-long-label"]').count(), 1,
+    "home capture is missing the long personal schedule");
+  const candidate = page.locator('[data-event-id="single-day-candidate-long-label"]');
+  assert.equal(await candidate.count(), 1, "home capture is missing the long confirmation-needed candidate");
+  const candidateStatus = candidate.locator(".home-event-status");
+  assert.equal(await candidateStatus.count(), 1, "home capture candidate must render exactly one visible status");
+  assert.equal((await candidateStatus.innerText()).trim(), "후보 · 미확인",
+    "home capture candidate visible status text changed");
+  if (viewport.width === 1920) {
+    const calendarOverflow = await page.locator(".home-calendar-scroll").evaluate((element) => ({
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight
+    }));
+    assert(calendarOverflow.scrollHeight <= calendarOverflow.clientHeight,
+      `desktop home capture clips calendar evidence vertically: ${calendarOverflow.scrollHeight} > ${calendarOverflow.clientHeight}`);
+  }
   const overflow = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     clientWidth: document.documentElement.clientWidth

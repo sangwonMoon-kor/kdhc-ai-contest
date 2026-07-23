@@ -285,6 +285,9 @@ async function run() {
     assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home calendar must render exactly 14 dates");
     assert.equal(await page.locator("[data-calendar-date]").first().getAttribute("data-calendar-date"), "2025-12-28", "calendar does not start from summary.simDate week");
     assert.equal(await page.locator('[data-calendar-date="2026-01-02"]').getAttribute("aria-current"), "date", "simulation date is not exposed as current date");
+    const longCandidateStatus = page.locator('[data-event-id="single-day-candidate-long-label"] .home-event-status');
+    assert.equal(await longCandidateStatus.count(), 1, "long candidate must render exactly one visible status");
+    assert.equal((await longCandidateStatus.innerText()).trim(), "후보 · 미확인", "long candidate visible status text changed");
     for (const eventId of ["personal-long-label", "single-day-candidate-long-label"]) {
       const chip = page.locator(`[data-event-id="${eventId}"]`);
       const layout = await chip.evaluate(function (element) {
