@@ -331,6 +331,8 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 
 /* ---- 업무 작업대 ---- */
 .wb-back{font-size:.85rem;margin-bottom:10px;display:inline-block}
+.workbench-snapshot-notice{margin-bottom:12px;padding:10px 13px;border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--surface-2);color:var(--ink-2);font-size:.82rem}
 .workbench-dossier{min-width:0;display:flex;flex-direction:column;gap:14px}
 .workbench-dossier>*{min-width:0;overflow-wrap:anywhere}
 .workbench-dossier>.card{margin-top:0}

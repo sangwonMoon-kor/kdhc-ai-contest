@@ -14,6 +14,16 @@ function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (m) => (
 function uid(p) { return (p || "x") + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function fmtD(iso) { if (!iso) return "기한 미정"; const m = String(iso).match(/(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[1]}.${m[2]}.${m[3]}` : String(iso); }
 function fmtTs(ts) { const d = new Date(ts); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; }
+function localBusinessDateISO(date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date || new Date());
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
 function ddayOf(dueISO, simISO) {
   if (!dueISO || !simISO) return null;
   return Math.round((new Date(dueISO + "T00:00:00") - new Date(simISO + "T00:00:00")) / 86400000);
@@ -63,6 +73,7 @@ let homeCalendarOffsetWeeks = 0;
 let homeAttachmentFile = null;
 let homeAttachmentMessage = "";
 let engineDown = false;
+let activeCompletionReviewDispose = null;
 
 function blankState() { return workspaceModel.createDemoState(); }
 function validWork(w) {
@@ -367,8 +378,18 @@ function parseHash() {
     return { v: "invalid-route", a: null };
   }
 }
-function nav(hash) { if (location.hash === hash) route(); else location.hash = hash; }
+function disposeActiveCompletionReview(returnFocus) {
+  const dispose = activeCompletionReviewDispose;
+  activeCompletionReviewDispose = null;
+  if (dispose) dispose(returnFocus === true);
+}
+function nav(hash) {
+  disposeActiveCompletionReview(false);
+  if (location.hash === hash) route();
+  else location.hash = hash;
+}
 async function route() {
+  disposeActiveCompletionReview(false);
   const { v, a } = parseHash();
   const isHome = v === "home";
   const active = isHome ? "home" : v === "schedule" ? "schedule" : v === "cloud" ? "cloud" : "work";
@@ -1025,14 +1046,32 @@ function renderPersonalScheduleCandidate(resultBox, candidate) {
 }
 
 /* ---------- 클라우드 ---------- */
+function completionBundleDate(bundle) {
+  return bundle && bundle.workSnapshot && bundle.workSnapshot.lifecycle
+    && bundle.workSnapshot.lifecycle.completionDateISO
+    || bundle && String(bundle.completedAtISO || "").slice(0, 10)
+    || "";
+}
+function compareCompletionBundles(a, b) {
+  return String(completionBundleDate(b)).localeCompare(String(completionBundleDate(a)))
+    || String(b && b.completedAtISO || "").localeCompare(String(a && a.completedAtISO || ""))
+    || String(a && a.id || "").localeCompare(String(b && b.id || ""));
+}
+function completionBundleForWork(workId) {
+  return workbenchModel.selectCloudBundles(S)
+    .filter((bundle) => bundle && bundle.workId === workId)
+    .sort(compareCompletionBundles)[0] || null;
+}
+function completionSnapshotMatchesLive(liveWork, snapshot) {
+  if (!liveWork || !snapshot) return false;
+  const comparableSnapshot = JSON.parse(JSON.stringify(snapshot));
+  delete comparableSnapshot.incompleteTodos;
+  delete comparableSnapshot.officialReferences;
+  delete comparableSnapshot.memoryReferences;
+  return JSON.stringify(liveWork) === JSON.stringify(comparableSnapshot);
+}
 function vCloud(main) {
-  const bundles = workbenchModel.selectCloudBundles(S).sort((a, b) => {
-    const aDate = a && a.workSnapshot && a.workSnapshot.lifecycle && a.workSnapshot.lifecycle.completionDateISO
-      || a && a.completedAtISO || "";
-    const bDate = b && b.workSnapshot && b.workSnapshot.lifecycle && b.workSnapshot.lifecycle.completionDateISO
-      || b && b.completedAtISO || "";
-    return String(bDate).localeCompare(String(aDate)) || String(b && b.id || "").localeCompare(String(a && a.id || ""));
-  });
+  const bundles = workbenchModel.selectCloudBundles(S).sort(compareCompletionBundles);
   if (bundles.length) {
     main.innerHTML = `<div class="view cloud-view">
       <h1 class="pg" tabindex="-1">클라우드</h1>
@@ -1040,8 +1079,7 @@ function vCloud(main) {
       <div class="cloud-bundle-list" aria-label="완료 업무 묶음">
         ${bundles.map((bundle) => {
           const work = bundle.workSnapshot || {};
-          const lifecycle = work.lifecycle || {};
-          const completionDateISO = lifecycle.completionDateISO || String(bundle.completedAtISO || "").slice(0, 10);
+          const completionDateISO = completionBundleDate(bundle);
           const output = work.output || {};
           const records = Array.isArray(work.records) ? work.records : [];
           const official = Array.isArray(work.officialReferences)
@@ -1083,6 +1121,7 @@ function vCloud(main) {
 
 /* ---------- 업무 작업대 ---------- */
 function openCompletionReview(work, references, output, opener) {
+  disposeActiveCompletionReview(false);
   const readiness = workbenchModel.completionReadiness(work);
   const official = references.official || [];
   const records = Array.isArray(work.records) ? work.records : [];
@@ -1105,7 +1144,7 @@ function openCompletionReview(work, references, output, opener) {
           ? `최종 결과물 · <strong>${esc(output.finalDocumentId)}</strong>`
           : "연결된 최종 결과물이 없습니다."}</p>
         <label class="completion-date-field">완료일
-          <input type="date" value="${new Date().toISOString().slice(0, 10)}" data-completion-date>
+          <input type="date" value="${localBusinessDateISO()}" data-completion-date>
         </label>
       </section>
       <section class="completion-review__section" data-review-standards>
@@ -1147,10 +1186,16 @@ function openCompletionReview(work, references, output, opener) {
   const cancel = $("[data-cancel-completion]", dialog);
   const confirm = $("[data-confirm-completion]", dialog);
   const focusables = () => $$('input:not([disabled]),button:not([disabled])', dialog);
+  let closed = false;
   const close = (returnFocus) => {
+    if (closed) return;
+    closed = true;
+    if (activeCompletionReviewDispose === dispose) activeCompletionReviewDispose = null;
     overlay.remove();
     if (returnFocus !== false && opener && document.body.contains(opener)) opener.focus();
   };
+  const dispose = (returnFocus) => close(returnFocus);
+  activeCompletionReviewDispose = dispose;
 
   dialog.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
@@ -1392,8 +1437,24 @@ async function vWorkbench(main, id) {
   const sum = await loadSummary().catch(() => null);
   const fc = await loadForecast().catch(() => ({ items: [] }));
   if (sum) seedFromForecast(fc, sum.simDate);
-  const w = getWork(id);
+  const liveWork = getWork(id);
+  const completionBundle = completionBundleForWork(id);
+  const snapshot = completionBundle && completionBundle.workSnapshot;
+  const hasUsableSnapshot = Boolean(snapshot && snapshot.id === id && validWork(snapshot)
+    && snapshot.lifecycle && snapshot.lifecycle.phase === "done");
+  if (!liveWork && completionBundle && !hasUsableSnapshot) {
+    return vNotFound(main, "완료 당시 기록을 불러올 수 없습니다", id);
+  }
+  const w = hasUsableSnapshot ? snapshot : liveWork;
   if (!w) return vNotFound(main, "업무를 찾을 수 없습니다", id);
+  const liveState = hasUsableSnapshot
+    ? (!liveWork ? "missing" : (completionSnapshotMatchesLive(liveWork, snapshot) ? "matching" : "diverged"))
+    : "live";
+  const snapshotNotice = liveState === "missing"
+    ? "현재 업무 목록에는 없지만 완료 보관 묶음의 완료 당시 기록을 표시합니다."
+    : (liveState === "diverged"
+      ? "현재 업무 내용과 완료 보관 묶음이 달라 완료 당시 스냅샷을 표시합니다."
+      : "");
   S.selectedWorkId = w.id; saveState();
   const sim = sum ? sum.simDate : null;
   const headline = workbenchModel.headlineFor(w, sim);
@@ -1426,8 +1487,10 @@ async function vWorkbench(main, id) {
         renderOutputSource("official", "공식 지침", "적용 기준", `${output.officialCount}건${output.officialCount ? "" : " · 확인 필요"}`)
       ];
 
-  main.innerHTML = `<div class="view" data-testid="workbench" data-work-id="${esc(w.id)}">
+  main.innerHTML = `<div class="view" data-testid="workbench" data-work-id="${esc(w.id)}"
+    data-work-source="${hasUsableSnapshot ? "completion-snapshot" : "live"}">
     <a class="wb-back" href="#work/list">← 내 업무</a>
+    ${snapshotNotice ? `<p class="workbench-snapshot-notice" data-completion-snapshot-notice>${esc(snapshotNotice)}</p>` : ""}
     <article class="workbench-dossier">
       <section class="workbench-headline" data-workbench-section="headline">
         <div class="workbench-headline__title">
