@@ -1036,6 +1036,65 @@ function vCloud(main) {
 }
 
 /* ---------- 업무 작업대 ---------- */
+function workbenchReference(source, documentById) {
+  return Object.assign({}, documentById.get(source.docId) || {}, source);
+}
+function referenceVersion(reference) {
+  if (reference.version) return reference.version;
+  const match = String(reference.title || "").match(/\bV\d{4}\.\d{2}-R\d+\b/i);
+  return match ? match[0] : null;
+}
+function referenceAccess(reference) {
+  return reference.access === "none" ? "none" : "full";
+}
+function referenceDetails(rows) {
+  return `<dl class="reference-details">${rows.map(([label, value]) =>
+    `<div><dt>${esc(label)}</dt><dd>${esc(value || "—")}</dd></div>`).join("")}</dl>`;
+}
+function referenceAction(reference) {
+  if (referenceAccess(reference) === "none") {
+    return `<div class="reference-denied"><p>본문 열람 권한이 없습니다</p>
+      <button class="btn ghost small" type="button" data-request-access="${esc(reference.docId)}">접근 요청</button></div>`;
+  }
+  return evBtn({ docId: reference.docId, label: reference.title || reference.docId });
+}
+function renderOfficialReference(reference) {
+  const effectiveDate = reference.effectiveDate || reference.startDate || reference.date;
+  return `<article class="reference-card" data-doc-id="${esc(reference.docId)}" data-access="${referenceAccess(reference)}"
+    ${reference.authorType ? `data-author-type="${esc(reference.authorType)}"` : ""}>
+    <div class="reference-card__kind">공식 지침</div>
+    <h3>${esc(reference.title || reference.docId)}</h3>
+    ${referenceDetails([
+      ["발행 조직", reference.issuer || reference.issuingOrganization || reference.organization || reference.author],
+      ["시행일", effectiveDate ? fmtD(effectiveDate) : null],
+      ["버전", referenceVersion(reference)],
+      ["적용 근거", reference.applicationBasis || reference.basis || reference.role],
+      ["권한 상태", referenceAccess(reference) === "none" ? "접근 제한" : "열람 가능"]
+    ])}
+    ${referenceAction(reference)}
+  </article>`;
+}
+function renderMemoryReference(reference) {
+  const date = reference.date || reference.createdAt || reference.effectiveDate;
+  const year = reference.year || (date && String(date).slice(0, 4));
+  const status = reference.needsClassification
+    ? "분류 확인 필요"
+    : (reference.verificationStatus || reference.confirmationStatus || (referenceAccess(reference) === "none" ? "접근 제한" : "확인 가능"));
+  return `<article class="reference-card" data-doc-id="${esc(reference.docId)}" data-access="${referenceAccess(reference)}"
+    ${reference.authorType ? `data-author-type="${esc(reference.authorType)}"` : ""}>
+    <div class="reference-card__kind">업무 메모리</div>
+    <h3>${esc(reference.title || reference.docId)}</h3>
+    ${referenceDetails([
+      ["연도", year ? `${year}년` : null],
+      ["원본 업무", reference.originalWork || reference.originalTask || reference.task],
+      ["작성 주체", reference.createdBy || reference.drafter || reference.author],
+      ["연결 이유", reference.connectionReason || reference.role],
+      ["확인 상태", status]
+    ])}
+    ${referenceAction(reference)}
+  </article>`;
+}
+
 async function vWorkbench(main, id) {
   const sum = await loadSummary().catch(() => null);
   const fc = await loadForecast().catch(() => ({ items: [] }));
@@ -1051,122 +1110,161 @@ async function vWorkbench(main, id) {
   const ownerLabel = [ownerSection && ownerSection.name, ownerPerson && ownerPerson.name].filter(Boolean).join(" · ")
     || w.requester || "담당자 미정";
   const headlineDday = ddayLabel(headline.dday);
-  const bf = await loadBriefing().catch(() => null);
+  const [bf, documentIndex] = await Promise.all([
+    loadBriefing().catch(() => null),
+    api("/api/documents").catch(() => [])
+  ]);
   const nt = nextTodo(w);
   const cautions = bf && Array.isArray(bf.cautions) ? bf.cautions.slice(0, 2) : [];
-  const showcaseSources = (w.sources || []).filter((source) => source && source.docId);
-  const showcaseStage = bf && Array.isArray(bf.stages) ? bf.stages.find((stage) => stage && stage.id === w.stageId) : null;
-  const showcaseDue = w.due ? fmtD(w.due) : "확인 필요";
-  const showcaseOutput = w.draft && w.draft.savedAt ? "저장된 초안 있음" : "확인 필요";
+  const documentById = new Map(documentIndex.map((document) => [document.id, document]));
+  const references = workbenchModel.partitionReferences(w);
+  const officialReferences = references.official.map((source) => workbenchReference(source, documentById));
+  const memoryReferences = references.memory.map((source) => workbenchReference(source, documentById));
 
   main.innerHTML = `<div class="view" data-testid="workbench" data-work-id="${esc(w.id)}">
     <a class="wb-back" href="#work/list">← 내 업무</a>
-    <header class="workbench-headline">
-      <div class="workbench-headline__title">
-        <p class="eyebrow">현재 업무</p>
-        <h1 class="pg" data-work-title>${esc(w.title)}</h1>
-        <div class="workbench-headline__meta">
-          <span class="phase-badge" data-work-phase="${esc(headline.phaseKey)}">${esc(headline.phaseLabel)}</span>
-          <span data-owner>${esc(ownerLabel)}</span>
+    <article class="workbench-dossier">
+      <section class="workbench-headline" data-workbench-section="headline">
+        <div class="workbench-headline__title">
+          <p class="eyebrow">현재 업무</p>
+          <h1 class="pg" data-work-title>${esc(w.title)}</h1>
+          <div class="workbench-headline__meta">
+            <span class="phase-badge" data-work-phase="${esc(headline.phaseKey)}">${esc(headline.phaseLabel)}</span>
+            <span data-owner>${esc(ownerLabel)}</span>
+          </div>
         </div>
-      </div>
-      <div class="workbench-deadline">
-        <span data-date-label>${headline.dateISO ? esc(headline.dateLabel) : "일정 미정"}</span>
-        <strong data-dday>${headlineDday}</strong>
-        ${headline.dateISO
-          ? `<time data-date-iso datetime="${esc(headline.dateISO)}">${fmtD(headline.dateISO)}</time>`
-          : `<time data-date-iso></time><button class="btn ghost small" type="button" data-add-work-date>날짜 추가</button>`}
-      </div>
-      ${headline.isComplete ? "" : '<button class="btn" type="button" data-complete-work>업무 완료</button>'}
-    </header>
-    <section class="card wb-context">
-      <div class="inst">${esc(w.instruction || "원래 지시가 기록되지 않았습니다")}</div>
-      <div class="kv">
-        <span>지시자 <b>${esc(w.requester || "—")}</b></span>
-        <span>기한 <b>${w.due ? fmtD(w.due) + " (" + ddayLabel(ddayOf(w.due, sim)) + ")" : esc(w.dueText || "기한 미정")}</b></span>
-        <span>단계 <b>${w.stageName ? esc(w.stageName) : "—"}</b>${w.stageId ? ` <button class="ev-btn" data-ev="okf:${esc(w.stageId)}">근거 · 단계 지식</button>` : ""}</span>
-        <span>완료 조건 <b>${esc(w.doneWhen || "확인 필요")}</b></span>
-        <span>진행 <b>${progress(w)}%</b></span>
-      </div>
-    </section>
+        <div class="workbench-deadline">
+          <span data-date-label>${headline.dateISO ? esc(headline.dateLabel) : "일정 미정"}</span>
+          <strong data-dday>${headlineDday}</strong>
+          ${headline.dateISO
+            ? `<time data-date-iso datetime="${esc(headline.dateISO)}">${fmtD(headline.dateISO)}</time>`
+            : `<time data-date-iso></time><button class="btn ghost small" type="button" data-add-work-date>날짜 추가</button>`}
+        </div>
+        <div class="workbench-headline__context wb-context">
+          <div class="inst">${esc(w.instruction || "원래 지시가 기록되지 않았습니다")}</div>
+          <div class="kv">
+            <span>지시자 <b>${esc(w.requester || "—")}</b></span>
+            <span>기한 <b>${w.due ? fmtD(w.due) + " (" + ddayLabel(ddayOf(w.due, sim)) + ")" : esc(w.dueText || "기한 미정")}</b></span>
+            <span>단계 <b>${w.stageName ? esc(w.stageName) : "—"}</b>${w.stageId ? ` <button class="ev-btn" data-ev="okf:${esc(w.stageId)}">근거 · 단계 지식</button>` : ""}</span>
+          </div>
+        </div>
+      </section>
 
-    <section class="card" data-testid="workbench-showcase">
-      <div class="blk-k">업무 시연 요약</div>
-      <div class="kv">
-        <span data-showcase="due">언제 해야 하는가 <b>${esc(showcaseDue)}</b></span>
-        <span data-showcase="sources">무엇을 참고해야 하는가 <b>${showcaseSources.length ? showcaseSources.map((source) => evBtn({ docId: source.docId, label: source.docId })).join("") : "연결된 자료 없음"}</b></span>
-        <span data-showcase="criterion">어떤 기준을 지켜야 하는가 <b>${showcaseStage && showcaseStage.desc ? `${esc(showcaseStage.name || showcaseStage.id)} · ${esc(showcaseStage.desc)} ${evBtn({ docId: `okf:${showcaseStage.id}`, label: showcaseStage.name || showcaseStage.id })}` : "확인 필요"}</b></span>
-        <span data-showcase="output">무엇을 만들어야 하는가 <b>${esc(showcaseOutput)}</b></span>
-      </div>
-    </section>
+      <section class="card workbench-section" data-workbench-section="progress" aria-labelledby="progress-title">
+        <div class="workbench-section__header">
+          <div><p class="eyebrow">진행</p><h2 id="progress-title">진행 기록과 할 일</h2></div>
+          <strong class="workbench-progress">${progress(w)}%</strong>
+        </div>
+        <div class="wb-now">
+          <div class="k">${headline.isComplete ? "완료 당시 남은 일" : "지금 할 일"}</div>
+          ${headline.isComplete
+            ? `<p class="sub workbench-readonly">완료 당시 기록을 읽기 전용으로 보여드립니다.</p>${nt ? `<div class="todo-line"><div class="tx"><b>${esc(nt.text)}</b></div></div>` : "<p>완료 당시 남은 일이 없습니다.</p>"}`
+            : (nt ? `<div class="todo-line">
+              <button class="todo-check" role="checkbox" aria-checked="false" data-td="${esc(nt.id)}" aria-label="완료: ${esc(nt.text)}">✓</button>
+              <div class="tx"><b>${esc(nt.text)}</b><div>${(nt.evidence || []).map(evBtn).join("") || `<span class="sub">연결된 근거 없음</span>`}
+              ${nt.action === "draft" ? `<button class="ev-btn" id="goDraft1">기안 집중 화면 →</button>` : ""}
+              ${nt.action === "check" ? `<button class="ev-btn" id="goCheck1">제출 전 점검 →</button>` : ""}</div></div>
+            </div>` : `<p>남은 할 일이 없습니다 — 완료 조건(${esc(w.doneWhen)})을 확인하세요.</p>`)}
+        </div>
+        <div class="workbench-subsection">
+          <div class="blk-k">전체 체크리스트 <span class="sub">완료 ${w.todos.filter((t) => t.done && !t.candidate).length}/${w.todos.filter((t) => !t.candidate).length}</span></div>
+          <div id="todoList">
+            ${w.todos.map((t) => headline.isComplete
+              ? `<div class="todo${t.done ? " done" : ""}${t.candidate ? " cand" : ""}">${t.candidate ? '<span class="cand-k">할 일 후보</span>' : ""}
+                  <div class="tx">${esc(t.text)}</div></div>`
+              : (t.candidate
+                ? `<div class="todo cand"><span class="cand-k">할 일 후보 — 진행률 미반영</span><div class="tx">${esc(t.text)}</div>
+                  <div class="ops"><button class="btn small" data-promote="${esc(t.id)}">반영</button><button class="btn ghost small" data-del="${esc(t.id)}">삭제</button></div></div>`
+                : `<div class="todo${t.done ? " done" : ""}">
+                  <button class="todo-check" role="checkbox" aria-checked="${t.done}" data-td="${esc(t.id)}" aria-label="${t.done ? "완료 해제" : "완료"}: ${esc(t.text)}">✓</button>
+                  <div class="tx">${esc(t.text)}<div>${(t.evidence || []).map(evBtn).join("")}</div></div>
+                </div>`)).join("")}
+          </div>
+        </div>
+        <div class="workbench-subsection">
+          <div class="blk-k">진행 기록</div>
+          <div id="recList">${w.records.length ? w.records.slice().sort((a, b) => b.ts - a.ts).map((r) => `
+            <div class="rec ${esc(r.kind)}"><span class="dot"></span>
+              <div><div>${esc(r.text)}</div><span class="ts">${fmtTs(r.ts)}${r.kind === "hint" ? " · 다음 담당자 메모로 남김" : ""}</span></div>
+              ${!headline.isComplete && r.kind !== "hint" ? `<div class="ops"><button class="btn ghost small" data-hint="${esc(r.id)}">다음 담당자에게</button></div>` : ""}
+            </div>`).join("") : `<div class="workbench-empty"><strong>첫 메모를 입력해 보세요</strong><p>결정·변경·확인 내용을 남기면 이 업무의 진행 기록이 됩니다.</p></div>`}</div>
+          <div id="hintFlow"></div>
+        </div>
+        ${headline.isComplete ? "" : `<form class="wb-input" id="wbOmni">
+          <input id="wbIn" type="text" autocomplete="off" placeholder="이 업무에 이어서 말하기 — 질문·결정·할 일" aria-label="이 업무에 이어서 말하기">
+          <button class="btn" type="submit">말하기</button>
+        </form>`}
+        <div id="wbResult"></div>
+      </section>
 
-    <section class="card wb-now">
-      <div class="k">${headline.isComplete ? "완료 당시 남은 일" : "지금 할 일"}</div>
-      ${headline.isComplete
-        ? `<p class="sub workbench-readonly">완료 당시 기록을 읽기 전용으로 보여드립니다.</p>${nt ? `<div class="todo-line"><div class="tx"><b>${esc(nt.text)}</b></div></div>` : "<p>완료 당시 남은 일이 없습니다.</p>"}`
-        : (nt ? `<div class="todo-line">
-          <button class="todo-check" role="checkbox" aria-checked="false" data-td="${esc(nt.id)}" aria-label="완료: ${esc(nt.text)}">✓</button>
-          <div class="tx"><b>${esc(nt.text)}</b><div>${(nt.evidence || []).map(evBtn).join("") || `<span class="sub">연결된 근거 없음</span>`}
-          ${nt.action === "draft" ? `<button class="ev-btn" id="goDraft1">기안 집중 화면 →</button>` : ""}
-          ${nt.action === "check" ? `<button class="ev-btn" id="goCheck1">제출 전 점검 →</button>` : ""}</div></div>
-        </div>` : `<p>남은 할 일이 없습니다 — 완료 조건(${esc(w.doneWhen)})을 확인하세요.</p>`)}
-    </section>
+      <section class="card workbench-section" data-workbench-section="official" data-reference-category="official" aria-labelledby="official-title">
+        <div class="workbench-section__header">
+          <div><p class="eyebrow">기준</p><h2 id="official-title">공식 지침</h2></div>
+          ${headline.isComplete || !officialReferences.length ? "" : '<button class="btn ghost small" type="button" data-connect-references>자료 연결</button>'}
+        </div>
+        ${officialReferences.length
+          ? `<div class="reference-grid">${officialReferences.map(renderOfficialReference).join("")}</div>`
+          : `<div class="workbench-empty"><strong>연결된 공식 지침 없음</strong><p>현재 업무에 적용할 공식 기준을 아직 연결하지 않았습니다.</p>
+            ${headline.isComplete ? "" : '<button class="btn ghost small" type="button" data-connect-references>자료 연결</button>'}</div>`}
+        ${headline.isComplete ? "" : `<div class="reference-connect" data-reference-connect>
+          <div class="blk-k">자료 붙이기 <span class="sub">문서를 이 업무의 근거로 저장합니다(검토 후 반영)</span></div>
+          <label class="attach-zone" id="dropZone">파일 선택(HWP·PDF·DOCX·XLSX·TXT) 또는 아래에 붙여넣기
+            <input type="file" id="fileIn" accept=".hwp,.hwpx,.pdf,.docx,.pptx,.xlsx,.txt,.md,.csv">
+          </label>
+          <textarea id="pasteIn" rows="3" placeholder="문서 내용을 붙여넣어도 됩니다"></textarea>
+          <div><button class="btn ghost small" id="ingestBtn">검토 후보 만들기</button></div>
+          <div id="ingestPanel"></div>
+        </div>`}
+      </section>
 
-    <section class="card">
-      <div class="blk-k">전체 체크리스트 <span class="sub">완료 ${w.todos.filter((t) => t.done && !t.candidate).length}/${w.todos.filter((t) => !t.candidate).length}</span></div>
-      <div id="todoList">
-        ${w.todos.map((t) => headline.isComplete
-          ? `<div class="todo${t.done ? " done" : ""}${t.candidate ? " cand" : ""}">${t.candidate ? '<span class="cand-k">할 일 후보</span>' : ""}
-              <div class="tx">${esc(t.text)}</div></div>`
-          : (t.candidate
-            ? `<div class="todo cand"><span class="cand-k">할 일 후보 — 진행률 미반영</span><div class="tx">${esc(t.text)}</div>
-              <div class="ops"><button class="btn small" data-promote="${esc(t.id)}">반영</button><button class="btn ghost small" data-del="${esc(t.id)}">삭제</button></div></div>`
-            : `<div class="todo${t.done ? " done" : ""}">
-              <button class="todo-check" role="checkbox" aria-checked="${t.done}" data-td="${esc(t.id)}" aria-label="${t.done ? "완료 해제" : "완료"}: ${esc(t.text)}">✓</button>
-              <div class="tx">${esc(t.text)}<div>${(t.evidence || []).map(evBtn).join("")}</div></div>
-            </div>`)).join("")}
-      </div>
-    </section>
+      <section class="card workbench-section" data-workbench-section="memory" data-reference-category="memory" aria-labelledby="memory-title">
+        <div class="workbench-section__header">
+          <div><p class="eyebrow">재사용</p><h2 id="memory-title">업무 메모리</h2></div>
+        </div>
+        ${memoryReferences.length
+          ? `<div class="reference-grid">${memoryReferences.map(renderMemoryReference).join("")}</div>`
+          : `<div class="workbench-empty"><strong>처음 진행하는 업무</strong><p>재사용할 과거 자료가 없어 신규 초안으로 시작합니다.</p></div>`}
+      </section>
 
-    <section class="card">
-      <div class="blk-k">진행 기록</div>
-      <div id="recList">${w.records.length ? w.records.slice().sort((a, b) => b.ts - a.ts).map((r) => `
-        <div class="rec ${esc(r.kind)}"><span class="dot"></span>
-          <div><div>${esc(r.text)}</div><span class="ts">${fmtTs(r.ts)}${r.kind === "hint" ? " · 다음 담당자 메모로 남김" : ""}</span></div>
-          ${!headline.isComplete && r.kind !== "hint" ? `<div class="ops"><button class="btn ghost small" data-hint="${esc(r.id)}">다음 담당자에게</button></div>` : ""}
-        </div>`).join("") : `<p class="sub">아직 기록이 없습니다 — 아래 입력창에 결정·변경을 적어 보세요.</p>`}</div>
-      <div id="hintFlow"></div>
-    </section>
+      <section class="card workbench-section wb-output" data-workbench-section="output" aria-labelledby="output-title">
+        <div class="workbench-section__header">
+          <div><p class="eyebrow">작성</p><h2 id="output-title">만들어야 할 결과물</h2></div>
+        </div>
+        <div class="kv">
+          <span>산출물 <b>${esc(w.title)}(안)</b></span>
+          <span>임시 저장 <b>${w.draft && w.draft.savedAt ? fmtTs(w.draft.savedAt) : "없음"}</b></span>
+        </div>
+        ${headline.isComplete ? '<p class="sub workbench-output-note">완료 당시 결과물 정보입니다.</p>' : `<button class="btn workbench-output-action" id="goDraft">기안 ${w.draft && w.draft.savedAt ? "이어서 쓰기" : "시작"}</button>`}
+        ${cautions.length ? `<div class="blk-k workbench-cautions">제출 전 주의</div>` + cautions.map((c) => `
+          <div class="k-item">${esc(c.text)}${(c.evidence || []).slice(0, 2).map(evBtn).join("")}</div>`).join("") : ""}
+      </section>
 
-    ${headline.isComplete ? "" : `<section class="card">
-      <div class="blk-k">자료 붙이기 <span class="sub">문서를 이 업무의 근거로 저장합니다(검토 후 반영)</span></div>
-      <label class="attach-zone" id="dropZone">파일 선택(HWP·PDF·DOCX·XLSX·TXT) 또는 아래에 붙여넣기
-        <input type="file" id="fileIn" accept=".hwp,.hwpx,.pdf,.docx,.pptx,.xlsx,.txt,.md,.csv">
-      </label>
-      <textarea id="pasteIn" rows="3" style="width:100%;margin-top:8px;border:1px solid var(--line-strong);border-radius:10px;padding:10px;font-family:inherit;background:var(--surface);color:var(--ink)" placeholder="문서 내용을 붙여넣어도 됩니다"></textarea>
-      <div style="margin-top:8px"><button class="btn ghost small" id="ingestBtn">검토 후보 만들기</button></div>
-      <div id="ingestPanel"></div>
-    </section>`}
-
-    <section class="card wb-output">
-      <div class="blk-k">만들어야 할 결과물</div>
-      <div class="kv" style="margin-bottom:10px">
-        <span>산출물 <b>${esc(w.title)}(안)</b></span>
-        <span>임시 저장 <b>${w.draft && w.draft.savedAt ? fmtTs(w.draft.savedAt) : "없음"}</b></span>
-      </div>
-      ${headline.isComplete ? '<p class="sub">완료 당시 결과물 정보입니다.</p>' : `<button class="btn" id="goDraft">기안 ${w.draft && w.draft.savedAt ? "이어서 쓰기" : "시작"}</button>`}
-      ${cautions.length ? `<div class="blk-k" style="margin-top:14px">제출 전 주의</div>` + cautions.map((c) => `
-        <div class="k-item">${esc(c.text)}${(c.evidence || []).slice(0, 2).map(evBtn).join("")}</div>`).join("") : ""}
-    </section>
-
-    ${headline.isComplete ? "" : `<form class="wb-input" id="wbOmni">
-      <input id="wbIn" type="text" autocomplete="off" placeholder="이 업무에 이어서 말하기 — 질문·결정·할 일" aria-label="이 업무에 이어서 말하기">
-      <button class="btn" type="submit">말하기</button>
-    </form>`}
-    <div id="wbResult"></div>
+      <section class="card workbench-section workbench-completion" data-workbench-section="completion" aria-labelledby="completion-title">
+        <div class="workbench-section__header">
+          <div><p class="eyebrow">마무리</p><h2 id="completion-title">${headline.isComplete ? "완료 보관" : "완료 조건"}</h2></div>
+          ${headline.isComplete ? '<span class="phase-badge" data-completion-status>읽기 전용</span>' : ""}
+        </div>
+        <p class="workbench-completion__criterion">${esc(w.doneWhen || "완료 조건을 확인해 주세요.")}</p>
+        ${headline.isComplete
+          ? '<p class="sub">완료 당시의 업무 기록과 연결 자료를 보관하고 있습니다.</p>'
+          : '<button class="btn" type="button" data-complete-work>업무 완료</button>'}
+      </section>
+    </article>
   </div>`;
 
   bindEvidence(main);
+  $$("[data-request-access]", main).forEach((button) => {
+    button.onclick = () => toast(`${button.dataset.requestAccess} 문서의 접근 요청을 준비했습니다.`);
+  });
+  $$("[data-connect-references]", main).forEach((button) => {
+    button.onclick = () => {
+      const connector = $("[data-reference-connect]", main);
+      if (!connector) return;
+      connector.scrollIntoView({ behavior: "smooth", block: "center" });
+      const pasteInput = $("#pasteIn", connector);
+      if (pasteInput) pasteInput.focus();
+    };
+  });
   $$("[data-td]", main).forEach((b) => {
     b.onclick = () => {
       const t = w.todos.find((x) => x.id === b.dataset.td); if (!t) return;
