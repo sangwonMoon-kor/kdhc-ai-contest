@@ -85,29 +85,46 @@
     );
   }
 
+  function collapseDocumentIndex(documents) {
+    const unique = new Map();
+    documents.forEach((document) => {
+      const existing = unique.get(document.id);
+      if (!existing) {
+        unique.set(document.id, document);
+        return;
+      }
+      unique.set(document.id, Object.assign({}, existing, document, {
+        access: existing.access === "none" || document.access === "none" ? "none" : "full"
+      }));
+    });
+    return [...unique.values()];
+  }
+
   function normalizeDocumentIndex(value, options = {}) {
     if (!Array.isArray(value)) throw new Error("documents contract mismatch");
-    return value.map((document) => {
+    return collapseDocumentIndex(value.map((document) => {
       if (!document || typeof document !== "object" || Array.isArray(document) || !nonEmptyString(document.id)) {
         throw new Error("documents contract mismatch");
       }
       if (options.legacyDocumentIndexGrant) {
         return Object.assign({}, document, {
-          access: document.access === "none" ? "none" : "full"
+          access: !Object.prototype.hasOwnProperty.call(document, "access")
+            ? "full"
+            : (document.access === "full" ? "full" : "none")
         });
       }
       if (!["full", "none"].includes(document.access)) {
         throw new Error("documents access contract mismatch");
       }
       return Object.assign({}, document);
-    });
+    }));
   }
 
   function mergeDocumentIndexes(base, overlays) {
-    const merged = new Map();
-    normalizeDocumentIndex(base).forEach((document) => merged.set(document.id, document));
-    normalizeDocumentIndex(overlays || []).forEach((document) => merged.set(document.id, document));
-    return [...merged.values()];
+    return collapseDocumentIndex([
+      ...normalizeDocumentIndex(base),
+      ...normalizeDocumentIndex(overlays || [])
+    ]);
   }
 
   function normalizeResponse(path, value, options = {}) {
@@ -238,6 +255,7 @@
             const overlays = normalizeDocumentIndex(localManifest.documentIndex || []);
             const overlay = overlays.find((document) => document.id === LOCAL_MAINTENANCE_DOCUMENT_ID);
             if (!overlay) return [];
+            if (overlay.access !== "full") return [overlay];
             const detail = normalizeResponse(
               `/api/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}`,
               await getJSON(`${fixtureBase}/local-maintenance/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}.json`)

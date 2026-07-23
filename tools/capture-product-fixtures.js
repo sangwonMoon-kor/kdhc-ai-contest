@@ -60,10 +60,23 @@ function fields(value, message, required) {
 }
 function normalizeCapturedDocumentIndex(documents) {
   assert(Array.isArray(documents), "documents must be an array");
-  return documents.map((document, index) => {
+  const normalized = documents.map((document, index) => {
     assert(object(document) && string(document.id), `documents[${index}] must have an id`);
-    return { ...document, access: document.access === "none" ? "none" : "full" };
+    return {
+      ...document,
+      access: !Object.prototype.hasOwnProperty.call(document, "access")
+        ? "full"
+        : (document.access === "full" ? "full" : "none")
+    };
   });
+  const unique = new Map();
+  normalized.forEach((document) => {
+    const existing = unique.get(document.id);
+    unique.set(document.id, existing
+      ? { ...existing, ...document, access: existing.access === "none" || document.access === "none" ? "none" : "full" }
+      : document);
+  });
+  return [...unique.values()];
 }
 function validateResponses({ summary, forecast, briefing, graph, documents, askPump, askMissing, drafts, riskyCheck, cleanCheck, hintStage, hintCommit, ingestStage, ingestCommit, extract }) {
   assert(object(summary), "summary must be an object");

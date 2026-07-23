@@ -59,6 +59,9 @@ if (!failures.length) {
   if (!documents.every((document) => document && ["full", "none"].includes(document.access))) {
     failures.push("captured document index contains implicit access");
   }
+  if (new Set(documents.map((document) => document.id)).size !== documents.length) {
+    failures.push("captured document index contains duplicate IDs");
+  }
   const routeCases = [
     ["/api/summary", null],
     ["/api/forecast", null],

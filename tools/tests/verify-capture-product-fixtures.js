@@ -52,15 +52,45 @@ assert.throws(
   /documents\[0\]\.access/,
   "capture validation accepted an implicit document access value"
 );
+for (const access of [null, "restricted"]) {
+  const invalidAccessPayload = payloads();
+  invalidAccessPayload.documents = invalidAccessPayload.documents.map((document, index) =>
+    index === 0 ? { ...document, access } : document);
+  assert.throws(
+    () => validateResponses(invalidAccessPayload),
+    /documents\[0\]\.access/,
+    `capture validation accepted explicit invalid access: ${String(access)}`
+  );
+}
 
 const normalizedCapturedDocuments = normalizeCapturedDocumentIndex([
   { id: "LEGACY-CAPTURED", title: "Legacy captured document" },
-  { id: "DENIED-CAPTURED", title: "Denied captured document", access: "none" }
+  { id: "FULL-CAPTURED", title: "Full captured document", access: "full" },
+  { id: "DENIED-CAPTURED", title: "Denied captured document", access: "none" },
+  { id: "NULL-CAPTURED", title: "Null captured document", access: null },
+  { id: "RESTRICTED-CAPTURED", title: "Restricted captured document", access: "restricted" }
 ]);
 assert.deepEqual(
   normalizedCapturedDocuments.map((document) => [document.id, document.access]),
-  [["LEGACY-CAPTURED", "full"], ["DENIED-CAPTURED", "none"]],
-  "capture boundary did not emit mandatory explicit access"
+  [
+    ["LEGACY-CAPTURED", "full"],
+    ["FULL-CAPTURED", "full"],
+    ["DENIED-CAPTURED", "none"],
+    ["NULL-CAPTURED", "none"],
+    ["RESTRICTED-CAPTURED", "none"]
+  ],
+  "capture boundary trusted an explicit unknown access value"
+);
+const duplicateCapturedDocuments = normalizeCapturedDocumentIndex([
+  { id: "CAPTURE-DUPLICATE", title: "Allowed duplicate", access: "full" },
+  { id: "CAPTURE-DUPLICATE", title: "Denied duplicate", access: "none" },
+  { id: "CAPTURE-SAME", title: "Same first", access: "full" },
+  { id: "CAPTURE-SAME", title: "Same second", access: "full" }
+]);
+assert.deepEqual(
+  duplicateCapturedDocuments.map((document) => [document.id, document.access]),
+  [["CAPTURE-DUPLICATE", "none"], ["CAPTURE-SAME", "full"]],
+  "capture boundary emitted duplicate IDs or allowed a conflicting duplicate"
 );
 
 assert.deepEqual(parseCliArgs([

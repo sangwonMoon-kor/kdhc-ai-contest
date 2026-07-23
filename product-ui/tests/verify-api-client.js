@@ -57,17 +57,49 @@ function response(body, ok = true, status = 200) {
   for (const [apiPath, value] of validShapes) assert.equal(normalizeResponse(apiPath, value), value);
 
   const normalizedLegacyLiveDocuments = normalizeResponse("/api/documents", [
-    { id: "LEGACY-ALLOWED", title: "Legacy allowed document" },
-    { id: "EXPLICIT-DENIED", title: "Explicit denied document", access: "none" }
+    { id: "LEGACY-ABSENT", title: "Legacy absent access" },
+    { id: "EXPLICIT-FULL", title: "Explicit full", access: "full" },
+    { id: "EXPLICIT-NONE", title: "Explicit none", access: "none" },
+    { id: "EXPLICIT-NULL", title: "Explicit null", access: null },
+    { id: "EXPLICIT-EMPTY", title: "Explicit empty", access: "" },
+    { id: "EXPLICIT-RESTRICTED", title: "Explicit restricted", access: "restricted" },
+    { id: "EXPLICIT-FUTURE", title: "Explicit future value", access: "metadata-only" }
   ], { legacyDocumentIndexGrant: true });
-  assert.equal(normalizedLegacyLiveDocuments[0].access, "full",
-    "authenticated live index presence did not normalize the legacy access grant");
-  assert.equal(normalizedLegacyLiveDocuments[1].access, "none",
-    "explicit live denial did not win over the legacy index grant");
+  assert.deepEqual(
+    normalizedLegacyLiveDocuments.map((document) => [document.id, document.access]),
+    [
+      ["LEGACY-ABSENT", "full"],
+      ["EXPLICIT-FULL", "full"],
+      ["EXPLICIT-NONE", "none"],
+      ["EXPLICIT-NULL", "none"],
+      ["EXPLICIT-EMPTY", "none"],
+      ["EXPLICIT-RESTRICTED", "none"],
+      ["EXPLICIT-FUTURE", "none"]
+    ],
+    "legacy grant trusted an explicit unknown access value"
+  );
   assert.throws(
     () => normalizeResponse("/api/documents", [{ id: "FIXTURE-MISSING-ACCESS" }]),
     /documents access contract mismatch/,
     "fixture/captured index accepted an implicit access value"
+  );
+  for (const access of [null, "", "restricted", "metadata-only"]) {
+    assert.throws(
+      () => normalizeResponse("/api/documents", [{ id: "FIXTURE-INVALID-ACCESS", access }]),
+      /documents access contract mismatch/,
+      `fixture index accepted explicit invalid access: ${String(access)}`
+    );
+  }
+  const duplicateLiveDocuments = normalizeResponse("/api/documents", [
+    { id: "LIVE-DUPLICATE", title: "Allowed duplicate", access: "full" },
+    { id: "LIVE-DUPLICATE", title: "Denied duplicate", access: "none" },
+    { id: "LIVE-SAME", title: "Same duplicate first", access: "full" },
+    { id: "LIVE-SAME", title: "Same duplicate second", access: "full" }
+  ], { legacyDocumentIndexGrant: true });
+  assert.deepEqual(
+    duplicateLiveDocuments.map((document) => [document.id, document.access]),
+    [["LIVE-DUPLICATE", "none"], ["LIVE-SAME", "full"]],
+    "live normalization returned duplicate IDs or allowed a conflicting duplicate"
   );
 
   const invalidShapes = [
@@ -123,6 +155,55 @@ function response(body, ok = true, status = 200) {
     "fixtures/documents/index.json"
   ]);
 
+  const overlayMergeCases = [{
+    name: "base none cannot be elevated by overlay full",
+    base: [{ id: "MERGED", access: "none", title: "Base denied" }],
+    overlays: [{ id: "MERGED", access: "full", title: "Overlay full" }],
+    expectedAccess: "none"
+  }, {
+    name: "overlay none revokes base full",
+    base: [{ id: "MERGED", access: "full", title: "Base full" }],
+    overlays: [{ id: "MERGED", access: "none", title: "Overlay denied" }],
+    expectedAccess: "none"
+  }, {
+    name: "same-access duplicates collapse",
+    base: [
+      { id: "MERGED", access: "full", title: "Base first" },
+      { id: "MERGED", access: "full", title: "Base second" }
+    ],
+    overlays: [{ id: "MERGED", access: "full", title: "Overlay full" }],
+    expectedAccess: "full"
+  }, {
+    name: "conflicting overlays deny when full precedes none",
+    base: [],
+    overlays: [
+      { id: "MERGED", access: "full", title: "Overlay full" },
+      { id: "MERGED", access: "none", title: "Overlay none" }
+    ],
+    expectedAccess: "none"
+  }, {
+    name: "conflicting overlays deny when none precedes full",
+    base: [],
+    overlays: [
+      { id: "MERGED", access: "none", title: "Overlay none" },
+      { id: "MERGED", access: "full", title: "Overlay full" }
+    ],
+    expectedAccess: "none"
+  }];
+  for (const mergeCase of overlayMergeCases) {
+    const mergeClient = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
+      if (url === "fixtures/manifest.json") {
+        return response({ contractVersion: 1, documentIndex: mergeCase.overlays });
+      }
+      if (url === "fixtures/documents/index.json") return response(mergeCase.base);
+      throw new Error(`unexpected merge URL: ${url}`);
+    }});
+    const mergedIndex = await mergeClient.request("/api/documents");
+    assert.equal(mergedIndex.length, 1, `${mergeCase.name}: canonical index was not unique`);
+    assert.equal(mergedIndex[0].id, "MERGED", `${mergeCase.name}: wrong canonical ID`);
+    assert.equal(mergedIndex[0].access, mergeCase.expectedAccess, mergeCase.name);
+  }
+
   const localOverlayCalls = [];
   const fixtureWithLocalOverlay = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
     localOverlayCalls.push(url);
@@ -165,6 +246,53 @@ function response(body, ok = true, status = 200) {
     "local overlay availability did not verify the private manifest");
   assert(localOverlayCalls.includes("fixtures/local-maintenance/documents/PROC-MAINT-31100.json"),
     "local overlay availability did not verify the private document");
+
+  const deniedLocalOverlayCalls = [];
+  const fixtureWithDeniedLocalOverlay = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
+    deniedLocalOverlayCalls.push(url);
+    if (url === "fixtures/manifest.json") return response({ contractVersion: 1, documentIndex: [] });
+    if (url === "fixtures/local-maintenance/ask/maintenance-plan.json") {
+      return response({
+        grounded: true,
+        answer: ["Local maintenance metadata only"],
+        knowledge: [],
+        docs: [{ id: "PROC-MAINT-31100" }]
+      });
+    }
+    if (url === "fixtures/documents/index.json") return response([]);
+    if (url === "fixtures/local-maintenance/manifest.json") {
+      return response({
+        contractVersion: 1,
+        localOnly: true,
+        documentIndex: [{
+          id: "PROC-MAINT-31100",
+          access: "none",
+          kind: "유지보수 절차",
+          title: "Restricted local maintenance procedure"
+        }]
+      });
+    }
+    if (url === "fixtures/local-maintenance/documents/PROC-MAINT-31100.json") {
+      return response({
+        doc: { id: "PROC-MAINT-31100", text: "PRIVATE DENIED LOCAL BODY" },
+        edges: []
+      });
+    }
+    throw new Error(`unexpected denied local overlay URL: ${url}`);
+  }});
+  await fixtureWithDeniedLocalOverlay.request("/api/ask", { question: "정기점검보수 기본계획 수립 절차" });
+  assert.deepEqual(
+    (await fixtureWithDeniedLocalOverlay.request("/api/documents"))
+      .map((document) => [document.id, document.access, document.title]),
+    [["PROC-MAINT-31100", "none", "Restricted local maintenance procedure"]],
+    "denied local overlay did not preserve denial metadata"
+  );
+  assert.equal(
+    deniedLocalOverlayCalls.filter((url) =>
+      url === "fixtures/local-maintenance/documents/PROC-MAINT-31100.json").length,
+    0,
+    "denied local overlay fetched private document detail"
+  );
 
   const unavailableLocalOverlayCalls = [];
   const unavailableLocalOverlay = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
