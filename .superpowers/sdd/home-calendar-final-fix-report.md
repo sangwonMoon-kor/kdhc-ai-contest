@@ -92,3 +92,118 @@ None. The tradeoff is intentionally taller single-day rows at small widths so al
 ## Commit
 
 `Fix mobile home calendar event containment` (final commit; hash is reported in the task handoff).
+
+## Review fix 2
+
+### RED
+
+The browser geometry assertion was parameterized before production changes across `390`, `640`, `641`, `768`, `1000`, `1001`, `1200`, and `1920` pixels. Each width requires the exact long personal label, exact long candidate label, exact `후보 · 미확인` status, no child scroll overflow, text rectangles contained by chip rectangles, and no document-level horizontal overflow.
+
+Command:
+
+```text
+npm run test:product-ui:home-browser
+```
+
+Exact failing output:
+
+```text
+> test:product-ui:home-browser
+> node product-ui/tests/verify-home-browser.js
+
+AssertionError [ERR_ASSERTION]: single-day-candidate-long-label label escapes its 641px home calendar chip
+    at assertLongEventContainment (/Users/openclaw/projects/kdhc-ai-contest/.worktrees/feature-on-memory-workbench/product-ui/tests/verify-home-browser.js:207:12)
+    at async run (/Users/openclaw/projects/kdhc-ai-contest/.worktrees/feature-on-memory-workbench/product-ui/tests/verify-home-browser.js:413:7)
+```
+
+This failed at the first width above the old `max-width:640px` special case and therefore reproduced the responsive gap directly.
+
+### GREEN and responsive-width results
+
+The fix replaces fixed single-day row sizing with an intrinsic `minmax(60px,max-content)` track and changes event chips from fixed `height:54px` to `height:auto; min-height:54px`. Every chip now grows only when wrapped content requires it, at the calendar event/row layer rather than at viewport-specific breakpoints.
+
+Command:
+
+```text
+npm run test:product-ui:home-browser
+```
+
+Exact passing output:
+
+```text
+> test:product-ui:home-browser
+> node product-ui/tests/verify-home-browser.js
+
+Home browser contract passed
+```
+
+Containment and document-level overflow passed at every parameterized width: `390`, `640`, `641`, `768`, `1000`, `1001`, `1200`, and `1920` pixels. The existing 390px 24px-section-gap and internal-calendar-scroll assertions also passed; the existing 1920px 36px hierarchy assertion passed earlier in the same browser contract.
+
+### Capture and visual evidence
+
+The capture utility now applies the same long-label/status containment checks to its 390px, 768px, and 1920px pages. Exact capture output:
+
+```text
+> capture:product-ui:home
+> node tools/capture-home-two-week-context.js
+
+Captured desktop home: product-ui/screenshots/home-two-week-context.png (1920/1920)
+Captured mobile home: /var/folders/zz/b798sxj96mqd9tbbxbx83g5w0000gn/T/kdhc-home-two-week-mobile.png (390/390)
+Captured tablet home: /var/folders/zz/b798sxj96mqd9tbbxbx83g5w0000gn/T/kdhc-home-two-week-tablet.png (768/768)
+```
+
+The regenerated 1920px PNG was inspected: calendar-first hierarchy, toolbar readability, event density, and 36px desktop spacing remain intact. The 768px artifact was also inspected: wrapped candidate and personal content stays inside its chips, the taller intrinsic rows remain legible, and calendar overflow stays internal. All three capture pages reported document widths equal to viewport widths.
+
+### Validation and full-suite output
+
+All requested commands completed with exit code 0:
+
+- `npm run test:product-ui:home-browser`
+- `node --check product-ui/app.js`
+- `node --check tools/capture-home-two-week-context.js`
+- `npm run capture:product-ui:home`
+- `npm run test:product-ui:source`
+- `npm run test:product-ui:schedule-browser`
+- `git diff --check`
+- `npm run test:product-ui`
+
+Focused output:
+
+```text
+Product UI source contract passed
+Schedule browser contract passed
+Home browser contract passed
+```
+
+Full-suite command/output record:
+
+```text
+> test:product-ui
+> npm run test:brand && npm run test:product-ui:source && npm run test:product-ui:home-model && npm run test:product-ui:workspace-model && npm run test:product-ui:workbench-model && npm run test:product-ui:home-state && npm run test:product-ui:shell-browser && npm run test:product-ui:work-list-browser && npm run test:product-ui:completion-browser && npm run test:product-ui:workbench-browser && npm run test:product-ui:home-browser && npm run test:product-ui:schedule-browser && npm run test:product-ui:local-maintenance && npm run test:product-ui:fixtures && npm run test:product-ui:api && npm run test:product-ui:data-mode && npm run test:product-ui:fixture-flows && npm run test:product-ui:capture && npm run test:product-ui:sync && npm run test:product-ui:e2e
+
+Exit code: 0
+```
+
+The full suite passed twice after the responsive fix, covering brand/source, all home/workspace/workbench models and state, shell/work-list/completion/workbench/home/schedule browser contracts, maintenance, fixture/API/data-mode/flow/capture/sync checks, and end-to-end validation.
+
+### Files
+
+- `product-ui/app.js` — uses intrinsic max-content growth for single-day calendar tracks.
+- `product-ui/style.css` — makes single-day chips intrinsically tall with the existing 54px minimum; removes the 640px-only fixed override.
+- `product-ui/tests/verify-home-browser.js` — adds reusable, parameterized containment and document-overflow coverage at eight widths.
+- `tools/capture-home-two-week-context.js` — runs equivalent containment checks at desktop, mobile, and narrow-tablet capture widths.
+- `product-ui/screenshots/home-two-week-context.png` — regenerated and visually inspected.
+- `.superpowers/sdd/home-calendar-final-fix-report.md` — appends this review-fix evidence.
+
+### Commit
+
+`Fix responsive home calendar event containment` (final hash is reported in the task handoff).
+
+### Self-review and concerns
+
+- The change is content-driven rather than breakpoint-driven, so intermediate widths and future wrapping lengths use the same layout rule.
+- Minimum desktop dimensions remain 54px/60px when content fits, preserving the 1920 hierarchy and readability.
+- The 14-day model, event routes, A layout, desktop/mobile section spacing, internal scrolling, and document-level no-overflow checks all remain green.
+- The pre-existing `.superpowers/sdd/task-2-report.md` and `product-ui/screenshots/showcase-golden.png` modifications will remain unstaged.
+
+Concerns: none. Narrower calendars intentionally grow only affected single-day rows enough to contain their complete visible text.

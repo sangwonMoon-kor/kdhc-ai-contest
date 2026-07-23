@@ -172,6 +172,44 @@ async function goHome(page) {
   await page.locator("#omniIn").waitFor();
 }
 
+async function assertLongEventContainment(page, viewportWidth) {
+  const personal = page.locator('[data-event-id="personal-long-label"]');
+  const candidate = page.locator('[data-event-id="single-day-candidate-long-label"]');
+  const candidateStatus = candidate.locator(".home-event-status");
+  assert.equal(await personal.count(), 1, `${viewportWidth}px personal long event is missing`);
+  assert.equal(await candidate.count(), 1, `${viewportWidth}px candidate long event is missing`);
+  assert.equal((await personal.locator(".home-event-text").innerText()).trim(), "2026년 정기점검보수 개인 검토 일정",
+    `${viewportWidth}px personal long label changed or is missing`);
+  assert.equal((await candidate.locator(".home-event-text").innerText()).trim(), "2026년 정기점검보수 확인 필요 일정",
+    `${viewportWidth}px candidate long label changed or is missing`);
+  assert.equal(await candidateStatus.count(), 1, `${viewportWidth}px candidate must render exactly one visible status`);
+  assert.equal((await candidateStatus.innerText()).trim(), "후보 · 미확인", `${viewportWidth}px candidate status changed or is missing`);
+  for (const event of [personal, candidate]) {
+    const eventId = await event.getAttribute("data-event-id");
+    const layout = await event.evaluate(function (element) {
+      const label = element.querySelector(".home-event-text");
+      const status = element.querySelector(".home-event-status");
+      const chipRect = element.getBoundingClientRect();
+      const labelRect = label && label.getBoundingClientRect();
+      const statusRect = status && status.getBoundingClientRect();
+      function contained(rect) {
+        return Boolean(rect && rect.left >= chipRect.left && rect.right <= chipRect.right
+          && rect.top >= chipRect.top && rect.bottom <= chipRect.bottom);
+      }
+      return {
+        labelClipped: Boolean(label && (label.scrollWidth > label.clientWidth || label.scrollHeight > label.clientHeight)),
+        labelContained: contained(labelRect),
+        statusClipped: Boolean(status && (status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight)),
+        statusContained: !status || contained(statusRect)
+      };
+    });
+    assert.equal(layout.labelClipped, false, `${eventId} label overflows its ${viewportWidth}px home calendar chip`);
+    assert.equal(layout.labelContained, true, `${eventId} label escapes its ${viewportWidth}px home calendar chip`);
+    assert.equal(layout.statusClipped, false, `${eventId} status overflows its ${viewportWidth}px home calendar chip`);
+    assert.equal(layout.statusContained, true, `${eventId} status escapes its ${viewportWidth}px home calendar chip`);
+  }
+}
+
 async function run() {
   let server;
   let browser;
@@ -285,27 +323,7 @@ async function run() {
     assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home calendar must render exactly 14 dates");
     assert.equal(await page.locator("[data-calendar-date]").first().getAttribute("data-calendar-date"), "2025-12-28", "calendar does not start from summary.simDate week");
     assert.equal(await page.locator('[data-calendar-date="2026-01-02"]').getAttribute("aria-current"), "date", "simulation date is not exposed as current date");
-    const longCandidateStatus = page.locator('[data-event-id="single-day-candidate-long-label"] .home-event-status');
-    assert.equal(await longCandidateStatus.count(), 1, "long candidate must render exactly one visible status");
-    assert.equal((await longCandidateStatus.innerText()).trim(), "후보 · 미확인", "long candidate visible status text changed");
-    for (const eventId of ["personal-long-label", "single-day-candidate-long-label"]) {
-      const chip = page.locator(`[data-event-id="${eventId}"]`);
-      const layout = await chip.evaluate(function (element) {
-        const label = element.querySelector(".home-event-text");
-        const status = element.querySelector(".home-event-status");
-        const chipRect = element.getBoundingClientRect();
-        const statusRect = status && status.getBoundingClientRect();
-        return {
-          labelClipped: label.scrollWidth > label.clientWidth || label.scrollHeight > label.clientHeight,
-          statusClipped: Boolean(status && (status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight)),
-          statusContained: Boolean(!status || (statusRect.left >= chipRect.left && statusRect.right <= chipRect.right
-            && statusRect.top >= chipRect.top && statusRect.bottom <= chipRect.bottom))
-        };
-      });
-      assert.equal(layout.labelClipped, false, `${eventId} label is clipped in the 1920px home calendar`);
-      assert.equal(layout.statusClipped, false, `${eventId} status is clipped in the 1920px home calendar`);
-      assert.equal(layout.statusContained, true, `${eventId} status escapes its 1920px home calendar chip`);
-    }
+    await assertLongEventContainment(page, 1920);
 
     assert((await page.locator('[data-calendar-kind="work"]').count()) >= 1, "multi-day work bar missing");
     assert.equal(await page.getByText("내 참여 업무", { exact: true }).count(), 1, "participant work is missing from home");
@@ -389,60 +407,31 @@ async function run() {
     await page.waitForFunction(function () { return location.hash === "#work/list"; });
     assert.equal(new URL(page.url()).hash, "#work/list", "icon rail is not keyboard operable");
 
-    await page.setViewportSize({ width: 390, height: 844 });
-    await goHome(page);
-    const mobileHierarchy = await page.evaluate(function () {
-      const calendar = document.querySelector(".home-calendar-panel").getBoundingClientRect();
-      const capture = document.querySelector(".home-capture-stack").getBoundingClientRect();
-      const scroll = document.querySelector(".home-calendar-scroll");
-      return {
-        sectionGap: Math.round(capture.top - calendar.bottom),
-        calendarScrollWidth: scroll.scrollWidth,
-        calendarClientWidth: scroll.clientWidth
-      };
-    });
-    assert(mobileHierarchy.sectionGap >= 22 && mobileHierarchy.sectionGap <= 26,
-      `mobile section gap is not 24px: ${mobileHierarchy.sectionGap}`);
-    assert(mobileHierarchy.calendarScrollWidth > mobileHierarchy.calendarClientWidth,
-      "mobile calendar no longer owns its horizontal overflow");
-    const mobileLongEventLayout = await page.evaluate(function () {
-      return ["personal-long-label", "single-day-candidate-long-label"].map(function (eventId) {
-        const chip = document.querySelector(`[data-event-id="${eventId}"]`);
-        const label = chip && chip.querySelector(".home-event-text");
-        const status = chip && chip.querySelector(".home-event-status");
-        const chipRect = chip && chip.getBoundingClientRect();
-        const labelRect = label && label.getBoundingClientRect();
-        const statusRect = status && status.getBoundingClientRect();
-        function contained(rect) {
-          return Boolean(rect && chipRect && rect.left >= chipRect.left && rect.right <= chipRect.right
-            && rect.top >= chipRect.top && rect.bottom <= chipRect.bottom);
-        }
+    for (const viewportWidth of [390, 640, 641, 768, 1000, 1001, 1200, 1920]) {
+      await page.setViewportSize({ width: viewportWidth, height: 1080 });
+      await goHome(page);
+      await assertLongEventContainment(page, viewportWidth);
+      const responsiveLayout = await page.evaluate(function () {
+        const calendar = document.querySelector(".home-calendar-panel").getBoundingClientRect();
+        const capture = document.querySelector(".home-capture-stack").getBoundingClientRect();
+        const scroll = document.querySelector(".home-calendar-scroll");
         return {
-          eventId: eventId,
-          label: label && label.textContent.trim(),
-          status: status && status.textContent.trim(),
-          labelClipped: Boolean(label && (label.scrollWidth > label.clientWidth || label.scrollHeight > label.clientHeight)),
-          labelContained: contained(labelRect),
-          statusClipped: Boolean(status && (status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight)),
-          statusContained: !status || contained(statusRect)
+          sectionGap: Math.round(capture.top - calendar.bottom),
+          calendarScrollWidth: scroll.scrollWidth,
+          calendarClientWidth: scroll.clientWidth,
+          documentScrollWidth: document.documentElement.scrollWidth,
+          documentClientWidth: document.documentElement.clientWidth
         };
       });
-    });
-    const mobilePersonal = mobileLongEventLayout.find(function (event) { return event.eventId === "personal-long-label"; });
-    const mobileCandidate = mobileLongEventLayout.find(function (event) { return event.eventId === "single-day-candidate-long-label"; });
-    assert.equal(mobilePersonal.label, "2026년 정기점검보수 개인 검토 일정", "390px personal long label changed or is missing");
-    assert.equal(mobileCandidate.label, "2026년 정기점검보수 확인 필요 일정", "390px candidate long label changed or is missing");
-    assert.equal(mobileCandidate.status, "후보 · 미확인", "390px candidate status changed or is missing");
-    for (const event of mobileLongEventLayout) {
-      assert.equal(event.labelClipped, false, `${event.eventId} label overflows its 390px home calendar chip`);
-      assert.equal(event.labelContained, true, `${event.eventId} label escapes its 390px home calendar chip`);
-      assert.equal(event.statusClipped, false, `${event.eventId} status overflows its 390px home calendar chip`);
-      assert.equal(event.statusContained, true, `${event.eventId} status escapes its 390px home calendar chip`);
+      assert(responsiveLayout.documentScrollWidth <= responsiveLayout.documentClientWidth,
+        `${viewportWidth}px home has document overflow: ${responsiveLayout.documentScrollWidth} > ${responsiveLayout.documentClientWidth}`);
+      if (viewportWidth === 390) {
+        assert(responsiveLayout.sectionGap >= 22 && responsiveLayout.sectionGap <= 26,
+          `mobile section gap is not 24px: ${responsiveLayout.sectionGap}`);
+        assert(responsiveLayout.calendarScrollWidth > responsiveLayout.calendarClientWidth,
+          "mobile calendar no longer owns its horizontal overflow");
+      }
     }
-    const overflow = await page.evaluate(function () {
-      return { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth };
-    });
-    assert(overflow.scrollWidth <= overflow.clientWidth, `390px home has document overflow: ${overflow.scrollWidth} > ${overflow.clientWidth}`);
     assert.deepEqual(errors, [], "home emitted console/page errors");
     console.log("Home browser contract passed");
   } finally {

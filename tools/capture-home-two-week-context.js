@@ -12,6 +12,7 @@ const port = 8410;
 const origin = `http://127.0.0.1:${port}`;
 const output = path.join(repoRoot, "product-ui", "screenshots", "home-two-week-context.png");
 const mobileOutput = path.join(os.tmpdir(), "kdhc-home-two-week-mobile.png");
+const tabletOutput = path.join(os.tmpdir(), "kdhc-home-two-week-tablet.png");
 const captureCalendarFixture = {
   personalSchedule: {
     id: "personal-long-label",
@@ -103,47 +104,45 @@ async function capture(page, viewport, file) {
   const status = (await page.locator("#dataStatus").innerText()).trim();
   assert.equal(status, "시연용 샘플 데이터", "fixture capture data-mode label is not truthful");
   assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home capture did not render 14 dates");
-  assert.equal(await page.locator('[data-event-id="personal-long-label"]').count(), 1,
-    "home capture is missing the long personal schedule");
+  const personal = page.locator('[data-event-id="personal-long-label"]');
+  assert.equal(await personal.count(), 1, "home capture is missing the long personal schedule");
   const candidate = page.locator('[data-event-id="single-day-candidate-long-label"]');
   assert.equal(await candidate.count(), 1, "home capture is missing the long confirmation-needed candidate");
   const candidateStatus = candidate.locator(".home-event-status");
   assert.equal(await candidateStatus.count(), 1, "home capture candidate must render exactly one visible status");
   assert.equal((await candidateStatus.innerText()).trim(), "후보 · 미확인",
     "home capture candidate visible status text changed");
-  if (viewport.width === 390) {
-    const longEventLayout = await page.evaluate(() => {
-      return ["personal-long-label", "single-day-candidate-long-label"].map((eventId) => {
-        const chip = document.querySelector(`[data-event-id="${eventId}"]`);
-        const label = chip && chip.querySelector(".home-event-text");
-        const status = chip && chip.querySelector(".home-event-status");
-        const chipRect = chip && chip.getBoundingClientRect();
-        const labelRect = label && label.getBoundingClientRect();
-        const statusRect = status && status.getBoundingClientRect();
-        const contained = (rect) => Boolean(rect && chipRect && rect.left >= chipRect.left && rect.right <= chipRect.right
-          && rect.top >= chipRect.top && rect.bottom <= chipRect.bottom);
-        return {
-          eventId,
-          label: label && label.textContent.trim(),
-          status: status && status.textContent.trim(),
-          labelClipped: Boolean(label && (label.scrollWidth > label.clientWidth || label.scrollHeight > label.clientHeight)),
-          labelContained: contained(labelRect),
-          statusClipped: Boolean(status && (status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight)),
-          statusContained: !status || contained(statusRect)
-        };
-      });
+  const longEventLayout = await page.evaluate(() => {
+    return ["personal-long-label", "single-day-candidate-long-label"].map((eventId) => {
+      const chip = document.querySelector(`[data-event-id="${eventId}"]`);
+      const label = chip && chip.querySelector(".home-event-text");
+      const status = chip && chip.querySelector(".home-event-status");
+      const chipRect = chip && chip.getBoundingClientRect();
+      const labelRect = label && label.getBoundingClientRect();
+      const statusRect = status && status.getBoundingClientRect();
+      const contained = (rect) => Boolean(rect && chipRect && rect.left >= chipRect.left && rect.right <= chipRect.right
+        && rect.top >= chipRect.top && rect.bottom <= chipRect.bottom);
+      return {
+        eventId,
+        label: label && label.textContent.trim(),
+        status: status && status.textContent.trim(),
+        labelClipped: Boolean(label && (label.scrollWidth > label.clientWidth || label.scrollHeight > label.clientHeight)),
+        labelContained: contained(labelRect),
+        statusClipped: Boolean(status && (status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight)),
+        statusContained: !status || contained(statusRect)
+      };
     });
-    const personal = longEventLayout.find((event) => event.eventId === "personal-long-label");
-    const candidateLayout = longEventLayout.find((event) => event.eventId === "single-day-candidate-long-label");
-    assert.equal(personal.label, "2026년 정기점검보수 개인 검토 일정", "390px home capture personal long label changed or is missing");
-    assert.equal(candidateLayout.label, "2026년 정기점검보수 확인 필요 일정", "390px home capture candidate long label changed or is missing");
-    assert.equal(candidateLayout.status, "후보 · 미확인", "390px home capture candidate status changed or is missing");
-    for (const event of longEventLayout) {
-      assert.equal(event.labelClipped, false, `${event.eventId} label overflows its 390px home capture chip`);
-      assert.equal(event.labelContained, true, `${event.eventId} label escapes its 390px home capture chip`);
-      assert.equal(event.statusClipped, false, `${event.eventId} status overflows its 390px home capture chip`);
-      assert.equal(event.statusContained, true, `${event.eventId} status escapes its 390px home capture chip`);
-    }
+  });
+  const personalLayout = longEventLayout.find((event) => event.eventId === "personal-long-label");
+  const candidateLayout = longEventLayout.find((event) => event.eventId === "single-day-candidate-long-label");
+  assert.equal(personalLayout.label, "2026년 정기점검보수 개인 검토 일정", `${viewport.width}px home capture personal long label changed or is missing`);
+  assert.equal(candidateLayout.label, "2026년 정기점검보수 확인 필요 일정", `${viewport.width}px home capture candidate long label changed or is missing`);
+  assert.equal(candidateLayout.status, "후보 · 미확인", `${viewport.width}px home capture candidate status changed or is missing`);
+  for (const event of longEventLayout) {
+    assert.equal(event.labelClipped, false, `${event.eventId} label overflows its ${viewport.width}px home capture chip`);
+    assert.equal(event.labelContained, true, `${event.eventId} label escapes its ${viewport.width}px home capture chip`);
+    assert.equal(event.statusClipped, false, `${event.eventId} status overflows its ${viewport.width}px home capture chip`);
+    assert.equal(event.statusContained, true, `${event.eventId} status escapes its ${viewport.width}px home capture chip`);
   }
   if (viewport.width === 1920) {
     const calendarOverflow = await page.locator(".home-calendar-scroll").evaluate((element) => ({
@@ -171,10 +170,13 @@ async function run() {
     fs.mkdirSync(path.dirname(output), { recursive: true });
     const desktop = await browser.newPage({ viewport: { width: 1920, height: 1080 }, locale: "ko-KR", timezoneId: "Asia/Seoul", colorScheme: "light", reducedMotion: "reduce" });
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, locale: "ko-KR", timezoneId: "Asia/Seoul", colorScheme: "light", reducedMotion: "reduce" });
+    const tablet = await browser.newPage({ viewport: { width: 768, height: 1024 }, locale: "ko-KR", timezoneId: "Asia/Seoul", colorScheme: "light", reducedMotion: "reduce" });
     const desktopOverflow = await capture(desktop, { width: 1920, height: 1080 }, output);
     const mobileOverflow = await capture(mobile, { width: 390, height: 844 }, mobileOutput);
+    const tabletOverflow = await capture(tablet, { width: 768, height: 1024 }, tabletOutput);
     console.log(`Captured desktop home: ${path.relative(repoRoot, output)} (${desktopOverflow.scrollWidth}/${desktopOverflow.clientWidth})`);
     console.log(`Captured mobile home: ${mobileOutput} (${mobileOverflow.scrollWidth}/${mobileOverflow.clientWidth})`);
+    console.log(`Captured tablet home: ${tabletOutput} (${tabletOverflow.scrollWidth}/${tabletOverflow.clientWidth})`);
   } finally {
     if (browser) await browser.close();
     await stopServer(server);
