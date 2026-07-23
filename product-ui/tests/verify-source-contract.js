@@ -15,11 +15,15 @@ if (!failures.length) {
   const app = read("app.js");
   const style = read("style.css");
   const baseline = JSON.parse(read("source-baseline.json"));
+  const manifest = JSON.parse(read("sync-manifest.json"));
   if (!index.includes('<main id="view"')) failures.push("missing SPA view root");
   if (!(index.indexOf('src="intent.js"') < index.indexOf('src="app.js"'))) failures.push("intent.js must load before app.js");
   if (!(index.indexOf('src="workspace-model.js"') < index.indexOf('src="app.js"'))) failures.push("workspace-model.js must load before app.js");
   if (!(index.indexOf('src="workspace-model.js"') < index.indexOf('src="workbench-model.js"')
     && index.indexOf('src="workbench-model.js"') < index.indexOf('src="app.js"'))) failures.push("workbench-model.js must load after workspace-model.js and before app.js");
+  const manifestEntries = Array.isArray(manifest.entries) ? manifest.entries : [];
+  if (!(manifestEntries.indexOf("workspace-model.js") < manifestEntries.indexOf("workbench-model.js")
+    && manifestEntries.indexOf("workbench-model.js") < manifestEntries.indexOf("app.js"))) failures.push("sync manifest must preserve workspace-model.js, workbench-model.js, app.js order");
   for (const route of ["#home", "#work/list", "#schedule", "#cloud", "#workbench/", "#draft/"]) {
     if (!app.includes(route)) failures.push(`missing route ${route}`);
   }
