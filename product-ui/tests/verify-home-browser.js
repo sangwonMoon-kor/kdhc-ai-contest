@@ -243,7 +243,16 @@ async function run() {
     await page.waitForFunction(function () { return location.hash === "#work/list"; });
     assert.equal(new URL(page.url()).hash, "#work/list", "normal text submission did not resume after attachment clear");
     await goHome(page);
-    assert.equal(await page.getByRole("heading", { name: "내 업무 일정" }).count(), 1, "calendar heading missing");
+    const homeHeading = page.getByRole("heading", { name: "다가오는 일정" });
+    assert.equal(await homeHeading.count(), 1, "upcoming schedule heading missing");
+    assert.equal(await page.getByRole("heading", { name: "내 업무 일정" }).count(), 0, "legacy owned-schedule heading remains");
+    assert.equal(await page.locator('.home-calendar-scroll[aria-label="다가오는 2주 일정"]').count(), 1, "calendar region lacks its new accessible name");
+    const homeOrder = await page.locator(".home-content").evaluate(function (container) {
+      const calendar = container.querySelector(".home-calendar-panel");
+      const capture = container.querySelector(".home-capture-stack");
+      return Boolean(calendar && capture && (calendar.compareDocumentPosition(capture) & Node.DOCUMENT_POSITION_FOLLOWING));
+    });
+    assert.equal(homeOrder, true, "calendar does not precede the capture stack");
     assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home calendar must render exactly 14 dates");
     assert.equal(await page.locator("[data-calendar-date]").first().getAttribute("data-calendar-date"), "2025-12-28", "calendar does not start from summary.simDate week");
     assert.equal(await page.locator('[data-calendar-date="2026-01-02"]').getAttribute("aria-current"), "date", "simulation date is not exposed as current date");
@@ -293,6 +302,20 @@ async function run() {
     assert.equal(await page.locator("body").evaluate(function (element) { return element.classList.contains("is-home"); }), false, "home body class leaked to workbench");
 
     await goHome(page);
+    const next = page.getByRole("button", { name: "다음 2주 보기" });
+    await next.focus();
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(function () {
+      const first = document.querySelector("[data-calendar-date]");
+      return first && first.dataset.calendarDate === "2026-01-11";
+    });
+    const today = page.getByRole("button", { name: "오늘" });
+    await today.focus();
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(function () {
+      const first = document.querySelector("[data-calendar-date]");
+      return first && first.dataset.calendarDate === "2025-12-28";
+    });
     const previous = page.getByRole("button", { name: "이전 2주 보기" });
     await previous.focus();
     await page.keyboard.press("Enter");
@@ -300,8 +323,7 @@ async function run() {
       const first = document.querySelector("[data-calendar-date]");
       return first && first.dataset.calendarDate === "2025-12-14";
     });
-    const next = page.getByRole("button", { name: "다음 2주 보기" });
-    await next.focus();
+    await today.focus();
     await page.keyboard.press("Enter");
     await page.waitForFunction(function () {
       const first = document.querySelector("[data-calendar-date]");

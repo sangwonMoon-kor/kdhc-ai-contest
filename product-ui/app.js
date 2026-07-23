@@ -480,27 +480,20 @@ async function vHome(main) {
   const events = workspaceModel.selectHomeEvents(S, calendarWindow);
 
   main.innerHTML = `<div class="home-content">
-      <section class="home-compose" aria-label="생각 입력">
-        <form class="omni" id="omni" data-testid="home-omni">
-          <label class="sr-only" for="omniIn">생각 입력</label>
-          <input id="omniIn" type="text" autocomplete="off" placeholder="지금 어떤 생각을 하시나요?" aria-label="생각 입력">
-          <input id="homeAttachment" type="file" hidden>
-          <button class="home-attach" id="homeAttachBtn" type="button" aria-label="파일 첨부">${homeIcon("attach")}</button>
-          <button class="home-send" type="submit" aria-label="입력 보내기">${homeIcon("send")}<span>보내기</span></button>
-        </form>
-      </section>
-      ${renderHomeFeedback()}
       <section class="home-calendar-panel" aria-labelledby="homeCalendarTitle">
         <div class="home-calendar-toolbar">
-          <h1 id="homeCalendarTitle">내 업무 일정</h1>
-          <div class="home-calendar-range" aria-live="polite">${homeRangeLabel(calendarWindow)}</div>
-          <div class="home-calendar-controls">
-            <button id="homeCalPrev" type="button" aria-label="이전 2주 보기">${homeIcon("chevron-left")}</button>
-            <button id="homeCalNext" type="button" aria-label="다음 2주 보기">${homeIcon("chevron-right")}</button>
+          <h1 id="homeCalendarTitle">다가오는 일정</h1>
+          <div class="home-calendar-tools">
+            <button class="home-calendar-today" id="homeCalToday" type="button">오늘</button>
+            <div class="home-calendar-range" aria-live="polite">${homeRangeLabel(calendarWindow)}</div>
+            <div class="home-calendar-controls">
+              <button id="homeCalPrev" type="button" aria-label="이전 2주 보기">${homeIcon("chevron-left")}</button>
+              <button id="homeCalNext" type="button" aria-label="다음 2주 보기">${homeIcon("chevron-right")}</button>
+            </div>
           </div>
           <a class="home-calendar-all" href="#schedule">전체 일정 ${homeIcon("chevron-right")}</a>
         </div>
-        <div class="home-calendar-scroll" role="region" aria-label="2주 업무 달력" tabindex="0">
+        <div class="home-calendar-scroll" role="region" aria-label="다가오는 2주 일정" tabindex="0">
           <div class="home-calendar-inner">
             <div class="home-weekdays" aria-hidden="true">${["일", "월", "화", "수", "목", "금", "토"].map((day) => `<span>${day}</span>`).join("")}</div>
             ${calendarWindow.weeks.map((week) => renderHomeCalendarWeek(week, events, sim)).join("")}
@@ -512,7 +505,19 @@ async function vHome(main) {
           <span><i class="legend-candidate"></i>확인 필요</span>
         </div>
       </section>
-      <div id="homeResult"></div>
+      <div class="home-capture-stack">
+        <section class="home-compose" aria-label="생각 입력">
+          <form class="omni" id="omni" data-testid="home-omni">
+            <label class="sr-only" for="omniIn">생각 입력</label>
+            <input id="omniIn" type="text" autocomplete="off" placeholder="지금 어떤 생각을 하시나요?" aria-label="생각 입력">
+            <input id="homeAttachment" type="file" hidden>
+            <button class="home-attach" id="homeAttachBtn" type="button" aria-label="파일 첨부">${homeIcon("attach")}</button>
+            <button class="home-send" type="submit" aria-label="입력 보내기">${homeIcon("send")}<span>보내기</span></button>
+          </form>
+        </section>
+        ${renderHomeFeedback()}
+        <div id="homeResult"></div>
+      </div>
   </div>`;
 
   renderDataStatus(apiClient.getStatus());
@@ -537,6 +542,7 @@ async function vHome(main) {
     handleOmni(text, null, $("#homeResult"), sim);
   };
   bindHomeFeedbackActions();
+  $("#homeCalToday").onclick = () => { homeCalendarOffsetWeeks = 0; route(); };
   $("#homeCalPrev").onclick = () => { homeCalendarOffsetWeeks -= 2; route(); };
   $("#homeCalNext").onclick = () => { homeCalendarOffsetWeeks += 2; route(); };
   $$("[data-calendar-kind]", main).forEach((eventButton) => {
