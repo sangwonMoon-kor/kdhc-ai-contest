@@ -61,7 +61,7 @@ async function run() {
   try {
     server = await startServer();
     browser = await launchBrowser();
-    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
     page.setDefaultTimeout(5000);
     await assertShell(page, "#home", "#home");
     await assertShell(page, "#work/list", "#work/list");

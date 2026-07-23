@@ -18,7 +18,7 @@ function ddayOf(dueISO, simISO) {
   if (!dueISO || !simISO) return null;
   return Math.round((new Date(dueISO + "T00:00:00") - new Date(simISO + "T00:00:00")) / 86400000);
 }
-function ddayLabel(n) { return n == null ? "" : n === 0 ? "D-DAY" : n > 0 ? `D-${n}` : `D+${-n}`; }
+function ddayLabel(n) { return n == null ? "" : n === 0 ? "D-day" : n > 0 ? `D-${n}` : `D+${-n}`; }
 
 /* ---------- 안전 저장소 (localStorage 불가 환경 폴백) ---------- */
 const storage = (() => {
@@ -52,6 +52,7 @@ async function loadSummary() { if (!cache.summary) cache.summary = await api("/a
 async function loadForecast() { if (!cache.forecast) cache.forecast = await api("/api/forecast"); return cache.forecast; }
 async function loadBriefing() { if (!cache.briefing) cache.briefing = await api("/api/briefing"); return cache.briefing; }
 const workspaceModel = window.OnMemoryWorkspaceModel;
+const workbenchModel = window.OnMemoryWorkbenchModel;
 
 /* ---------- 업무 건 상태 계층 ---------- */
 let S = null;              // {v, works[], selectedWorkId}
@@ -114,7 +115,7 @@ function loadState() {
 }
 function saveState() { try { storage.setItem(SKEY, JSON.stringify(S)); } catch (e) { /* 저장 불가 환경 — 메모리로 계속 */ } }
 function loadUI() {
-  const defaults = { calYM: null, listFilter: null, scheduleScopes: [workspaceModel.SCOPE.MINE] };
+  const defaults = { calYM: null, listFilter: null, workListMode: "active", scheduleScopes: [workspaceModel.SCOPE.MINE] };
   try {
     const parsed = JSON.parse(storage.getItem(UKEY) || "{}");
     const loaded = Object.assign({}, defaults, parsed);
@@ -789,7 +790,8 @@ async function vList(main) {
   const fc = await loadForecast().catch(() => ({ items: [] }));
   if (sum) seedFromForecast(fc, sum.simDate);
   const sim = sum ? sum.simDate : null;
-  let works = S.works.slice();
+  const workMode = UI.workListMode === "completed" ? "completed" : "active";
+  let works = workbenchModel.selectWorkList(S, workMode);
   const filtered = UI.listFilter === "repeat";
   if (filtered) works = works.filter((w) => w.repeat);
   works.sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
@@ -797,33 +799,48 @@ async function vList(main) {
   main.innerHTML = `<div class="view">
     <h1 class="pg" tabindex="-1">내 업무</h1>
     <div class="list-tools">
-      <div class="cap-tabs" role="tablist">
-        <button class="on" role="tab" aria-selected="true">목록 보기</button>
-        <button role="tab" aria-selected="false" id="toCal">달력 보기</button>
+      <div class="cap-tabs" role="tablist" aria-label="업무 상태">
+        <button class="${workMode === "active" ? "on" : ""}" role="tab" data-mode="active"
+          aria-selected="${workMode === "active"}" aria-controls="workCards">진행</button>
+        <button class="${workMode === "completed" ? "on" : ""}" role="tab" data-mode="completed"
+          aria-selected="${workMode === "completed"}" aria-controls="workCards">완료</button>
       </div>
       ${filtered ? `<span class="filter-chip">반복 업무만 <button id="clrF" aria-label="필터 해제">✕</button></span>` : ""}
+      <button class="btn ghost small" id="toCal">달력 보기</button>
       <button class="btn ghost small" id="newWork" style="margin-left:auto">+ 새 업무</button>
     </div>
-    <div id="workCards">${works.length ? "" : `<div class="empty">업무가 없습니다 — 홈에서 지시를 적거나 새 업무를 만들어 보세요.</div>`}</div>
+    <div id="workCards" role="tabpanel">${works.length ? "" : `<div class="empty">${workMode === "completed" ? "완료한 업무가 없습니다." : "업무가 없습니다 — 홈에서 지시를 적거나 새 업무를 만들어 보세요."}</div>`}</div>
   </div>`;
   const box = $("#workCards");
   for (const w of works) {
     const nt = nextTodo(w);
     const dd = ddayOf(w.due, sim);
+    const headline = workbenchModel.headlineFor(w, sim);
     const b = document.createElement("button");
     b.className = "work-card";
+    b.dataset.workId = w.id;
+    b.dataset.workPhase = headline.phaseKey;
     b.innerHTML = `<span class="t">${esc(w.title)}
         ${w.repeat ? `<span class="badge repeat">반복</span>` : ""}
         ${!w.due ? `<span class="badge nodue">기한 확인 필요</span>` : ""}
-        ${w.stageName ? `<span class="badge stage">${esc(w.stageName)}</span>` : ""}</span>
+        <span class="badge stage">${esc(headline.phaseLabel)}</span></span>
       <span class="meta"><span>지시: ${esc(w.requester || "—")}</span>
-        <span>마감: <b>${w.due ? fmtD(w.due) + (dd != null ? " · " + ddayLabel(dd) : "") : esc(w.dueText || "기한 미정")}</b></span>
-        <span>진행 ${progress(w)}%</span></span>
-      ${nt ? `<span class="next">다음: ${esc(nt.text)}</span>` : `<span class="next">모든 할 일 완료 — ${esc(w.doneWhen)}</span>`}
-      <span class="prog"><i style="width:${progress(w)}%"></i></span>`;
+        <span>${headline.isComplete ? "완료일" : "마감"}: <b>${headline.isComplete
+          ? fmtD(headline.dateISO)
+          : (w.due ? fmtD(w.due) + (dd != null ? " · " + ddayLabel(dd) : "") : esc(w.dueText || "기한 미정"))}</b></span>
+        ${headline.isComplete ? "" : `<span>진행 ${progress(w)}%</span>`}</span>
+      ${headline.isComplete ? "" : (nt ? `<span class="next">다음: ${esc(nt.text)}</span>` : `<span class="next">모든 할 일 완료 — ${esc(w.doneWhen)}</span>`)
+      }${headline.isComplete ? "" : `<span class="prog"><i style="width:${progress(w)}%"></i></span>`}`;
     b.onclick = () => { S.selectedWorkId = w.id; saveState(); nav("#workbench/" + w.id); };
     box.appendChild(b);
   }
+  $$('[role="tab"][data-mode]', main).forEach((tab) => {
+    tab.onclick = () => {
+      UI.workListMode = tab.dataset.mode;
+      saveUI();
+      route();
+    };
+  });
   $("#toCal").onclick = () => nav("#schedule");
   $("#newWork").onclick = () => createWorkFrom("새 업무 — 제목을 지시로 바꿔 주세요", null);
   const clr = $("#clrF"); if (clr) clr.onclick = () => { UI.listFilter = null; saveUI(); route(); };
@@ -1001,6 +1018,13 @@ async function vWorkbench(main, id) {
   if (!w) return vNotFound(main, "업무를 찾을 수 없습니다", id);
   S.selectedWorkId = w.id; saveState();
   const sim = sum ? sum.simDate : null;
+  const headline = workbenchModel.headlineFor(w, sim);
+  const ownerPerson = (S.org && S.org.people || []).find((person) =>
+    (w.relations || []).some((relation) => relation && relation.kind === "owner" && relation.personId === person.id));
+  const ownerSection = ownerPerson && (S.org && S.org.sections || []).find((section) => section.id === ownerPerson.sectionId);
+  const ownerLabel = [ownerSection && ownerSection.name, ownerPerson && ownerPerson.name].filter(Boolean).join(" · ")
+    || w.requester || "담당자 미정";
+  const headlineDday = ddayLabel(headline.dday);
   const bf = await loadBriefing().catch(() => null);
   const nt = nextTodo(w);
   const cautions = bf && Array.isArray(bf.cautions) ? bf.cautions.slice(0, 2) : [];
@@ -1009,11 +1033,27 @@ async function vWorkbench(main, id) {
   const showcaseDue = w.due ? fmtD(w.due) : "확인 필요";
   const showcaseOutput = w.draft && w.draft.savedAt ? "저장된 초안 있음" : "확인 필요";
 
-  main.innerHTML = `<div class="view" data-testid="workbench">
+  main.innerHTML = `<div class="view" data-testid="workbench" data-work-id="${esc(w.id)}">
     <a class="wb-back" href="#work/list">← 내 업무</a>
+    <header class="workbench-headline">
+      <div class="workbench-headline__title">
+        <p class="eyebrow">현재 업무</p>
+        <h1 class="pg" data-work-title>${esc(w.title)}</h1>
+        <div class="workbench-headline__meta">
+          <span class="phase-badge" data-work-phase="${esc(headline.phaseKey)}">${esc(headline.phaseLabel)}</span>
+          <span data-owner>${esc(ownerLabel)}</span>
+        </div>
+      </div>
+      <div class="workbench-deadline">
+        <span data-date-label>${headline.dateISO ? esc(headline.dateLabel) : "일정 미정"}</span>
+        <strong data-dday>${headlineDday}</strong>
+        ${headline.dateISO
+          ? `<time data-date-iso datetime="${esc(headline.dateISO)}">${fmtD(headline.dateISO)}</time>`
+          : `<time data-date-iso></time><button class="btn ghost small" type="button" data-add-work-date>날짜 추가</button>`}
+      </div>
+      ${headline.isComplete ? "" : '<button class="btn" type="button" data-complete-work>업무 완료</button>'}
+    </header>
     <section class="card wb-context">
-      <h1 tabindex="-1" class="pg" style="margin:0 0 4px">${esc(w.title)}
-        ${w.repeat ? `<span class="badge repeat">반복</span>` : ""}</h1>
       <div class="inst">${esc(w.instruction || "원래 지시가 기록되지 않았습니다")}</div>
       <div class="kv">
         <span>지시자 <b>${esc(w.requester || "—")}</b></span>
@@ -1035,25 +1075,30 @@ async function vWorkbench(main, id) {
     </section>
 
     <section class="card wb-now">
-      <div class="k">지금 할 일</div>
-      ${nt ? `<div class="todo-line">
+      <div class="k">${headline.isComplete ? "완료 당시 남은 일" : "지금 할 일"}</div>
+      ${headline.isComplete
+        ? `<p class="sub workbench-readonly">완료 당시 기록을 읽기 전용으로 보여드립니다.</p>${nt ? `<div class="todo-line"><div class="tx"><b>${esc(nt.text)}</b></div></div>` : "<p>완료 당시 남은 일이 없습니다.</p>"}`
+        : (nt ? `<div class="todo-line">
           <button class="todo-check" role="checkbox" aria-checked="false" data-td="${esc(nt.id)}" aria-label="완료: ${esc(nt.text)}">✓</button>
           <div class="tx"><b>${esc(nt.text)}</b><div>${(nt.evidence || []).map(evBtn).join("") || `<span class="sub">연결된 근거 없음</span>`}
           ${nt.action === "draft" ? `<button class="ev-btn" id="goDraft1">기안 집중 화면 →</button>` : ""}
           ${nt.action === "check" ? `<button class="ev-btn" id="goCheck1">제출 전 점검 →</button>` : ""}</div></div>
-        </div>` : `<p>남은 할 일이 없습니다 — 완료 조건(${esc(w.doneWhen)})을 확인하세요.</p>`}
+        </div>` : `<p>남은 할 일이 없습니다 — 완료 조건(${esc(w.doneWhen)})을 확인하세요.</p>`)}
     </section>
 
     <section class="card">
       <div class="blk-k">전체 체크리스트 <span class="sub">완료 ${w.todos.filter((t) => t.done && !t.candidate).length}/${w.todos.filter((t) => !t.candidate).length}</span></div>
       <div id="todoList">
-        ${w.todos.map((t) => t.candidate
-          ? `<div class="todo cand"><span class="cand-k">할 일 후보 — 진행률 미반영</span><div class="tx">${esc(t.text)}</div>
+        ${w.todos.map((t) => headline.isComplete
+          ? `<div class="todo${t.done ? " done" : ""}${t.candidate ? " cand" : ""}">${t.candidate ? '<span class="cand-k">할 일 후보</span>' : ""}
+              <div class="tx">${esc(t.text)}</div></div>`
+          : (t.candidate
+            ? `<div class="todo cand"><span class="cand-k">할 일 후보 — 진행률 미반영</span><div class="tx">${esc(t.text)}</div>
               <div class="ops"><button class="btn small" data-promote="${esc(t.id)}">반영</button><button class="btn ghost small" data-del="${esc(t.id)}">삭제</button></div></div>`
-          : `<div class="todo${t.done ? " done" : ""}">
+            : `<div class="todo${t.done ? " done" : ""}">
               <button class="todo-check" role="checkbox" aria-checked="${t.done}" data-td="${esc(t.id)}" aria-label="${t.done ? "완료 해제" : "완료"}: ${esc(t.text)}">✓</button>
               <div class="tx">${esc(t.text)}<div>${(t.evidence || []).map(evBtn).join("")}</div></div>
-            </div>`).join("")}
+            </div>`)).join("")}
       </div>
     </section>
 
@@ -1062,12 +1107,12 @@ async function vWorkbench(main, id) {
       <div id="recList">${w.records.length ? w.records.slice().sort((a, b) => b.ts - a.ts).map((r) => `
         <div class="rec ${esc(r.kind)}"><span class="dot"></span>
           <div><div>${esc(r.text)}</div><span class="ts">${fmtTs(r.ts)}${r.kind === "hint" ? " · 다음 담당자 메모로 남김" : ""}</span></div>
-          ${r.kind !== "hint" ? `<div class="ops"><button class="btn ghost small" data-hint="${esc(r.id)}">다음 담당자에게</button></div>` : ""}
+          ${!headline.isComplete && r.kind !== "hint" ? `<div class="ops"><button class="btn ghost small" data-hint="${esc(r.id)}">다음 담당자에게</button></div>` : ""}
         </div>`).join("") : `<p class="sub">아직 기록이 없습니다 — 아래 입력창에 결정·변경을 적어 보세요.</p>`}</div>
       <div id="hintFlow"></div>
     </section>
 
-    <section class="card">
+    ${headline.isComplete ? "" : `<section class="card">
       <div class="blk-k">자료 붙이기 <span class="sub">문서를 이 업무의 근거로 저장합니다(검토 후 반영)</span></div>
       <label class="attach-zone" id="dropZone">파일 선택(HWP·PDF·DOCX·XLSX·TXT) 또는 아래에 붙여넣기
         <input type="file" id="fileIn" accept=".hwp,.hwpx,.pdf,.docx,.pptx,.xlsx,.txt,.md,.csv">
@@ -1075,7 +1120,7 @@ async function vWorkbench(main, id) {
       <textarea id="pasteIn" rows="3" style="width:100%;margin-top:8px;border:1px solid var(--line-strong);border-radius:10px;padding:10px;font-family:inherit;background:var(--surface);color:var(--ink)" placeholder="문서 내용을 붙여넣어도 됩니다"></textarea>
       <div style="margin-top:8px"><button class="btn ghost small" id="ingestBtn">검토 후보 만들기</button></div>
       <div id="ingestPanel"></div>
-    </section>
+    </section>`}
 
     <section class="card wb-output">
       <div class="blk-k">만들어야 할 결과물</div>
@@ -1083,15 +1128,15 @@ async function vWorkbench(main, id) {
         <span>산출물 <b>${esc(w.title)}(안)</b></span>
         <span>임시 저장 <b>${w.draft && w.draft.savedAt ? fmtTs(w.draft.savedAt) : "없음"}</b></span>
       </div>
-      <button class="btn" id="goDraft">기안 ${w.draft && w.draft.savedAt ? "이어서 쓰기" : "시작"}</button>
+      ${headline.isComplete ? '<p class="sub">완료 당시 결과물 정보입니다.</p>' : `<button class="btn" id="goDraft">기안 ${w.draft && w.draft.savedAt ? "이어서 쓰기" : "시작"}</button>`}
       ${cautions.length ? `<div class="blk-k" style="margin-top:14px">제출 전 주의</div>` + cautions.map((c) => `
         <div class="k-item">${esc(c.text)}${(c.evidence || []).slice(0, 2).map(evBtn).join("")}</div>`).join("") : ""}
     </section>
 
-    <form class="wb-input" id="wbOmni">
+    ${headline.isComplete ? "" : `<form class="wb-input" id="wbOmni">
       <input id="wbIn" type="text" autocomplete="off" placeholder="이 업무에 이어서 말하기 — 질문·결정·할 일" aria-label="이 업무에 이어서 말하기">
       <button class="btn" type="submit">말하기</button>
-    </form>
+    </form>`}
     <div id="wbResult"></div>
   </div>`;
 
@@ -1119,15 +1164,18 @@ async function vWorkbench(main, id) {
   const gd = $("#goDraft"); if (gd) gd.onclick = () => nav("#draft/" + w.id);
   const gd1 = $("#goDraft1"); if (gd1) gd1.onclick = () => nav("#draft/" + w.id);
   const gc1 = $("#goCheck1"); if (gc1) gc1.onclick = () => nav("#draft/" + w.id);
-  $("#wbOmni").onsubmit = (e) => {
-    e.preventDefault();
-    const input = $("#wbIn");
-    const text = input.value;
-    input.value = "";
-    handleOmni(text, w, $("#wbResult"), sim);
-  };
-  $("#fileIn").onchange = (e) => { if (e.target.files[0]) ingestFlow(w, e.target.files[0], null); };
-  $("#ingestBtn").onclick = () => { const t = $("#pasteIn").value.trim(); if (t) ingestFlow(w, null, t); };
+  const wbOmni = $("#wbOmni");
+  if (wbOmni) wbOmni.onsubmit = (e) => {
+      e.preventDefault();
+      const input = $("#wbIn");
+      const text = input.value;
+      input.value = "";
+      handleOmni(text, w, $("#wbResult"), sim);
+    };
+  const fileIn = $("#fileIn");
+  if (fileIn) fileIn.onchange = (e) => { if (e.target.files[0]) ingestFlow(w, e.target.files[0], null); };
+  const ingestBtn = $("#ingestBtn");
+  if (ingestBtn) ingestBtn.onclick = () => { const t = $("#pasteIn").value.trim(); if (t) ingestFlow(w, null, t); };
 }
 
 /* ---------- 다음 담당자 메모(힌트) ---------- */
