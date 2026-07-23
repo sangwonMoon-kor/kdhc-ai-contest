@@ -111,6 +111,40 @@ async function capture(page, viewport, file) {
   assert.equal(await candidateStatus.count(), 1, "home capture candidate must render exactly one visible status");
   assert.equal((await candidateStatus.innerText()).trim(), "후보 · 미확인",
     "home capture candidate visible status text changed");
+  if (viewport.width === 390) {
+    const longEventLayout = await page.evaluate(() => {
+      return ["personal-long-label", "single-day-candidate-long-label"].map((eventId) => {
+        const chip = document.querySelector(`[data-event-id="${eventId}"]`);
+        const label = chip && chip.querySelector(".home-event-text");
+        const status = chip && chip.querySelector(".home-event-status");
+        const chipRect = chip && chip.getBoundingClientRect();
+        const labelRect = label && label.getBoundingClientRect();
+        const statusRect = status && status.getBoundingClientRect();
+        const contained = (rect) => Boolean(rect && chipRect && rect.left >= chipRect.left && rect.right <= chipRect.right
+          && rect.top >= chipRect.top && rect.bottom <= chipRect.bottom);
+        return {
+          eventId,
+          label: label && label.textContent.trim(),
+          status: status && status.textContent.trim(),
+          labelClipped: Boolean(label && (label.scrollWidth > label.clientWidth || label.scrollHeight > label.clientHeight)),
+          labelContained: contained(labelRect),
+          statusClipped: Boolean(status && (status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight)),
+          statusContained: !status || contained(statusRect)
+        };
+      });
+    });
+    const personal = longEventLayout.find((event) => event.eventId === "personal-long-label");
+    const candidateLayout = longEventLayout.find((event) => event.eventId === "single-day-candidate-long-label");
+    assert.equal(personal.label, "2026년 정기점검보수 개인 검토 일정", "390px home capture personal long label changed or is missing");
+    assert.equal(candidateLayout.label, "2026년 정기점검보수 확인 필요 일정", "390px home capture candidate long label changed or is missing");
+    assert.equal(candidateLayout.status, "후보 · 미확인", "390px home capture candidate status changed or is missing");
+    for (const event of longEventLayout) {
+      assert.equal(event.labelClipped, false, `${event.eventId} label overflows its 390px home capture chip`);
+      assert.equal(event.labelContained, true, `${event.eventId} label escapes its 390px home capture chip`);
+      assert.equal(event.statusClipped, false, `${event.eventId} status overflows its 390px home capture chip`);
+      assert.equal(event.statusContained, true, `${event.eventId} status escapes its 390px home capture chip`);
+    }
+  }
   if (viewport.width === 1920) {
     const calendarOverflow = await page.locator(".home-calendar-scroll").evaluate((element) => ({
       scrollHeight: element.scrollHeight,

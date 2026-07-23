@@ -405,6 +405,40 @@ async function run() {
       `mobile section gap is not 24px: ${mobileHierarchy.sectionGap}`);
     assert(mobileHierarchy.calendarScrollWidth > mobileHierarchy.calendarClientWidth,
       "mobile calendar no longer owns its horizontal overflow");
+    const mobileLongEventLayout = await page.evaluate(function () {
+      return ["personal-long-label", "single-day-candidate-long-label"].map(function (eventId) {
+        const chip = document.querySelector(`[data-event-id="${eventId}"]`);
+        const label = chip && chip.querySelector(".home-event-text");
+        const status = chip && chip.querySelector(".home-event-status");
+        const chipRect = chip && chip.getBoundingClientRect();
+        const labelRect = label && label.getBoundingClientRect();
+        const statusRect = status && status.getBoundingClientRect();
+        function contained(rect) {
+          return Boolean(rect && chipRect && rect.left >= chipRect.left && rect.right <= chipRect.right
+            && rect.top >= chipRect.top && rect.bottom <= chipRect.bottom);
+        }
+        return {
+          eventId: eventId,
+          label: label && label.textContent.trim(),
+          status: status && status.textContent.trim(),
+          labelClipped: Boolean(label && (label.scrollWidth > label.clientWidth || label.scrollHeight > label.clientHeight)),
+          labelContained: contained(labelRect),
+          statusClipped: Boolean(status && (status.scrollWidth > status.clientWidth || status.scrollHeight > status.clientHeight)),
+          statusContained: !status || contained(statusRect)
+        };
+      });
+    });
+    const mobilePersonal = mobileLongEventLayout.find(function (event) { return event.eventId === "personal-long-label"; });
+    const mobileCandidate = mobileLongEventLayout.find(function (event) { return event.eventId === "single-day-candidate-long-label"; });
+    assert.equal(mobilePersonal.label, "2026년 정기점검보수 개인 검토 일정", "390px personal long label changed or is missing");
+    assert.equal(mobileCandidate.label, "2026년 정기점검보수 확인 필요 일정", "390px candidate long label changed or is missing");
+    assert.equal(mobileCandidate.status, "후보 · 미확인", "390px candidate status changed or is missing");
+    for (const event of mobileLongEventLayout) {
+      assert.equal(event.labelClipped, false, `${event.eventId} label overflows its 390px home calendar chip`);
+      assert.equal(event.labelContained, true, `${event.eventId} label escapes its 390px home calendar chip`);
+      assert.equal(event.statusClipped, false, `${event.eventId} status overflows its 390px home calendar chip`);
+      assert.equal(event.statusContained, true, `${event.eventId} status escapes its 390px home calendar chip`);
+    }
     const overflow = await page.evaluate(function () {
       return { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth };
     });

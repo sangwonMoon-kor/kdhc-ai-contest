@@ -705,7 +705,7 @@ function renderHomeCalendarWeek(days, events, sim) {
     if (!event2) return "38px";
     const visibleStart = event2.startISO < first ? first : event2.startISO;
     const visibleEnd = event2.endISO > last ? last : event2.endISO;
-    return visibleStart === visibleEnd ? "60px" : "38px";
+    return visibleStart === visibleEnd ? "var(--home-calendar-single-day-row,60px)" : "38px";
   }).join(" ");
   return `<div class="home-calendar-week" style="grid-template-rows:48px ${laneRows}">${dayCells}${eventButtons}</div>`;
 }

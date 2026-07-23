@@ -585,6 +585,8 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
   .home-calendar-today{min-height:36px;padding:0 11px}
   .home-calendar-scroll{max-height:420px}
   .home-calendar-inner{min-width:780px}
+  .home-calendar-week{--home-calendar-single-day-row:92px}
+  .home-calendar-event.is-single-day{height:86px}
   .home-calendar-legend{gap:14px;padding:13px 6px 0;font-size:.72rem;flex-wrap:wrap}
 }
 @media (max-width:760px){
