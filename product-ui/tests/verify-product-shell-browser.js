@@ -5,6 +5,8 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 const { chromium } = require("playwright");
+const workspaceModel = require("../workspace-model.js");
+const workbenchModel = require("../workbench-model.js");
 
 const repoRoot = path.resolve(__dirname, "..", "..");
 const port = 9300 + (process.pid % 500);
@@ -63,10 +65,27 @@ async function run() {
     browser = await launchBrowser();
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
     page.setDefaultTimeout(5000);
+    const fixture = workspaceModel.createDemoState();
+    const completed = workbenchModel.completeWork(fixture, "work-maintenance-plan-2026", {
+      completedAtISO: "2026-07-23T11:00:00.000Z",
+      completedBy: fixture.currentPersonId,
+      completionDateISO: "2026-07-23",
+      acknowledgeIncomplete: true
+    }).state;
+    await page.addInitScript((state) => {
+      localStorage.setItem("jikmu.workbench.v1", JSON.stringify(state));
+      localStorage.removeItem("jikmu.ui.v1");
+    }, completed);
     await assertShell(page, "#home", "#home");
     await assertShell(page, "#work/list", "#work/list");
     await assertShell(page, "#schedule", "#schedule");
     await assertShell(page, "#cloud", "#cloud");
+    assert.equal(await page.locator("[data-cloud-bundle]").count(), 1, "completed bundle is missing from the cloud shell");
+    assert.equal(
+      await page.locator("[data-cloud-bundle]").getAttribute("data-work-id"),
+      "work-maintenance-plan-2026",
+      "cloud bundle does not preserve the workId"
+    );
     await assertShell(page, "#workbench/work-maintenance-plan-2026", "#work/list");
 
     await page.goto(`${base}/?data=fixture#work/calendar`, { waitUntil: "networkidle" });

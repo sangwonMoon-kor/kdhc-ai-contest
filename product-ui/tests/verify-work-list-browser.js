@@ -144,7 +144,17 @@ async function assertWidth(browser, width, state) {
   assert.equal(await completedTab.getAttribute("aria-selected"), "true");
   assert.equal(await activeTab.getAttribute("aria-selected"), "false");
   assert.equal(await page.locator('[data-work-phase="done"]').count(), 1);
+  assert.equal(
+    await page.locator('[data-work-id="work-maintenance-plan-completed"]').getAttribute("data-work-id"),
+    "work-maintenance-plan-completed",
+    "completed list did not preserve the workId"
+  );
   await openWork(page, "work-maintenance-plan-completed");
+  assert.equal(
+    await page.locator('[data-testid="workbench"]').getAttribute("data-work-id"),
+    "work-maintenance-plan-completed",
+    "completed list did not reenter the same workId"
+  );
   await assertHeadline(page, {
     title: "2025년 정기점검보수 기본계획 수립",
     phase: "완료",
@@ -153,6 +163,7 @@ async function assertWidth(browser, width, state) {
     dateISO: "2026-01-02",
     dateText: "2026.01.02"
   });
+  assert((await page.locator(".workbench-readonly").innerText()).includes("완료 당시 기록"));
   assert.equal(await page.locator("[data-complete-work]").count(), 0, "completed work exposes the completion action");
   for (const selector of ["#wbOmni", "#fileIn", "#goDraft", "#goDraft1", "[data-td]", "[data-promote]", "[data-del]", "[data-hint]"]) {
     assert.equal(await page.locator(selector).count(), 0, `completed work exposes mutable control ${selector}`);

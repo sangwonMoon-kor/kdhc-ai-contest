@@ -126,6 +126,12 @@ const state = {
 assert.equal(model.completionReadiness(state.works[0]).ready, false);
 assert.equal(model.completionReadiness({ todos: [{ id: "proposal", done: false, candidate: true }] }).ready, true);
 assert.deepStrictEqual(model.selectWorkList(state, "active").map((work) => work.id), ["work-a"]);
+assert.throws(() => model.completeWork(state, "work-a", {
+  completedAtISO: "2026-07-23T10:59:00.000Z",
+  completedBy: "person-kim-hannan",
+  completionDateISO: "2026-07-23",
+  acknowledgeIncomplete: false
+}), /acknowledged/, "incomplete follow-ups can be completed without acknowledgement");
 
 const result = model.completeWork(state, "work-a", {
   completedAtISO: "2026-07-23T11:00:00.000Z",
@@ -137,9 +143,14 @@ assert.equal(result.state.works[0].lifecycle.phase, "done");
 assert.equal(result.state.completionBundles.length, 1);
 assert.equal(result.state.completionBundles[0].baselinePhase, "design");
 assert.deepStrictEqual(result.state.completionBundles[0].workSnapshot.incompleteTodos.map((todo) => todo.id), ["todo-open"]);
+assert.equal(result.bundle.workId, "work-a");
+assert.equal(result.bundle.workSnapshot.id, "work-a");
 assert.equal(state.works[0].lifecycle.phase, "design");
 assert.equal(state.completionBundles.length, 0);
 assert.deepStrictEqual(model.selectWorkList(result.state, "completed").map((work) => work.id), ["work-a"]);
 assert.deepStrictEqual(model.selectCloudBundles(result.state).map((bundle) => bundle.workId), ["work-a"]);
+const selectedBundles = model.selectCloudBundles(result.state);
+selectedBundles[0].workSnapshot.title = "changed outside the model";
+assert.equal(result.state.completionBundles[0].workSnapshot.title, "열수송관 보수 설계");
 
 console.log("Workbench model contract passed");

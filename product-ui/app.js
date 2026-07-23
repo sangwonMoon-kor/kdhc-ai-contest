@@ -1026,6 +1026,50 @@ function renderPersonalScheduleCandidate(resultBox, candidate) {
 
 /* ---------- 클라우드 ---------- */
 function vCloud(main) {
+  const bundles = workbenchModel.selectCloudBundles(S).sort((a, b) => {
+    const aDate = a && a.workSnapshot && a.workSnapshot.lifecycle && a.workSnapshot.lifecycle.completionDateISO
+      || a && a.completedAtISO || "";
+    const bDate = b && b.workSnapshot && b.workSnapshot.lifecycle && b.workSnapshot.lifecycle.completionDateISO
+      || b && b.completedAtISO || "";
+    return String(bDate).localeCompare(String(aDate)) || String(b && b.id || "").localeCompare(String(a && a.id || ""));
+  });
+  if (bundles.length) {
+    main.innerHTML = `<div class="view cloud-view">
+      <h1 class="pg" tabindex="-1">클라우드</h1>
+      <p class="sub cloud-intro">완료 당시의 결과물, 공식 기준, 업무 기록을 묶음으로 보관합니다.</p>
+      <div class="cloud-bundle-list" aria-label="완료 업무 묶음">
+        ${bundles.map((bundle) => {
+          const work = bundle.workSnapshot || {};
+          const lifecycle = work.lifecycle || {};
+          const completionDateISO = lifecycle.completionDateISO || String(bundle.completedAtISO || "").slice(0, 10);
+          const output = work.output || {};
+          const records = Array.isArray(work.records) ? work.records : [];
+          const official = Array.isArray(work.officialReferences)
+            ? work.officialReferences : workbenchModel.partitionReferences(work).official;
+          return `<button class="card cloud-bundle-card" type="button" data-cloud-bundle
+            data-bundle-id="${esc(bundle.id)}" data-work-id="${esc(bundle.workId)}">
+            <span class="cloud-bundle-card__heading">
+              <strong>${esc(work.title || "제목 없는 완료 업무")}</strong>
+              <time datetime="${esc(completionDateISO)}">${fmtD(completionDateISO)}</time>
+            </span>
+            <span class="cloud-bundle-card__meta">
+              <span>${output.finalDocumentId ? "최종 결과물 있음" : "최종 결과물 없음"}</span>
+              <span>기록 ${records.length}건</span>
+              <span>공식 기준 ${official.length}건</span>
+            </span>
+          </button>`;
+        }).join("")}
+      </div>
+    </div>`;
+    $$("[data-cloud-bundle]", main).forEach((button) => {
+      button.onclick = () => {
+        S.selectedWorkId = button.dataset.workId;
+        saveState();
+        nav("#workbench/" + button.dataset.workId);
+      };
+    });
+    return;
+  }
   main.innerHTML = `<div class="view cloud-view">
     <h1 class="pg" tabindex="-1">클라우드</h1>
     <div class="card cloud-empty">
@@ -1038,6 +1082,125 @@ function vCloud(main) {
 }
 
 /* ---------- 업무 작업대 ---------- */
+function openCompletionReview(work, references, output, opener) {
+  const readiness = workbenchModel.completionReadiness(work);
+  const official = references.official || [];
+  const records = Array.isArray(work.records) ? work.records : [];
+  const overlay = document.createElement("div");
+  overlay.className = "completion-review-backdrop";
+  overlay.innerHTML = `<section class="completion-review" role="dialog" aria-modal="true"
+    aria-labelledby="completion-review-title" aria-describedby="completion-review-description"
+    data-completion-review>
+    <div class="completion-review__header">
+      <div>
+        <p class="eyebrow">완료 전 검토</p>
+        <h2 id="completion-review-title">${esc(work.title)}</h2>
+        <p class="sub" id="completion-review-description">완료 당시 보관할 내용을 한 번에 확인합니다.</p>
+      </div>
+    </div>
+    <div class="completion-review__grid">
+      <section class="completion-review__section" data-review-output>
+        <h3>최종 결과물과 완료일</h3>
+        <p>${output.finalDocumentId
+          ? `최종 결과물 · <strong>${esc(output.finalDocumentId)}</strong>`
+          : "연결된 최종 결과물이 없습니다."}</p>
+        <label class="completion-date-field">완료일
+          <input type="date" value="${new Date().toISOString().slice(0, 10)}" data-completion-date>
+        </label>
+      </section>
+      <section class="completion-review__section" data-review-standards>
+        <h3>적용 공식 기준</h3>
+        ${official.length
+          ? `<ul>${official.map((reference) =>
+            `<li>${esc(reference.title || reference.docId || "이름 없는 공식 기준")}</li>`).join("")}</ul>`
+          : '<p class="sub">연결된 공식 기준이 없습니다.</p>'}
+      </section>
+      <section class="completion-review__section" data-review-records>
+        <h3>확정 기록</h3>
+        ${records.length
+          ? `<ul>${records.map((record) => `<li>${esc(record.text || "내용 없는 기록")}</li>`).join("")}</ul>`
+          : '<p class="sub">확정된 기록이 없습니다.</p>'}
+      </section>
+      <section class="completion-review__section" data-review-open-items>
+        <h3>미완료 후속 작업</h3>
+        ${readiness.incompleteTodos.length
+          ? `<ul>${readiness.incompleteTodos.map((todo) => `<li>${esc(todo.text)}</li>`).join("")}</ul>
+            <label class="completion-acknowledgement">
+              <input type="checkbox" data-acknowledge-open-items>
+              <span>미완료 후속 작업이 남아 있음을 확인했습니다.</span>
+            </label>`
+          : '<p class="sub">남은 후속 작업이 없습니다.</p>'}
+      </section>
+    </div>
+    <p class="completion-review__status" role="status" aria-live="polite"></p>
+    <div class="completion-review__actions">
+      <button class="btn ghost" type="button" data-cancel-completion>취소</button>
+      <button class="btn" type="button" data-confirm-completion>완료로 전환</button>
+    </div>
+  </section>`;
+  document.body.appendChild(overlay);
+
+  const dialog = $("[data-completion-review]", overlay);
+  const completionDateInput = $("[data-completion-date]", dialog);
+  const acknowledgement = $("[data-acknowledge-open-items]", dialog);
+  const status = $(".completion-review__status", dialog);
+  const cancel = $("[data-cancel-completion]", dialog);
+  const confirm = $("[data-confirm-completion]", dialog);
+  const focusables = () => $$('input:not([disabled]),button:not([disabled])', dialog);
+  const close = (returnFocus) => {
+    overlay.remove();
+    if (returnFocus !== false && opener && document.body.contains(opener)) opener.focus();
+  };
+
+  dialog.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close(true);
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const items = focusables();
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+  cancel.onclick = () => close(true);
+  confirm.onclick = () => {
+    if (!completionDateInput.value) {
+      status.textContent = "완료일을 입력해 주세요.";
+      completionDateInput.focus();
+      return;
+    }
+    if (readiness.requiresAcknowledgement && (!acknowledgement || !acknowledgement.checked)) {
+      status.textContent = "미완료 후속 작업을 확인했다는 표시가 필요합니다.";
+      acknowledgement.focus();
+      return;
+    }
+    try {
+      const result = workbenchModel.completeWork(S, work.id, {
+        completedAtISO: new Date().toISOString(),
+        completedBy: S.currentPersonId,
+        completionDateISO: completionDateInput.value,
+        acknowledgeIncomplete: acknowledgement ? acknowledgement.checked : true
+      });
+      S = result.state;
+      saveState();
+      close(false);
+      nav("#work/list");
+    } catch (error) {
+      status.textContent = error && error.message ? error.message : "완료로 전환하지 못했습니다.";
+    }
+  };
+  completionDateInput.focus();
+}
+
 function workbenchReference(source, documentById) {
   return Object.assign({}, documentById.get(source.docId) || {}, source);
 }
@@ -1479,6 +1642,8 @@ async function vWorkbench(main, id) {
   if (fileIn) fileIn.onchange = (e) => { if (e.target.files[0]) ingestFlow(w, e.target.files[0], null); };
   const ingestBtn = $("#ingestBtn");
   if (ingestBtn) ingestBtn.onclick = () => { const t = $("#pasteIn").value.trim(); if (t) ingestFlow(w, null, t); };
+  const completeButton = $("[data-complete-work]", main);
+  if (completeButton) completeButton.onclick = () => openCompletionReview(w, references, output, completeButton);
 }
 
 /* ---------- 다음 담당자 메모(힌트) ---------- */
