@@ -51,6 +51,7 @@ const cache = { summary: null, forecast: null, briefing: null };
 async function loadSummary() { if (!cache.summary) cache.summary = await api("/api/summary"); return cache.summary; }
 async function loadForecast() { if (!cache.forecast) cache.forecast = await api("/api/forecast"); return cache.forecast; }
 async function loadBriefing() { if (!cache.briefing) cache.briefing = await api("/api/briefing"); return cache.briefing; }
+const workspaceModel = window.OnMemoryWorkspaceModel;
 
 /* ---------- 업무 건 상태 계층 ---------- */
 let S = null;              // {v, works[], selectedWorkId}
@@ -62,7 +63,7 @@ let homeAttachmentFile = null;
 let homeAttachmentMessage = "";
 let engineDown = false;
 
-function blankState() { return { v: 1, works: [], selectedWorkId: null }; }
+function blankState() { return workspaceModel.createDemoState(); }
 function validWork(w) {
   return w && typeof w === "object" && typeof w.id === "string" && typeof w.title === "string"
     && Array.isArray(w.todos) && Array.isArray(w.records) && Array.isArray(w.sources);
@@ -107,8 +108,8 @@ function loadState() {
     const raw = storage.getItem(SKEY);
     if (!raw) return blankState();
     const j = JSON.parse(raw);
-    if (!j || j.v !== 1 || !Array.isArray(j.works) || !j.works.every(validWork)) return blankState(); // 스키마 불일치 → 안전 복구
-    return Object.assign({}, j, { works: j.works.map(normalizeWork) });
+    const migrated = workspaceModel.migrateState(j);
+    return Object.assign({}, migrated, { works: migrated.works.filter(validWork).map(normalizeWork) });
   } catch (e) { return blankState(); }
 }
 function saveState() { try { storage.setItem(SKEY, JSON.stringify(S)); } catch (e) { /* 저장 불가 환경 — 메모리로 계속 */ } }
@@ -121,28 +122,14 @@ function seedFromForecast(fc, sim) {
   for (const it of (fc && fc.items) || []) {
     const key = `${it.stageId}|${it.month}`;
     if (have.has(key)) continue;
-    const year = (sim || "").slice(0, 4);
-    S.works.push({
-      id: "w-" + it.stageId + "-m" + it.month,
-      seedKey: key,
-      title: (year ? year + "년 " : "") + it.name,
-      instruction: `매년 ${it.month}월 반복 — 과거 문서 ${it.docCount}건 근거`,
-      requester: "반복 업무(과거 문서 근거)",
-      due: it.dueDate || null,
-      stageId: it.stageId || null,
-      stageName: it.task || "",
-      doneWhen: "결재 상신",
-      repeat: true,
-      todos: [
+    const work = workspaceModel.adaptForecastItem(it, null, sim);
+    work.todos = [
         { id: uid("t"), text: "작년 문서 확인", done: false, candidate: false, evidence: (it.docs || []).slice(0, 3).map((d) => ({ docId: d, label: "과거 문서" })) },
         { id: uid("t"), text: "협조처·일정 확인", done: false, candidate: false, evidence: [] },
         { id: uid("t"), text: "초안 작성(작년 양식)", done: false, candidate: false, evidence: [], action: "draft" },
         { id: uid("t"), text: "제출 전 점검", done: false, candidate: false, evidence: [], action: "check" },
-      ],
-      records: [],
-      sources: (it.docs || []).map((d) => ({ docId: d, role: "과거 문서" })),
-      draft: { savedAt: null, values: null },
-    });
+      ];
+    S.works.push(work);
   }
   saveState();
 }

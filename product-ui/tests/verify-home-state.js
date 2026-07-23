@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const { parseScheduleCandidate } = require("../home-model.js");
+const workspaceModel = require("../workspace-model.js");
 
 const root = path.resolve(__dirname, "..");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8")
@@ -13,7 +14,7 @@ const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8")
 
 function loadHomeState(storedState) {
   const values = new Map();
-  if (storedState) values.set("jikmu.workbench.v1", JSON.stringify(storedState));
+  if (storedState) values.set("jikmu.workbench.v1", typeof storedState === "string" ? storedState : JSON.stringify(storedState));
   const localStorage = {
     getItem: (key) => values.has(key) ? values.get(key) : null,
     setItem: (key, value) => values.set(key, String(value)),
@@ -27,6 +28,7 @@ function loadHomeState(storedState) {
   const window = {
     JikmuApi: { createApiClient: () => ({ request: async () => ({}) }), modeFromSearch: () => "fixture" },
     JikmuHomeModel: { parseScheduleCandidate },
+    OnMemoryWorkspaceModel: workspaceModel,
     addEventListener: () => {},
   };
   const sandbox = {
@@ -49,8 +51,23 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
 {
   const legacy = { v: 1, works: [legacyWork()], selectedWorkId: "work-1" };
   const homeState = loadHomeState(legacy);
-  assert.deepStrictEqual(plain(homeState.loadState()), legacy, "v1 work remains valid without calendar fields");
+  const migrated = plain(homeState.loadState());
+  assert.equal(migrated.v, 2, "v1 state migrates to workspace v2");
+  assert.equal(migrated.currentPersonId, "person-kim-hannan");
+  assert.equal(migrated.currentRoleId, "role-maintenance-planning");
+  assert.equal(migrated.selectedWorkId, "work-1");
+  assert.deepStrictEqual(migrated.works[0].todos, legacy.works[0].todos, "migration preserves todos");
+  assert.deepStrictEqual(migrated.works[0].records, legacy.works[0].records, "migration preserves records");
+  assert.deepStrictEqual(migrated.works[0].sources, legacy.works[0].sources, "migration preserves sources");
   assert.deepStrictEqual(plain(homeState.normalizeWork(legacy.works[0])), legacy.works[0], "normalization preserves a legacy work unchanged");
+}
+
+{
+  const homeState = loadHomeState("{broken json");
+  const recovered = plain(homeState.loadState());
+  assert.equal(recovered.v, 2, "damaged storage recovers with a v2 demo state");
+  assert(Array.isArray(recovered.works));
+  assert(Array.isArray(recovered.personalSchedules));
 }
 
 {
@@ -61,7 +78,11 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
     scheduleCandidates: [{ id: "candidate-1", kind: "date", label: "운영부 일정", startISO: "2026-02-03", endISO: "2026-02-03", confirmed: false }],
   });
   const homeState = loadHomeState({ v: 1, works: [scheduled], selectedWorkId: scheduled.id });
-  assert.deepStrictEqual(plain(homeState.loadState().works[0]), scheduled, "normalization keeps optional calendar and candidate fields");
+  const migrated = plain(homeState.loadState().works[0]);
+  assert.equal(migrated.id, scheduled.id);
+  assert.equal(migrated.due, scheduled.due);
+  assert.deepStrictEqual(migrated.sources, scheduled.sources);
+  assert.deepStrictEqual(migrated.scheduleCandidates, scheduled.scheduleCandidates, "migration keeps calendar candidates");
 }
 
 {
