@@ -17,8 +17,12 @@ if (!failures.length) {
   const baseline = JSON.parse(read("source-baseline.json"));
   if (!index.includes('<main id="view"')) failures.push("missing SPA view root");
   if (!(index.indexOf('src="intent.js"') < index.indexOf('src="app.js"'))) failures.push("intent.js must load before app.js");
-  for (const route of ["#home", "#work/list", "#work/calendar", "#workbench/", "#draft/"]) {
+  if (!(index.indexOf('src="workspace-model.js"') < index.indexOf('src="app.js"'))) failures.push("workspace-model.js must load before app.js");
+  for (const route of ["#home", "#work/list", "#schedule", "#cloud", "#workbench/", "#draft/"]) {
     if (!app.includes(route)) failures.push(`missing route ${route}`);
+  }
+  for (const menu of ["홈", "내 업무", "일정", "클라우드"]) {
+    if (!app.includes(`label: "${menu}"`)) failures.push(`missing common menu ${menu}`);
   }
   if (/function typeIntro\(/.test(app)) failures.push("legacy home typing intro remains");
   if (!app.includes("window.JikmuHomeModel.buildTwoWeekWindow")) failures.push("home does not build its 14-day model window");

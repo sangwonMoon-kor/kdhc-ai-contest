@@ -271,7 +271,7 @@ function bindEvidence(root) {
 }
 
 /* ---------- 라우터 ---------- */
-const LEGACY = { "": "#home", "#": "#home", "#ask": "#home", "#briefing": "#work/list", "#forecast": "#work/calendar", "#check": "#work/list", "#draft": "#work/list", "#ingest": "#work/list", "#next": "#work/list", "#home": "#home" };
+const LEGACY = { "": "#home", "#": "#home", "#ask": "#home", "#briefing": "#work/list", "#forecast": "#schedule", "#work/calendar": "#schedule", "#check": "#work/list", "#draft": "#work/list", "#ingest": "#work/list", "#next": "#work/list", "#home": "#home" };
 function parseHash() {
   let h = location.hash || "#home";
   if (LEGACY[h] && LEGACY[h] !== h) { location.replace(LEGACY[h]); h = LEGACY[h]; }
@@ -286,26 +286,37 @@ function nav(hash) { if (location.hash === hash) route(); else location.hash = h
 async function route() {
   const { v, a } = parseHash();
   const isHome = v === "home";
-  $$(".nav-caps a").forEach((el2) => el2.classList.toggle("on", el2.dataset.nav === (v === "home" ? "home" : v === "work" || v === "workbench" || v === "draft" ? "work" : "")));
+  const active = isHome ? "home" : v === "schedule" ? "schedule" : v === "cloud" ? "cloud" : "work";
   const main = $("#view");
   document.body.classList.toggle("is-home", isHome);
   main.classList.toggle("home-main", isHome);
-  main.innerHTML = "";
+  main.innerHTML = `<div class="app-shell">
+    ${renderAppSidebar(active)}
+    <section class="app-content${isHome ? " is-home-content" : ""}">
+      ${renderShellUtilities()}
+      <div class="app-view"></div>
+    </section>
+  </div>`;
+  const view = $(".app-view", main);
+  const shellThemeBtn = $("#shellThemeBtn", main);
+  if (shellThemeBtn) shellThemeBtn.onclick = () => applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  renderDataStatus(apiClient.getStatus());
   closeDrawer();
   try {
-    if (v === "home") await vHome(main);
-    else if (v === "work" && a === "calendar") await vCalendar(main);
-    else if (v === "work") await vList(main);
-    else if (v === "workbench") await vWorkbench(main, a);
-    else if (v === "draft") await vDraft(main, a);
-    else if (v === "graph") await vGraph(main);
-    else if (v === "vision") vVision(main);
-    else vNotFound(main, "화면을 찾을 수 없습니다.");
+    if (v === "home") await vHome(view);
+    else if (v === "schedule") await vCalendar(view);
+    else if (v === "cloud") vCloud(view);
+    else if (v === "work") await vList(view);
+    else if (v === "workbench") await vWorkbench(view, a);
+    else if (v === "draft") await vDraft(view, a);
+    else if (v === "graph") await vGraph(view);
+    else if (v === "vision") vVision(view);
+    else vNotFound(view, "화면을 찾을 수 없습니다.");
   } catch (e) {
-    main.innerHTML = `<div class="view"><h1 class="pg" tabindex="-1">연결이 원활하지 않습니다</h1>
+    view.innerHTML = `<div class="view"><h1 class="pg" tabindex="-1">연결이 원활하지 않습니다</h1>
       <div class="card"><p>엔진에 연결하지 못했습니다. 로컬에서는 <code>cd service && npm start</code>로 서버를 켜 주세요.</p></div></div>`;
   }
-  const h1 = $("h1.pg", main) || $("h1", main);
+  const h1 = $("h1.pg", view) || $("h1", view);
   if (h1) { h1.setAttribute("tabindex", "-1"); h1.focus({ preventScroll: false }); }
 }
 
@@ -323,10 +334,7 @@ async function vHome(main) {
   const calendarWindow = window.JikmuHomeModel.buildTwoWeekWindow(sim, homeCalendarOffsetWeeks);
   const events = window.JikmuHomeModel.buildCalendarEvents(S.works, calendarWindow);
 
-  main.innerHTML = `<div class="home-shell">
-    ${renderHomeRail()}
-    <div class="home-content">
-      <span class="data-status home-data-status" id="homeDataStatus" role="status" aria-live="polite">데이터 확인 중</span>
+  main.innerHTML = `<div class="home-content">
       <section class="home-compose" aria-label="생각 입력">
         <form class="omni" id="omni" data-testid="home-omni">
           <label class="sr-only" for="omniIn">생각 입력</label>
@@ -345,7 +353,7 @@ async function vHome(main) {
             <button id="homeCalPrev" type="button" aria-label="이전 2주 보기">${homeIcon("chevron-left")}</button>
             <button id="homeCalNext" type="button" aria-label="다음 2주 보기">${homeIcon("chevron-right")}</button>
           </div>
-          <a class="home-calendar-all" href="#work/calendar">전체 일정 ${homeIcon("chevron-right")}</a>
+          <a class="home-calendar-all" href="#schedule">전체 일정 ${homeIcon("chevron-right")}</a>
         </div>
         <div class="home-calendar-scroll" role="region" aria-label="2주 업무 달력" tabindex="0">
           <div class="home-calendar-inner">
@@ -360,7 +368,6 @@ async function vHome(main) {
         </div>
       </section>
       <div id="homeResult"></div>
-    </div>
   </div>`;
 
   renderDataStatus(apiClient.getStatus());
@@ -403,7 +410,7 @@ function homeIcon(name) {
     home: '<rect x="6" y="4" width="12" height="16" rx="2"></rect><path d="M9 9h6M9 13h6"></path>',
     folder: '<path d="M3.5 7.5h6l2-2h9v13h-17z"></path>',
     calendar: '<rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16M8 14h.01M12 14h.01M16 14h.01"></path>',
-    bookmark: '<path d="M7 4.5h10v16l-5-3.5-5 3.5z"></path>',
+    cloud: '<path d="M7 18h10a4 4 0 00.8-7.9A6 6 0 006.4 8.7 4.5 4.5 0 007 18z"></path>',
     attach: '<path d="M9.5 12.5l5.7-5.7a3.2 3.2 0 014.5 4.5l-8 8a5 5 0 01-7.1-7.1l8.4-8.4"></path>',
     send: '<path d="M3 11.5L21 4l-7.5 18-2.2-7.3zM11.3 14.7L21 4"></path>',
     "chevron-left": '<path d="M15 18l-6-6 6-6"></path>',
@@ -412,16 +419,24 @@ function homeIcon(name) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths[name] || ""}</svg>`;
 }
 
-function renderHomeRail() {
-  return `<aside class="home-rail" aria-label="홈 빠른 이동">
-    <div class="home-rail-brand">ON_메모리</div>
-    <nav aria-label="홈 메뉴">
-      <a class="is-current" href="#home" aria-label="오늘의 업무" aria-current="page">${homeIcon("home")}<span>오늘의 업무</span></a>
-      <a href="#work/list" aria-label="내 업무 목록">${homeIcon("folder")}<span>내 업무 목록</span></a>
-      <a href="#work/calendar" aria-label="월간 업무 달력">${homeIcon("calendar")}<span>월간 업무 달력</span></a>
-      <a href="#vision" aria-label="서비스 소개">${homeIcon("bookmark")}<span>서비스 소개</span></a>
-    </nav>
+function renderAppSidebar(active) {
+  const items = [
+    { id: "home", href: "#home", label: "홈", icon: "home" },
+    { id: "work", href: "#work/list", label: "내 업무", icon: "folder" },
+    { id: "schedule", href: "#schedule", label: "일정", icon: "calendar" },
+    { id: "cloud", href: "#cloud", label: "클라우드", icon: "cloud" },
+  ];
+  return `<aside class="app-sidebar" aria-label="주 메뉴">
+    <a class="app-brand" href="#home" aria-label="ON_메모리 홈">ON_메모리</a>
+    <nav>${items.map((item) => `<a class="${item.id === active ? "is-current" : ""}" href="${item.href}" aria-label="${item.label}"${item.id === active ? ' aria-current="page"' : ""}>${homeIcon(item.icon)}<span>${item.label}</span></a>`).join("")}</nav>
   </aside>`;
+}
+
+function renderShellUtilities() {
+  return `<div class="shell-utilities" aria-label="화면 도구">
+    <span class="data-status home-data-status" id="homeDataStatus" role="status" aria-live="polite">데이터 확인 중</span>
+    <button class="icon-btn" id="shellThemeBtn" type="button" aria-label="화면 모드 전환">◐</button>
+  </div>`;
 }
 
 function homeISODateParts(iso) {
@@ -732,7 +747,7 @@ async function vList(main) {
     b.onclick = () => { S.selectedWorkId = w.id; saveState(); nav("#workbench/" + w.id); };
     box.appendChild(b);
   }
-  $("#toCal").onclick = () => nav("#work/calendar");
+  $("#toCal").onclick = () => nav("#schedule");
   $("#newWork").onclick = () => createWorkFrom("새 업무 — 제목을 지시로 바꿔 주세요", null);
   const clr = $("#clrF"); if (clr) clr.onclick = () => { UI.listFilter = null; saveUI(); route(); };
 }
@@ -768,10 +783,10 @@ async function vCalendar(main) {
       ${(byDay.get(d) || []).map((w) => `<button class="cal-chip" data-w="${esc(w.id)}" title="${esc(w.title)}">${esc(w.title)}</button>`).join("")}</div>`;
   }
   main.innerHTML = `<div class="view">
-    <h1 class="pg" tabindex="-1">내 업무</h1>
+    <h1 class="pg" tabindex="-1">일정</h1>
     <div class="list-tools"><div class="cap-tabs" role="tablist">
-      <button role="tab" aria-selected="false" id="toList">목록 보기</button>
-      <button class="on" role="tab" aria-selected="true">달력 보기</button>
+      <button role="tab" aria-selected="false" id="toList">내 업무 보기</button>
+      <button class="on" role="tab" aria-selected="true">월간 일정</button>
     </div></div>
     <div class="cal-head">
       <button class="icon-btn" id="calPrev" aria-label="이전 달">‹</button>
@@ -791,6 +806,19 @@ async function vCalendar(main) {
   $("#calNext").onclick = () => { const d2 = new Date(Y, M, 1); UI.calYM = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, "0")}`; saveUI(); route(); };
   $$("#yGrid [data-m]").forEach((b) => { b.onclick = () => { UI.calYM = `${Y}-${String(+b.dataset.m).padStart(2, "0")}`; saveUI(); route(); }; });
   $$(".cal-chip").forEach((b) => { b.onclick = () => { S.selectedWorkId = b.dataset.w; saveState(); nav("#workbench/" + b.dataset.w); }; });
+}
+
+/* ---------- 클라우드 ---------- */
+function vCloud(main) {
+  main.innerHTML = `<div class="view cloud-view">
+    <h1 class="pg" tabindex="-1">클라우드</h1>
+    <div class="card cloud-empty">
+      <div class="cloud-empty-icon" aria-hidden="true">${homeIcon("cloud")}</div>
+      <h2>연결된 자료가 아직 없습니다</h2>
+      <p>공사 자료와 업무 산출물은 데이터 연결 단계에서 이곳에 모입니다.</p>
+      <p class="sub">지금은 화면 흐름만 확인할 수 있으며, 임의의 문서나 과거 데이터를 만들지 않습니다.</p>
+    </div>
+  </div>`;
 }
 
 /* ---------- 업무 작업대 ---------- */

@@ -206,7 +206,7 @@ async function run() {
     const errors = [];
     const fixturePage = await openApp(browser, "fixture", errors);
     await assertStatus(fixturePage, "시연용 샘플 데이터", "fixture");
-    await fixturePage.locator('.home-rail a[href="#work/list"]').click();
+    await fixturePage.locator('.app-sidebar a[href="#work/list"]').click();
     await fixturePage.getByRole("heading", { name: "내 업무" }).waitFor();
     await assertStatus(fixturePage, "시연용 샘플 데이터", "fixture");
     await fixturePage.close();

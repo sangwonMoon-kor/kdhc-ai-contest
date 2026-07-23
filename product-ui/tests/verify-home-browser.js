@@ -157,12 +157,12 @@ async function run() {
     assert.equal(composeFocus.outlineStyle, "solid", "primary home input does not expose a solid focus-within ring");
     assert(composeFocus.outlineWidth >= 2, "primary home input focus-within ring is too thin");
     assert.notEqual(composeFocus.outlineColor, "rgba(0, 0, 0, 0)", "primary home input focus-within ring is transparent");
-    for (const selector of [".home-send", ".home-calendar-all", ".home-rail a.is-current"]) {
+    for (const selector of [".home-send", ".home-calendar-all", ".app-sidebar a.is-current"]) {
       const textColor = cssRgb(await page.locator(selector).evaluate(function (element) { return getComputedStyle(element).color; }));
       assert(contrastRatio(textColor, [255, 255, 255]) >= 4.5, `${selector} text misses WCAG AA contrast on white`);
       assert(contrastRatio(textColor, [251, 250, 249]) >= 4.5, `${selector} text misses WCAG AA contrast on the home background`);
     }
-    const currentRail = page.locator(".home-rail a.is-current");
+    const currentRail = page.locator(".app-sidebar a.is-current");
     await currentRail.hover();
     const hoveredRailColor = cssRgb(await currentRail.evaluate(function (element) { return getComputedStyle(element).color; }));
     assert(contrastRatio(hoveredRailColor, [255, 255, 255]) >= 4.5, "hovered current rail text misses WCAG AA contrast on white");
@@ -172,7 +172,7 @@ async function run() {
       function find(rules) {
         for (const rule of Array.from(rules || [])) {
           if (rule.selectorText) selectors.push(rule.selectorText);
-          if (rule.selectorText && rule.selectorText.split(",").map(function (value) { return value.trim(); }).includes(".home-rail nav a:hover") && rule.style.color) return rule.style.color;
+          if (rule.selectorText && rule.selectorText.split(",").map(function (value) { return value.trim(); }).includes(".is-home .app-sidebar nav a:hover") && rule.style.color) return rule.style.color;
           if (rule.cssRules) {
             const nested = find(rule.cssRules);
             if (nested) return nested;
@@ -181,7 +181,7 @@ async function run() {
         return "";
       }
       const color = Array.from(document.styleSheets).map(function (sheet) { return find(sheet.cssRules); }).find(Boolean) || "";
-      return { color: color, selectors: selectors.filter(function (selector) { return selector.includes("home-rail"); }) };
+      return { color: color, selectors: selectors.filter(function (selector) { return selector.includes("app-sidebar"); }) };
     });
     assert.equal(railHoverRule.color, "var(--home-red-deep)", `desktop rail hover rule uses a non-AA red text token: ${JSON.stringify(railHoverRule)}`);
     const constructionColor = cssRgb(await page.locator(".home-event--work.is-construction").first().evaluate(function (element) { return getComputedStyle(element).color; }));
@@ -236,10 +236,11 @@ async function run() {
     assert.equal(await deadline.count(), 1, "forecast deadline event missing");
     await deadline.click();
     await page.waitForFunction(function (expected) { return location.hash === `#workbench/${expected}`; }, forecastWorkId);
-    await page.locator("header.top").waitFor({ state: "visible" });
+    await page.locator(".app-sidebar").waitFor({ state: "visible" });
     assert.equal(new URL(page.url()).hash, `#workbench/${forecastWorkId}`, "forecast deadline changed work identity");
-    assert.equal(await page.locator("header.top").isVisible(), true, "non-home route lost the existing header");
-    assert.equal(await page.locator("footer.foot").isVisible(), true, "non-home route lost the existing footer");
+    assert.equal(await page.locator("header.top").isVisible(), false, "legacy header returned on a non-home route");
+    assert.equal(await page.locator("footer.foot").isVisible(), false, "legacy footer returned on a non-home route");
+    assert.equal(await page.locator('.app-sidebar a[href="#work/list"]').getAttribute("aria-current"), "page", "workbench does not retain the 내 업무 menu state");
     assert.equal(await page.locator("body").evaluate(function (element) { return element.classList.contains("is-home"); }), false, "home body class leaked to workbench");
 
     await goHome(page);
@@ -258,9 +259,9 @@ async function run() {
       return first && first.dataset.calendarDate === "2025-12-28";
     });
 
-    const railLinks = page.locator(".home-rail a");
-    assert.equal(await railLinks.count(), 4, "home icon rail does not expose four routes");
-    const workRailLink = page.locator('.home-rail a[href="#work/list"]');
+    const railLinks = page.locator(".app-sidebar nav a");
+    assert.equal(await railLinks.count(), 4, "common sidebar does not expose four routes");
+    const workRailLink = page.locator('.app-sidebar a[href="#work/list"]');
     assert((await workRailLink.getAttribute("aria-label")), "rail link lacks an accessible name");
     await workRailLink.focus();
     await page.keyboard.press("Enter");

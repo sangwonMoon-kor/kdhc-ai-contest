@@ -12,6 +12,7 @@
     "test:product-ui:home-model": "node product-ui/tests/verify-home-model.js",
     "test:product-ui:workspace-model": "node product-ui/tests/verify-workspace-model.js",
     "test:product-ui:home-state": "node product-ui/tests/verify-home-state.js",
+    "test:product-ui:shell-browser": "node product-ui/tests/verify-product-shell-browser.js",
     "test:product-ui:home-browser": "node product-ui/tests/verify-home-browser.js",
     "test:product-ui:source": "node product-ui/tests/verify-source-contract.js",
     "test:product-ui:fixtures": "node product-ui/tests/verify-fixtures.js",
@@ -21,7 +22,7 @@
     "test:product-ui:capture": "node tools/tests/verify-capture-product-fixtures.js",
     "test:product-ui:e2e": "node product-ui/tests/verify-showcase-e2e.js",
     "test:product-ui:sync": "node tools/test-sync-product-ui.js",
-    "test:product-ui": "npm run test:brand && npm run test:product-ui:source && npm run test:product-ui:home-model && npm run test:product-ui:workspace-model && npm run test:product-ui:home-state && npm run test:product-ui:home-browser && npm run test:product-ui:local-maintenance && npm run test:product-ui:fixtures && npm run test:product-ui:api && npm run test:product-ui:data-mode && npm run test:product-ui:fixture-flows && npm run test:product-ui:capture && npm run test:product-ui:sync && npm run test:product-ui:e2e"
+    "test:product-ui": "npm run test:brand && npm run test:product-ui:source && npm run test:product-ui:home-model && npm run test:product-ui:workspace-model && npm run test:product-ui:home-state && npm run test:product-ui:shell-browser && npm run test:product-ui:home-browser && npm run test:product-ui:local-maintenance && npm run test:product-ui:fixtures && npm run test:product-ui:api && npm run test:product-ui:data-mode && npm run test:product-ui:fixture-flows && npm run test:product-ui:capture && npm run test:product-ui:sync && npm run test:product-ui:e2e"
   },
   "devDependencies": {
     "playwright": "1.61.1"
