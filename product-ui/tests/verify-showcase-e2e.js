@@ -212,53 +212,56 @@ async function run() {
       draft: { savedAt: null, values: null }
     }, "pump showcase seed values changed");
 
-    const showcase = page.locator('[data-testid="workbench-showcase"]');
-    await showcase.waitFor();
-    const showcaseText = (await showcase.innerText()).trim();
-    for (const label of ["언제 해야 하는가", "무엇을 참고해야 하는가", "어떤 기준을 지켜야 하는가", "무엇을 만들어야 하는가"]) {
-      assert(showcaseText.includes(label), `workbench showcase missed: ${label}`);
-    }
-    assert(showcaseText.includes("2026.04.09"), "workbench showcase did not use the forecast due date");
+    const dossier = page.locator(".workbench-dossier");
+    await dossier.waitFor();
+    assert.deepEqual(await dossier.locator("[data-workbench-section]").evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute("data-workbench-section"))),
+    ["headline", "progress", "official", "memory", "output", "completion"],
+    "workbench dossier semantic order changed");
+    const headlineSection = dossier.locator('[data-workbench-section="headline"]');
+    const memorySection = dossier.locator('[data-workbench-section="memory"]');
+    const outputSection = dossier.locator('[data-workbench-section="output"]');
+    const completionSection = dossier.locator('[data-workbench-section="completion"]');
+    assert((await headlineSection.innerText()).includes("2026.04.09"), "workbench headline did not use the forecast due date");
     for (const documentId of ["APPR-2024-0408", "APPR-2025-0409"]) {
-      assert(showcaseText.includes(documentId), `workbench showcase missed linked document: ${documentId}`);
+      assert.equal(await memorySection.locator(`[data-doc-id="${documentId}"]`).count(), 1,
+        `workbench memory missed linked document: ${documentId}`);
     }
-    assert(showcaseText.includes("설계·내역 작성"), "workbench showcase missed the selected briefing stage criterion");
-    const groundedOutput = showcase.locator('[data-showcase="output"]');
-    const groundedOutputText = (await groundedOutput.innerText()).trim();
-    assert(groundedOutputText.includes("확인 필요"), "workbench showcase did not keep an ungrounded output unresolved");
-    assert.equal(groundedOutputText.includes("결재 상신"), false, "workbench showcase conflated completion criteria with the output");
-    assert.equal(showcaseText.includes("2026년 순환수 펌프 정비공사 추진 보고(안)"), false, "workbench showcase synthesized a deliverable from an empty draft");
-    assert((await page.locator(".wb-context").innerText()).includes("결재 상신"), "workbench context missed the done-when condition");
-    assert.equal(await showcase.locator('[data-ev="okf:design-and-costing"]').count(), 1, "workbench showcase missed its selected-stage OKF evidence control");
-    const legacyOutput = page.locator(".wb-output");
-    assert((await legacyOutput.innerText()).includes("산출물 2026년 순환수 펌프 정비공사 추진 보고(안)"), "legacy workbench output no longer uses its original title-based display");
+    assert((await memorySection.innerText()).includes("분류 확인 필요"), "unclassified forecast sources lost their review status");
+    assert((await outputSection.innerText()).includes("산출물 2026년 순환수 펌프 정비공사 추진 보고(안)"), "workbench output no longer uses its title-based display");
+    assert.equal((await outputSection.innerText()).includes("결재 상신"), false, "workbench output conflated completion criteria with the output");
+    assert((await completionSection.innerText()).includes("결재 상신"), "workbench completion section missed the done-when condition");
+    assert.equal(await headlineSection.locator('[data-ev="okf:design-and-costing"]').count(), 1, "workbench headline missed its selected-stage OKF evidence control");
 
-    await showcase.locator('[data-ev="APPR-2024-0408"]').click();
+    await memorySection.locator('[data-doc-id="APPR-2024-0408"] [data-ev="APPR-2024-0408"]').click();
     await page.waitForSelector("#drawer:not([hidden])");
     await page.waitForFunction(() => !document.querySelector("#drawerBody")?.textContent.includes("불러오는 중"));
-    assert((await page.locator("#drawerBody").innerText()).includes("2024년 순환수 펌프 정비공사 추진 보고"), "summary document evidence drawer showed unexpected detail");
+    assert((await page.locator("#drawerBody").innerText()).includes("2024년 순환수 펌프 정비공사 추진 보고"), "memory document evidence drawer showed unexpected detail");
     await page.click("#drawerClose");
 
-    await showcase.locator('[data-ev="okf:design-and-costing"]').click();
+    await headlineSection.locator('[data-ev="okf:design-and-costing"]').click();
     await page.waitForSelector("#drawer:not([hidden])");
     await page.waitForFunction(() => !document.querySelector("#drawerBody")?.textContent.includes("불러오는 중"));
-    assert((await page.locator("#drawerBody").innerText()).includes("설계·내역 작성"), "summary criterion evidence drawer showed unexpected detail");
+    assert((await page.locator("#drawerBody").innerText()).includes("설계·내역 작성"), "headline criterion evidence drawer showed unexpected detail");
     await page.click("#drawerClose");
 
     await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, missingWork.id);
-    await page.waitForSelector('[data-testid="workbench-showcase"]');
-    const missingShowcase = page.locator('[data-testid="workbench-showcase"]');
-    assert((await missingShowcase.locator('[data-showcase="due"]').innerText()).includes("확인 필요"), "missing due used an arbitrary dueText value");
-    assert((await missingShowcase.locator('[data-showcase="sources"]').innerText()).includes("연결된 자료 없음"), "missing sources were synthesized");
-    assert((await missingShowcase.locator('[data-showcase="criterion"]').innerText()).includes("확인 필요"), "unlinked stage used global criteria");
-    assert((await missingShowcase.locator('[data-showcase="output"]').innerText()).includes("확인 필요"), "empty draft or title synthesized an output");
+    await page.waitForSelector(".workbench-dossier");
+    const missingDossier = page.locator(".workbench-dossier");
+    assert((await missingDossier.locator('[data-workbench-section="headline"]').innerText()).includes("일정 미정"), "missing due used an arbitrary dueText value");
+    assert((await missingDossier.locator('[data-workbench-section="official"]').innerText()).includes("연결된 공식 지침 없음"), "missing official references were synthesized");
+    const missingMemoryText = await missingDossier.locator('[data-workbench-section="memory"]').innerText();
+    assert(missingMemoryText.includes("처음 진행하는 업무") && missingMemoryText.includes("신규 초안"), "missing memory did not show the first-work empty state");
+    assert((await missingDossier.locator('[data-workbench-section="progress"]').innerText()).includes("첫 메모"), "missing records did not show the first-note guidance");
 
     await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, savedDraftWork.id);
-    await page.waitForSelector('[data-testid="workbench-showcase"]');
-    const savedDraftShowcase = page.locator('[data-testid="workbench-showcase"] [data-showcase="output"]');
-    assert((await savedDraftShowcase.innerText()).includes("저장된 초안 있음"), "saved draft presence was not shown truthfully in the showcase");
-    assert.equal((await savedDraftShowcase.innerText()).includes("저장된 현장 확인 기안"), false, "an arbitrary draft field was presented as the output identity");
-    assert.equal((await savedDraftShowcase.innerText()).includes("완료 조건 결재 상신"), false, "saved draft incorrectly fell back to the completion condition");
+    await page.waitForSelector(".workbench-dossier");
+    const savedDraftOutput = page.locator('[data-workbench-section="output"]');
+    const savedDraftOutputText = await savedDraftOutput.innerText();
+    assert(savedDraftOutputText.includes("임시 저장") && savedDraftOutputText.includes("기안 이어서 쓰기"), "saved draft presence was not shown truthfully in the dossier");
+    assert.equal(savedDraftOutputText.includes("저장된 현장 확인 기안"), false, "an arbitrary draft field was presented as the output identity");
+    assert.equal(savedDraftOutputText.includes("결재 상신"), false, "saved draft incorrectly fell back to the completion condition");
+    assert((await page.locator('[data-workbench-section="completion"]').innerText()).includes("결재 상신"), "saved draft completion condition left its dedicated section");
 
     await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, workId);
     await page.waitForSelector('[data-testid="workbench"]');
