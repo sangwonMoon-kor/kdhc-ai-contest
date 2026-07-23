@@ -294,6 +294,95 @@ function response(body, ok = true, status = 200) {
     "denied local overlay fetched private document detail"
   );
 
+  const layeredLocalCases = [{
+    name: "base none dominates local full",
+    base: [{
+      id: "PROC-MAINT-31100",
+      access: "none",
+      kind: "유지보수 절차",
+      title: "Base denied procedure"
+    }],
+    top: [],
+    rejects: false
+  }, {
+    name: "top-level none dominates local full",
+    base: [],
+    top: [{
+      id: "PROC-MAINT-31100",
+      access: "none",
+      kind: "유지보수 절차",
+      title: "Top-level denied procedure"
+    }],
+    rejects: false
+  }, {
+    name: "invalid top-level access rejects before local detail",
+    base: [],
+    top: [{
+      id: "PROC-MAINT-31100",
+      access: "restricted",
+      kind: "유지보수 절차",
+      title: "Invalid top-level procedure"
+    }],
+    rejects: true
+  }];
+  for (const layeredCase of layeredLocalCases) {
+    const calls = [];
+    const client = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
+      calls.push(url);
+      if (url === "fixtures/manifest.json") {
+        return response({ contractVersion: 1, documentIndex: layeredCase.top });
+      }
+      if (url === "fixtures/local-maintenance/ask/maintenance-plan.json") {
+        return response({
+          grounded: true,
+          answer: ["Layered local maintenance answer"],
+          knowledge: [],
+          docs: [{ id: "PROC-MAINT-31100" }]
+        });
+      }
+      if (url === "fixtures/documents/index.json") return response(layeredCase.base);
+      if (url === "fixtures/local-maintenance/manifest.json") {
+        return response({
+          contractVersion: 1,
+          localOnly: true,
+          documentIndex: [{
+            id: "PROC-MAINT-31100",
+            access: "full",
+            kind: "유지보수 절차",
+            title: "Local full procedure"
+          }]
+        });
+      }
+      if (url === "fixtures/local-maintenance/documents/PROC-MAINT-31100.json") {
+        return response({
+          doc: { id: "PROC-MAINT-31100", text: "PRIVATE LAYERED LOCAL BODY" },
+          edges: []
+        });
+      }
+      throw new Error(`unexpected layered local URL: ${url}`);
+    }});
+    await client.request("/api/ask", { question: "정기점검보수 기본계획 수립 절차" });
+    if (layeredCase.rejects) {
+      await assert.rejects(
+        () => client.request("/api/documents"),
+        /documents access contract mismatch/,
+        layeredCase.name
+      );
+    } else {
+      const index = await client.request("/api/documents");
+      assert.equal(index.filter((document) => document.id === "PROC-MAINT-31100").length, 1,
+        `${layeredCase.name}: canonical index was not unique`);
+      assert.equal(index.find((document) => document.id === "PROC-MAINT-31100").access, "none",
+        layeredCase.name);
+    }
+    assert.equal(
+      calls.filter((url) =>
+        url === "fixtures/local-maintenance/documents/PROC-MAINT-31100.json").length,
+      0,
+      `${layeredCase.name}: private detail was requested before effective access`
+    );
+  }
+
   const unavailableLocalOverlayCalls = [];
   const unavailableLocalOverlay = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
     unavailableLocalOverlayCalls.push(url);

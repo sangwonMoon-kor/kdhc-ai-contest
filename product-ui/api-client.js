@@ -195,7 +195,8 @@
     let lastError = null;
     let manifestPromise = null;
     let hasAttemptedLive = false;
-    let localMaintenanceOverlayPromise = null;
+    let localMaintenanceMetadataPromise = null;
+    let localMaintenanceDetailAvailablePromise = null;
     let localMaintenanceAskAvailable = false;
 
     function status() {
@@ -245,28 +246,39 @@
       return manifestPromise;
     }
 
-    async function localMaintenanceDocumentOverlay() {
+    async function localMaintenanceDocumentMetadata() {
       if (!localMaintenanceAskAvailable) return [];
-      if (!localMaintenanceOverlayPromise) {
-        localMaintenanceOverlayPromise = (async () => {
+      if (!localMaintenanceMetadataPromise) {
+        localMaintenanceMetadataPromise = (async () => {
           try {
             const localManifest = await getJSON(`${fixtureBase}/local-maintenance/manifest.json`);
             if (!localManifest || localManifest.contractVersion !== 1 || localManifest.localOnly !== true) return [];
             const overlays = normalizeDocumentIndex(localManifest.documentIndex || []);
             const overlay = overlays.find((document) => document.id === LOCAL_MAINTENANCE_DOCUMENT_ID);
-            if (!overlay) return [];
-            if (overlay.access !== "full") return [overlay];
-            const detail = normalizeResponse(
-              `/api/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}`,
-              await getJSON(`${fixtureBase}/local-maintenance/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}.json`)
-            );
-            return detail.doc.id === LOCAL_MAINTENANCE_DOCUMENT_ID ? [overlay] : [];
+            return overlay ? [overlay] : [];
           } catch (error) {
             return [];
           }
         })();
       }
-      return localMaintenanceOverlayPromise;
+      return localMaintenanceMetadataPromise;
+    }
+
+    async function localMaintenanceDetailAvailable() {
+      if (!localMaintenanceDetailAvailablePromise) {
+        localMaintenanceDetailAvailablePromise = (async () => {
+          try {
+            const detail = normalizeResponse(
+              `/api/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}`,
+              await getJSON(`${fixtureBase}/local-maintenance/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}.json`)
+            );
+            return detail.doc.id === LOCAL_MAINTENANCE_DOCUMENT_ID;
+          } catch (error) {
+            return false;
+          }
+        })();
+      }
+      return localMaintenanceDetailAvailablePromise;
     }
 
     async function fixtureRequest(path, body) {
@@ -286,11 +298,22 @@
         if (loadedLocalMaintenanceAsk) localMaintenanceAskAvailable = true;
         let data = normalizeResponse(path, value);
         if (path === "/api/documents") {
+          const localMetadata = await localMaintenanceDocumentMetadata();
           const overlays = [
             ...(Array.isArray(manifest.documentIndex) ? manifest.documentIndex : []),
-            ...await localMaintenanceDocumentOverlay()
+            ...localMetadata
           ];
           data = mergeDocumentIndexes(data, overlays);
+          const localEntry = localMetadata.find((document) =>
+            document.id === LOCAL_MAINTENANCE_DOCUMENT_ID);
+          if (!localEntry) {
+            data = data.filter((document) => document.id !== LOCAL_MAINTENANCE_DOCUMENT_ID);
+          } else {
+            const effective = data.find((document) => document.id === LOCAL_MAINTENANCE_DOCUMENT_ID);
+            if (effective && effective.access === "full" && !await localMaintenanceDetailAvailable()) {
+              data = data.filter((document) => document.id !== LOCAL_MAINTENANCE_DOCUMENT_ID);
+            }
+          }
         }
         activeMode = "fixture";
         source = "fixture";
