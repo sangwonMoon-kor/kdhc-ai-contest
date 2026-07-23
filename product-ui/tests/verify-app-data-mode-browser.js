@@ -191,6 +191,20 @@ async function settleAsk(page, method, question, value) {
   }, { method: method, question: question, value: value });
 }
 
+async function assertWorkbenchRoute(browser, mode, errors) {
+  const page = await openApp(browser, mode, errors);
+  await page.evaluate(function () {
+    location.hash = "#workbench/work-maintenance-plan-2026";
+  });
+  const workbench = page.locator('[data-testid="workbench"][data-work-id="work-maintenance-plan-2026"]');
+  await workbench.waitFor();
+  assert.deepStrictEqual(await workbench.locator("[data-workbench-section]").evaluateAll(function (sections) {
+    return sections.map(function (section) { return section.getAttribute("data-workbench-section"); });
+  }), ["headline", "progress", "official", "memory", "output", "completion"],
+  `${mode} data mode did not open the workbench route`);
+  await page.close();
+}
+
 async function run() {
   let server;
   let browser;
@@ -210,6 +224,9 @@ async function run() {
     await fixturePage.getByRole("heading", { name: "내 업무" }).waitFor();
     await assertStatus(fixturePage, "시연용 샘플 데이터", "fixture");
     await fixturePage.close();
+    for (const mode of ["fixture", "live", "auto"]) {
+      await assertWorkbenchRoute(browser, mode, errors);
+    }
 
     const livePage = await openApp(browser, "live", errors);
     await livePage.evaluate(function () {

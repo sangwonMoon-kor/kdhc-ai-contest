@@ -27,9 +27,9 @@
   }
 
   function isISOTime(value) {
-    return typeof value === "string"
-      && /^\d{4}-\d{2}-\d{2}T/.test(value)
-      && !Number.isNaN(Date.parse(value));
+    if (typeof value !== "string") return false;
+    const match = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,3})?(?:Z|[+-](?:0\d|1[0-4]):[0-5]\d)$/.exec(value);
+    return Boolean(match && isISODate(match[1]) && !Number.isNaN(Date.parse(value)));
   }
 
   function daysBetween(startISO, endISO) {
@@ -76,6 +76,21 @@
       }
     }
     return { official, memory };
+  }
+
+  function resolveReferenceAccess(reference, canonicalReference) {
+    const docId = typeof reference === "string"
+      ? reference
+      : (reference && typeof reference.docId === "string" ? reference.docId : "");
+    const canonicalId = canonicalReference && (canonicalReference.id || canonicalReference.docId);
+    const isKnown = Boolean(docId && canonicalId === docId);
+    const access = isKnown && canonicalReference.access === "full" ? "full" : "none";
+    return {
+      docId,
+      access,
+      canReadBody: access === "full",
+      isKnown
+    };
   }
 
   function parsedDate(text, options) {
@@ -153,7 +168,7 @@
       next.schedule = next.schedule && typeof next.schedule === "object" ? next.schedule : {};
       next.schedule.milestones = Array.isArray(next.schedule.milestones) ? next.schedule.milestones : [];
       next.schedule.milestones.push({
-        id: `milestone-${candidate.id}`,
+        id: `milestone-${stableId(note.id, candidate.id)}`,
         dateISO: candidate.dateISO,
         label: candidate.label,
         sourceNoteId: note.id,
@@ -161,7 +176,7 @@
       });
     } else if (candidate.type === "followup") {
       next.todos.push({
-        id: `todo-${candidate.id}`,
+        id: `todo-${stableId(note.id, candidate.id)}`,
         text: candidate.label,
         done: false,
         candidate: false,
@@ -180,6 +195,54 @@
       ready: incompleteTodos.length === 0,
       incompleteTodos,
       requiresAcknowledgement: incompleteTodos.length > 0
+    };
+  }
+
+  function archiveReferencePresentation(source, resolved, category) {
+    const presentation = resolved && typeof resolved === "object" ? resolved : source;
+    const archived = {
+      docId: source.docId,
+      category,
+      title: presentation.title,
+      issuer: presentation.issuer || presentation.issuingOrganization || presentation.organization || presentation.author,
+      effectiveDate: presentation.effectiveDate || presentation.startDate || presentation.date,
+      version: presentation.version,
+      rationale: presentation.rationale || presentation.applicationBasis || presentation.basis
+        || presentation.connectionReason || source.role,
+      role: source.role,
+      year: presentation.year,
+      originalWork: presentation.originalWork || presentation.originalTask || presentation.task,
+      createdBy: presentation.createdBy || presentation.drafter || presentation.author,
+      connectionReason: presentation.connectionReason || source.role,
+      authorType: presentation.authorType || source.authorType,
+      verificationStatus: presentation.verificationStatus || presentation.confirmationStatus,
+      needsClassification: presentation.needsClassification === true || source.needsClassification === true
+    };
+    return Object.fromEntries(Object.entries(archived).filter((entry) => entry[1] !== undefined));
+  }
+
+  function archiveReferencePresentations(work, supplied) {
+    const references = partitionReferences(work);
+    const provided = supplied && typeof supplied === "object" ? supplied : {};
+    const resolvedByKey = new Map();
+    for (const category of ["official", "memory"]) {
+      for (const reference of Array.isArray(provided[category]) ? provided[category] : []) {
+        if (reference && typeof reference.docId === "string") {
+          resolvedByKey.set(`${category}:${reference.docId}`, reference);
+        }
+      }
+    }
+    return {
+      official: references.official.map((source) => archiveReferencePresentation(
+        source,
+        resolvedByKey.get(`official:${source.docId}`),
+        "official"
+      )),
+      memory: references.memory.map((source) => archiveReferencePresentation(
+        source,
+        resolvedByKey.get(`memory:${source.docId}`),
+        "memory"
+      ))
     };
   }
 
@@ -209,7 +272,7 @@
     work.lifecycle.completedBy = completion.completedBy;
     work.lifecycle.completionDateISO = completion.completionDateISO;
 
-    const references = partitionReferences(work);
+    const references = archiveReferencePresentations(work, completion.resolvedReferences);
     const workSnapshot = clone(work);
     workSnapshot.incompleteTodos = readiness.incompleteTodos;
     workSnapshot.officialReferences = references.official;
@@ -227,9 +290,13 @@
   }
 
   function selectWorkList(state, mode) {
-    const completed = mode === "completed";
+    const selectCompleted = mode === "completed";
     return (state && Array.isArray(state.works) ? state.works : [])
-      .filter((work) => Boolean(work) && ((work.lifecycle && work.lifecycle.phase === "done") === completed))
+      .filter((work) => {
+        if (!work) return false;
+        const isDone = Boolean(work.lifecycle && work.lifecycle.phase === "done");
+        return selectCompleted ? isDone : !isDone;
+      })
       .map(clone);
   }
 
@@ -241,6 +308,7 @@
     PHASE,
     headlineFor,
     partitionReferences,
+    resolveReferenceAccess,
     analyzeProgressText,
     createProgressNote,
     confirmProgressCandidate,

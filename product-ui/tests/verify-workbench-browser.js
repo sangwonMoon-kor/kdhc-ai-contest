@@ -19,6 +19,13 @@ function fixtureState() {
   work.stageName = "설계·내역 작성";
   work.output.templateId = "TPL-MAINTENANCE-REPORT";
   work.output.priorDocumentId = "APPR-2025-0409";
+  work.todos = [{
+    id: "todo-restricted-evidence",
+    text: "제한 문서 확인",
+    done: false,
+    candidate: false,
+    evidence: [{ docId: "RESTRICTED-2026", label: "제한 문서 할 일 근거" }]
+  }];
   const newWork = state.works.find((item) => item.id === "work-maintenance-contract-2026");
   newWork.output.templateId = "TPL-COMPANY-BASIC";
   work.sources.push({
@@ -29,7 +36,7 @@ function fixtureState() {
     effectiveDate: "2026-01-15",
     version: "V1.0",
     role: "감사 적용 기준",
-    access: "none",
+    access: "full",
     body: "권한 없는 문서의 비공개 본문"
   }, {
     docId: "LEGACY-NOTE-01",
@@ -96,15 +103,45 @@ async function assertNoOverflow(page, width) {
 async function assertToneCandidateRequiresExplicitApply(page, originalText) {
   const input = page.locator("[data-ph]").first();
   await input.fill(originalText);
+  const valuesBeforeRequest = await page.locator("[data-ph]").evaluateAll((fields) =>
+    fields.map((field) => field.value));
   await page.getByRole("button", { name: "공기업 문체 교정안 요청", exact: true }).click();
   const boundary = page.locator(".tone-candidate-boundary");
   await boundary.waitFor();
+  assert.equal(await boundary.getAttribute("role"), "status", "tone boundary is not announced as status");
   assert((await boundary.innerText()).includes("문체 교정 연결 준비됨"));
   assert((await boundary.innerText()).includes("현재 초안은 변경되지 않았습니다."));
   assert((await boundary.innerText()).includes("적용은 사용자가 선택합니다."));
-  assert.equal(await input.inputValue(), originalText, "tone request mutated the draft before explicit apply");
+  assert.deepStrictEqual(await page.locator("[data-ph]").evaluateAll((fields) =>
+    fields.map((field) => field.value)), valuesBeforeRequest,
+  "tone request mutated one or more draft fields before explicit apply");
   assert.equal(await page.getByRole("button", { name: "교정안 적용", exact: true }).count(), 0,
     "tone boundary exposed an apply action without an API candidate");
+}
+
+async function assertUntouchedDefaultFixture(browser) {
+  const errors = [];
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  page.setDefaultTimeout(5000);
+  page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(`console: ${message.text()}`);
+  });
+  page.on("requestfailed", (request) => errors.push(`requestfailed: ${request.url()}`));
+  await page.goto(`${baseURL}/?data=fixture#workbench/work-maintenance-plan-2026`, { waitUntil: "networkidle" });
+  const personalNote = page.locator('[data-doc-id="tip-inspection-order"]');
+  const personalNoteText = await personalNote.innerText();
+  assert(personalNoteText.includes("개인 메모 · 연결된 문서 본문 없음"),
+    "local personal note renders a working-looking document action");
+  assert.equal(await personalNote.locator("[data-ev]").count(), 0,
+    "local personal note exposes a document body action");
+  assert.equal(await personalNote.locator("[data-request-access]").count(), 0,
+    "local personal note exposes an irrelevant access-request action");
+  await page.locator("#goDraft").click();
+  await page.waitForFunction(() => location.hash === "#draft/work-maintenance-plan-2026");
+  await page.locator('[data-testid="draft-document"]').waitFor();
+  assert.deepStrictEqual(errors, [], "untouched default recurring draft or personal note produced a failed request/console error");
+  await page.close();
 }
 
 async function run() {
@@ -113,6 +150,7 @@ async function run() {
   try {
     server = await startServer();
     browser = await launchBrowser();
+    await assertUntouchedDefaultFixture(browser);
     const state = fixtureState();
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     page.setDefaultTimeout(5000);
@@ -120,6 +158,42 @@ async function run() {
       localStorage.setItem("jikmu.workbench.v1", JSON.stringify(fixture));
       localStorage.removeItem("jikmu.ui.v1");
     }, state);
+    const canonicalDocuments = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, "product-ui", "fixtures", "documents", "index.json"),
+      "utf8"
+    )).map((document) => Object.assign({}, document, { access: "full" }));
+    canonicalDocuments.push({
+      id: "RESTRICTED-2026",
+      kind: "감사문서",
+      title: "현재 접근 제한 감사 기준",
+      date: "2026-01-15",
+      author: "감사실",
+      access: "none"
+    });
+    const briefing = JSON.parse(fs.readFileSync(
+      path.join(repoRoot, "product-ui", "fixtures", "briefing.json"),
+      "utf8"
+    ));
+    briefing.cautions = [{
+      text: "제한 문서 주의사항",
+      evidence: [{ docId: "RESTRICTED-2026", label: "제한 문서 주의 근거" }]
+    }];
+    await page.route("**/fixtures/documents/index.json", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(canonicalDocuments)
+    }));
+    await page.route("**/fixtures/briefing.json", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(briefing)
+    }));
+    const restrictedDetailRequests = [];
+    page.on("request", (request) => {
+      if (request.url().includes("/fixtures/documents/RESTRICTED-2026.json")) {
+        restrictedDetailRequests.push(request.url());
+      }
+    });
 
     await page.goto(`${baseURL}/?data=fixture#workbench/work-maintenance-plan-2026`, { waitUntil: "networkidle" });
     await page.locator('[data-testid="workbench"]').waitFor();
@@ -168,11 +242,29 @@ async function run() {
 
     const restricted = page.locator('[data-doc-id="RESTRICTED-2026"]');
     const restrictedText = await restricted.innerText();
-    for (const value of ["제한 감사 기준", "감사실", "본문 열람 권한이 없습니다", "접근 요청"]) {
+    for (const value of ["현재 접근 제한 감사 기준", "감사실", "본문 열람 권한이 없습니다", "접근 요청"]) {
       assert(restrictedText.includes(value), `restricted reference missed ${value}`);
     }
     assert.equal(restrictedText.includes("권한 없는 문서의 비공개 본문"), false);
     assert.equal(await restricted.locator("[data-ev]").count(), 0, "restricted reference exposes its document viewer");
+    assert.equal(await restricted.getAttribute("data-access"), "none",
+      "stale persisted access overrode the current canonical denial");
+    const restrictedEvidenceButtons = page.locator('[data-ev="RESTRICTED-2026"]');
+    assert.equal(await restrictedEvidenceButtons.count(), 3,
+      "restricted document was not exercised through todo and caution evidence");
+    for (let index = 0; index < await restrictedEvidenceButtons.count(); index += 1) {
+      await restrictedEvidenceButtons.nth(index).click();
+      await page.locator("#drawer:not([hidden])").waitFor();
+      await page.waitForFunction(() => !document.querySelector("#drawerBody")?.textContent.includes("불러오는 중"));
+      const deniedDrawerText = await page.locator("#drawerBody").innerText();
+      assert(deniedDrawerText.includes("본문 열람 권한이 없습니다"),
+        `restricted generic evidence ${index} did not fail closed at the detail boundary: ${deniedDrawerText}`);
+      assert.equal(deniedDrawerText.includes("권한 없는 문서의 비공개 본문"), false,
+        "restricted body leaked through the evidence drawer");
+      await page.locator("#drawerClose").click();
+    }
+    assert.deepStrictEqual(restrictedDetailRequests, [],
+      "restricted evidence issued a document detail request");
 
     const progress = page.locator('[data-workbench-section="progress"]');
     assert((await progress.innerText()).includes("첫 메모"));
@@ -291,6 +383,7 @@ async function run() {
     await assertSectionOrder(page);
 
     await page.goto(`${baseURL}/?data=fixture#workbench/work-maintenance-contract-2026`, { waitUntil: "networkidle" });
+    await page.locator('[data-testid="workbench"][data-work-id="work-maintenance-contract-2026"]').waitFor();
     await assertSectionOrder(page);
     const officialEmpty = page.locator('[data-workbench-section="official"]');
     assert((await officialEmpty.innerText()).includes("연결된 공식 지침 없음"));
@@ -339,6 +432,7 @@ async function run() {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${baseURL}/?data=fixture#workbench/work-maintenance-plan-2026`, { waitUntil: "networkidle" });
+    await page.locator('[data-testid="workbench"][data-work-id="work-maintenance-plan-2026"]').waitFor();
     await assertSectionOrder(page);
     assert.equal(await page.locator(".reference-grid").evaluateAll((nodes) =>
       nodes.every((node) => getComputedStyle(node).gridTemplateColumns.split(" ").length === 1)), true);

@@ -134,14 +134,19 @@ async function assertToneCandidateRequiresExplicitApply(page) {
   const previousText = await input.inputValue();
   const originalText = "사용자가 입력한 금액 근거";
   await input.fill(originalText);
+  const valuesBeforeRequest = await page.locator("[data-ph]").evaluateAll((fields) =>
+    fields.map((field) => field.value));
   await page.getByRole("button", { name: "공기업 문체 교정안 요청", exact: true }).click();
   const boundary = page.locator(".tone-candidate-boundary");
   await boundary.waitFor();
+  assert.equal(await boundary.getAttribute("role"), "status", "tone boundary is not announced as status");
   const boundaryText = await boundary.innerText();
   assert(boundaryText.includes("문체 교정 연결 준비됨"), "tone request did not open the honest status boundary");
   assert(boundaryText.includes("현재 초안은 변경되지 않았습니다."), "tone boundary claimed or implied draft mutation");
   assert(boundaryText.includes("적용은 사용자가 선택합니다."), "tone boundary lost the explicit-apply contract");
-  assert.equal(await input.inputValue(), originalText, "tone request mutated the draft before explicit apply");
+  assert.deepStrictEqual(await page.locator("[data-ph]").evaluateAll((fields) =>
+    fields.map((field) => field.value)), valuesBeforeRequest,
+  "tone request mutated one or more draft fields before explicit apply");
   assert.equal(await page.getByRole("button", { name: "교정안 적용", exact: true }).count(), 0,
     "tone boundary exposed an apply action without an API candidate");
   await input.fill(previousText);
@@ -246,7 +251,10 @@ async function run() {
     const memorySection = dossier.locator('[data-workbench-section="memory"]');
     const outputSection = dossier.locator('[data-workbench-section="output"]');
     const completionSection = dossier.locator('[data-workbench-section="completion"]');
-    assert((await headlineSection.innerText()).includes("2026.04.09"), "workbench headline did not use the forecast due date");
+    const headlineText = await headlineSection.innerText();
+    assert(headlineText.includes("일정 미정"), "unconfirmed forecast due was presented as a canonical workbench date");
+    assert.equal(headlineText.includes("2026.04.09"), false, "workbench headline presented legacy due");
+    assert.equal(/D(?:-|\+|‑)\d+/.test(headlineText), false, "workbench headline derived D-day from legacy due");
     for (const documentId of ["APPR-2024-0408", "APPR-2025-0409"]) {
       assert.equal(await memorySection.locator(`[data-doc-id="${documentId}"]`).count(), 1,
         `workbench memory missed linked document: ${documentId}`);

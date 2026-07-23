@@ -27,6 +27,28 @@ assert.deepStrictEqual(split.memory.map((item) => item.docId), ["old", "unknown"
 assert.equal(split.memory[1].needsClassification, true);
 assert.equal(referenceWork.sources[2].needsClassification, undefined);
 
+assert.deepStrictEqual(
+  model.resolveReferenceAccess(
+    { docId: "restricted", access: "full" },
+    { id: "restricted", access: "none" }
+  ),
+  { docId: "restricted", access: "none", canReadBody: false, isKnown: true },
+  "stale persisted access overrode the current canonical denial"
+);
+assert.deepStrictEqual(
+  model.resolveReferenceAccess({ docId: "missing", access: "full" }, null),
+  { docId: "missing", access: "none", canReadBody: false, isKnown: false },
+  "missing canonical access failed open"
+);
+assert.deepStrictEqual(
+  model.resolveReferenceAccess(
+    { docId: "readable", access: "none" },
+    { id: "readable", access: "full" }
+  ),
+  { docId: "readable", access: "full", canReadBody: true, isKnown: true },
+  "current canonical access was not authoritative"
+);
+
 const note = model.createProgressNote("7월 30일 도면 발송", "2026-07-23T10:00:00.000Z", []);
 assert.equal(note.text, "7월 30일 도면 발송");
 assert.equal(note.analysis.status, "empty");
@@ -60,6 +82,50 @@ assert.equal(scheduled.records[0].analysis.candidates[0].status, "confirmed");
 const followedUp = model.confirmProgressCandidate(progressing, progressing.records[0].id, candidates[2].id);
 assert.equal(followedUp.todos.length, 1);
 assert.equal(followedUp.todos[0].candidate, false);
+
+const repeatedCandidates = model.analyzeProgressText("7월 30일 도면 확인 요청", {
+  parseDate: () => "2026-07-30"
+});
+const repeatedNotesWork = {
+  id: "work-repeated-notes",
+  records: [
+    model.createProgressNote("7월 30일 도면 확인 요청", "2026-07-23T10:00:00.000Z", repeatedCandidates),
+    model.createProgressNote("7월 30일 도면 확인 요청", "2026-07-23T11:00:00.000Z", repeatedCandidates)
+  ],
+  schedule: { milestones: [] },
+  todos: []
+};
+const repeatedScheduleCandidateId = repeatedCandidates.find((candidate) => candidate.type === "schedule").id;
+const repeatedFollowupCandidateId = repeatedCandidates.find((candidate) => candidate.type === "followup").id;
+let repeatedApplied = model.confirmProgressCandidate(
+  repeatedNotesWork,
+  repeatedNotesWork.records[0].id,
+  repeatedScheduleCandidateId
+);
+repeatedApplied = model.confirmProgressCandidate(
+  repeatedApplied,
+  repeatedApplied.records[1].id,
+  repeatedScheduleCandidateId
+);
+repeatedApplied = model.confirmProgressCandidate(
+  repeatedApplied,
+  repeatedApplied.records[0].id,
+  repeatedFollowupCandidateId
+);
+repeatedApplied = model.confirmProgressCandidate(
+  repeatedApplied,
+  repeatedApplied.records[1].id,
+  repeatedFollowupCandidateId
+);
+assert.equal(new Set(repeatedApplied.schedule.milestones.map((milestone) => milestone.id)).size, 2,
+  "identical notes produced duplicate applied milestone IDs");
+assert.equal(new Set(repeatedApplied.todos.map((todo) => todo.id)).size, 2,
+  "identical notes produced duplicate applied todo IDs");
+const firstRepeatedTodo = repeatedApplied.todos.find((todo) => todo.sourceNoteId === repeatedApplied.records[0].id);
+const secondRepeatedTodo = repeatedApplied.todos.find((todo) => todo.sourceNoteId === repeatedApplied.records[1].id);
+repeatedApplied.todos.find((todo) => todo.id === firstRepeatedTodo.id).done = true;
+assert.equal(firstRepeatedTodo.done, true);
+assert.equal(secondRepeatedTodo.done, false, "toggling one identical note's todo also toggled the other");
 
 const headlineBeforeCandidate = {
   phase: "design",
@@ -126,12 +192,38 @@ const state = {
 assert.equal(model.completionReadiness(state.works[0]).ready, false);
 assert.equal(model.completionReadiness({ todos: [{ id: "proposal", done: false, candidate: true }] }).ready, true);
 assert.deepStrictEqual(model.selectWorkList(state, "active").map((work) => work.id), ["work-a"]);
+assert.deepStrictEqual(model.selectWorkList({
+  works: [
+    { id: "missing-lifecycle" },
+    { id: "unknown-phase", lifecycle: { phase: "paused" } },
+    { id: "done", lifecycle: { phase: "done" } }
+  ]
+}, "active").map((work) => work.id), ["missing-lifecycle", "unknown-phase"],
+"every work not explicitly done must remain in the active list");
 assert.throws(() => model.completeWork(state, "work-a", {
   completedAtISO: "2026-07-23T10:59:00.000Z",
   completedBy: "person-kim-hannan",
   completionDateISO: "2026-07-23",
   acknowledgeIncomplete: false
 }), /acknowledged/, "incomplete follow-ups can be completed without acknowledgement");
+assert.throws(() => model.completeWork(state, "work-a", {
+  completedAtISO: "2026-02-30T10:59:00.000Z",
+  completedBy: "person-kim-hannan",
+  completionDateISO: "2026-07-23",
+  acknowledgeIncomplete: true
+}), /Valid ISO completion time/, "normalized nonexistent completion timestamp was accepted");
+assert.throws(() => model.completeWork(state, "work-a", {
+  completedAtISO: "2026-07-23T25:00:00.000Z",
+  completedBy: "person-kim-hannan",
+  completionDateISO: "2026-07-23",
+  acknowledgeIncomplete: true
+}), /Valid ISO completion time/, "out-of-range completion time was accepted");
+assert.throws(() => model.completeWork(state, "work-a", {
+  completedAtISO: "2026-07-23T11:00:00.000Z",
+  completedBy: "person-kim-hannan",
+  completionDateISO: "2026-02-30",
+  acknowledgeIncomplete: true
+}), /Valid completion date/, "normalized nonexistent completion date was accepted");
 
 const result = model.completeWork(state, "work-a", {
   completedAtISO: "2026-07-23T11:00:00.000Z",
@@ -152,5 +244,47 @@ assert.deepStrictEqual(model.selectCloudBundles(result.state).map((bundle) => bu
 const selectedBundles = model.selectCloudBundles(result.state);
 selectedBundles[0].workSnapshot.title = "changed outside the model";
 assert.equal(result.state.completionBundles[0].workSnapshot.title, "열수송관 보수 설계");
+
+const archivalState = JSON.parse(JSON.stringify(state));
+archivalState.works[0].sources = [{
+  docId: "RULE-ARCHIVE-01",
+  category: "official",
+  role: "완료 당시 적용 근거",
+  sourceSystem: "document-index"
+}];
+const resolvedReferences = {
+  official: [{
+    docId: "RULE-ARCHIVE-01",
+    category: "official",
+    title: "완료 당시 지침 제목",
+    issuer: "완료 당시 발행 조직",
+    effectiveDate: "2026-07-01",
+    version: "V2026.07-R01",
+    rationale: "완료 당시 적용 근거",
+    access: "full",
+    body: "보관하면 안 되는 본문"
+  }],
+  memory: []
+};
+const archivalResult = model.completeWork(archivalState, "work-a", {
+  completedAtISO: "2026-07-23T12:00:00.000Z",
+  completedBy: "person-kim-hannan",
+  completionDateISO: "2026-07-23",
+  acknowledgeIncomplete: true,
+  resolvedReferences
+});
+const archivedReference = archivalResult.bundle.workSnapshot.officialReferences[0];
+assert.deepStrictEqual(archivalResult.bundle.workSnapshot.sources, archivalState.works[0].sources,
+  "completion changed the raw reference identity");
+assert.equal(archivedReference.docId, "RULE-ARCHIVE-01");
+assert.equal(archivedReference.title, "완료 당시 지침 제목");
+assert.equal(archivedReference.issuer, "완료 당시 발행 조직");
+assert.equal(archivedReference.version, "V2026.07-R01");
+assert.equal(archivedReference.rationale, "완료 당시 적용 근거");
+assert.equal("access" in archivedReference, false, "completion archived mutable access state");
+assert.equal("body" in archivedReference, false, "completion archived document body as presentation metadata");
+resolvedReferences.official[0].title = "완료 후 바뀐 현재 제목";
+assert.equal(archivalResult.bundle.workSnapshot.officialReferences[0].title, "완료 당시 지침 제목",
+  "completion reference presentation was not immutable");
 
 console.log("Workbench model contract passed");

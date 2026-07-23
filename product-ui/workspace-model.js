@@ -58,9 +58,9 @@
       title: "2026년 정기점검보수 기본계획 수립",
       instruction: "정기점검보수 기본계획을 수립합니다.",
       requester: "정비기획과",
-      due: "2026-03-31",
-      stageId: "maintenance-planning",
-      stageName: "기본계획 수립",
+      due: "2026-07-30",
+      stageId: "design-and-costing",
+      stageName: "설계·내역 작성",
       doneWhen: "기본계획 결재",
       repeat: true,
       departmentId: "dept-plant",
@@ -81,7 +81,7 @@
       },
       schedule: {
         startISO: "2026-01-05",
-        endISO: "2026-03-31",
+        endISO: "2026-07-30",
         milestones: [{ id: "scope", dateISO: "2026-01-23", label: "점검 범위 확정" }]
       },
       todos: [],

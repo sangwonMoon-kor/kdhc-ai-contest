@@ -28,7 +28,18 @@ function completionFixture() {
     kind: "decision",
     text: "점검 범위를 확정했습니다.",
     ts: "2026-07-22T09:00:00.000Z"
-  }];
+  }, workbenchModel.createProgressNote(
+    "현장 사진을 확인 요청했습니다.",
+    "2026-07-22T10:00:00.000Z",
+    [{
+      id: "candidate-proposed-review",
+      type: "followup",
+      label: "현장 사진 확인",
+      basis: "현장 사진을 확인 요청했습니다.",
+      dateISO: null,
+      status: "proposed"
+    }]
+  )];
 
   const older = JSON.parse(JSON.stringify(target));
   older.id = "work-maintenance-plan-2025";
@@ -92,6 +103,26 @@ function sameDateOrderingFixture() {
   }).state;
   completed.completionBundles.find((bundle) => bundle.workId === targetWorkId).id = "zzz-older-bundle";
   completed.completionBundles.find((bundle) => bundle.workId === newerWork.id).id = "aaa-newer-bundle";
+  return completed;
+}
+
+function historicalBundlesFixture() {
+  const state = workspaceModel.createDemoState();
+  const completed = workbenchModel.completeWork(state, targetWorkId, {
+    completedAtISO: "2026-07-23T12:00:00.000Z",
+    completedBy: state.currentPersonId,
+    completionDateISO: "2026-07-23",
+    acknowledgeIncomplete: true
+  }).state;
+  const newer = completed.completionBundles[0];
+  newer.id = "bundle-newer-snapshot";
+  newer.workSnapshot.title = "최신 완료 스냅샷";
+  const older = JSON.parse(JSON.stringify(newer));
+  older.id = "bundle-older-snapshot";
+  older.completedAtISO = "2026-01-05T09:00:00.000Z";
+  older.workSnapshot.title = "이전 완료 스냅샷";
+  older.workSnapshot.lifecycle.completionDateISO = "2026-01-05";
+  completed.completionBundles = [older, newer];
   return completed;
 }
 
@@ -206,8 +237,11 @@ async function assertSnapshotBackedReentry(browser) {
   assert((await divergedPage.locator("[data-completion-snapshot-notice]").innerText()).includes("현재 업무 내용과"));
 
   await divergedPage.goto(`${baseURL}/?data=fixture#cloud`, { waitUntil: "networkidle" });
-  await divergedPage.locator(`[data-cloud-bundle][data-work-id="${targetWorkId}"]`).click();
-  await divergedPage.waitForFunction((workId) => location.hash === `#workbench/${workId}`, targetWorkId);
+  const divergedBundle = divergedPage.locator(`[data-cloud-bundle][data-work-id="${targetWorkId}"]`);
+  const divergedBundleId = await divergedBundle.getAttribute("data-bundle-id");
+  await divergedBundle.click();
+  await divergedPage.waitForFunction((expectedHash) => location.hash === expectedHash,
+    `#workbench/${targetWorkId}/${divergedBundleId}`);
   assert.equal(await divergedPage.locator("[data-work-title]").innerText(), "완료 묶음 스냅샷 제목",
     "cloud reentry rendered divergent live work");
   await divergedPage.close();
@@ -216,8 +250,11 @@ async function assertSnapshotBackedReentry(browser) {
   missingPage.setDefaultTimeout(5000);
   await installFixture(missingPage, snapshotFixture(true));
   await missingPage.goto(`${baseURL}/?data=fixture#cloud`, { waitUntil: "networkidle" });
-  await missingPage.locator(`[data-cloud-bundle][data-work-id="${targetWorkId}"]`).click();
-  await missingPage.waitForFunction((workId) => location.hash === `#workbench/${workId}`, targetWorkId);
+  const missingBundle = missingPage.locator(`[data-cloud-bundle][data-work-id="${targetWorkId}"]`);
+  const missingBundleId = await missingBundle.getAttribute("data-bundle-id");
+  await missingBundle.click();
+  await missingPage.waitForFunction((expectedHash) => location.hash === expectedHash,
+    `#workbench/${targetWorkId}/${missingBundleId}`);
   assert.equal(await missingPage.locator("[data-work-title]").innerText(), "완료 묶음 스냅샷 제목",
     "missing live work prevented snapshot reentry");
   assert((await missingPage.locator("[data-completion-snapshot-notice]").innerText()).includes("현재 업무 목록에는 없지만"));
@@ -234,6 +271,103 @@ async function assertCloudCompletedAtOrdering(browser) {
     ["aaa-newer-bundle", "zzz-older-bundle"],
     "same-date cloud bundles were not ordered by completedAtISO"
   );
+  await page.close();
+}
+
+async function assertArchivedReferencePresentationAndCurrentAccess(browser) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  page.setDefaultTimeout(5000);
+  const state = workspaceModel.createDemoState();
+  const target = state.works.find((work) => work.id === targetWorkId);
+  target.todos = [];
+  target.sources = [{
+    docId: "RULE-2026-0401",
+    role: "완료 당시 적용 근거",
+    category: "official",
+    access: "full",
+    title: "오래된 저장 제목"
+  }];
+  await installFixture(page, state);
+  let currentDenied = false;
+  await page.route("**/fixtures/documents/index.json", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify([{
+      id: "RULE-2026-0401",
+      kind: "사규·지침",
+      title: currentDenied ? "완료 후 변경된 현재 제목" : "완료 당시 확인한 지침 제목",
+      date: currentDenied ? "2026-08-01" : "2026-04-01",
+      author: currentDenied ? "현재 발행 조직" : "완료 당시 발행 조직",
+      version: currentDenied ? "V2026.08-R02" : "V2026.04-R03",
+      access: currentDenied ? "none" : "full"
+    }])
+  }));
+  const detailRequests = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/fixtures/documents/RULE-2026-0401.json")) {
+      detailRequests.push(request.url());
+    }
+  });
+
+  await page.goto(`${baseURL}/?data=fixture#workbench/${targetWorkId}`, { waitUntil: "networkidle" });
+  assert((await page.locator('[data-doc-id="RULE-2026-0401"]').innerText()).includes("완료 당시 확인한 지침 제목"),
+    "live work did not resolve canonical reference presentation before completion");
+  await page.locator("[data-complete-work]").click();
+  await page.locator("[data-completion-date]").fill("2026-07-23");
+  await page.locator("[data-confirm-completion]").click();
+  await page.waitForFunction(() => location.hash === "#work/list");
+  currentDenied = true;
+  await page.locator('[role="tab"][data-mode="completed"]').click();
+  await page.locator(`[data-work-id="${targetWorkId}"]`).click();
+  await page.waitForFunction((workId) => location.hash === `#workbench/${workId}`, targetWorkId);
+
+  const archivedCard = page.locator('[data-doc-id="RULE-2026-0401"]');
+  const archivedText = await archivedCard.innerText();
+  assert(archivedText.includes("완료 당시 확인한 지침 제목"),
+    "completed reentry did not preserve completion-time reference presentation");
+  assert(archivedText.includes("완료 당시 발행 조직"),
+    "completed reentry did not preserve completion-time issuer");
+  assert(archivedText.includes("V2026.04-R03"),
+    "completed reentry did not preserve completion-time version");
+  assert.equal(archivedText.includes("완료 후 변경된 현재 제목"), false,
+    "completed reentry replaced archived presentation with the current index metadata");
+  assert.equal(await archivedCard.getAttribute("data-access"), "none",
+    "completed reference did not re-evaluate the current canonical denial");
+  assert.equal(await archivedCard.locator("[data-ev]").count(), 0,
+    "currently denied archived reference exposes a body action");
+  const storedReference = await page.evaluate((workId) => {
+    const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+    return stored.completionBundles.find((bundle) => bundle.workId === workId)
+      .workSnapshot.officialReferences[0];
+  }, targetWorkId);
+  assert.equal(storedReference.title, "완료 당시 확인한 지침 제목");
+  assert.equal("access" in storedReference, false, "completion snapshot archived mutable access");
+  assert.deepStrictEqual(detailRequests, [], "completed denied reference requested its document body");
+  await page.close();
+}
+
+async function assertHistoricalBundleIdentity(browser) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  page.setDefaultTimeout(5000);
+  await installFixture(page, historicalBundlesFixture());
+  await page.goto(`${baseURL}/?data=fixture#cloud`, { waitUntil: "networkidle" });
+  const olderCard = page.locator('[data-cloud-bundle][data-bundle-id="bundle-older-snapshot"]');
+  await olderCard.click();
+  await page.waitForFunction((expectedHash) => location.hash === expectedHash,
+    `#workbench/${targetWorkId}/bundle-older-snapshot`);
+  assert.equal(await page.locator("[data-work-title]").innerText(), "이전 완료 스냅샷",
+    "clicking an older cloud bundle opened the latest snapshot");
+  assert.equal(await page.locator("[data-testid='workbench']").getAttribute("data-work-id"), targetWorkId,
+    "bundle-specific route lost the workId context");
+  assert.equal(await page.locator("[data-testid='workbench']").getAttribute("data-bundle-id"), "bundle-older-snapshot",
+    "bundle-specific route lost the clicked bundle identity");
+
+  await page.goto(`${baseURL}/?data=fixture#work/list`, { waitUntil: "networkidle" });
+  await page.locator('[role="tab"][data-mode="completed"]').click();
+  await page.locator(`[data-work-id="${targetWorkId}"]`).click();
+  await page.waitForFunction((expectedHash) => location.hash === expectedHash, `#workbench/${targetWorkId}`);
+  assert.equal(await page.locator("[data-work-title]").innerText(), "최신 완료 스냅샷",
+    "completed-list route without a bundle identity did not select the latest snapshot");
   await page.close();
 }
 
@@ -273,7 +407,9 @@ async function run() {
       "route-dispose": assertDialogDisposedOnRoute,
       "local-date": assertLocalCompletionDate,
       "snapshot-reentry": assertSnapshotBackedReentry,
-      "cloud-order": assertCloudCompletedAtOrdering
+      "cloud-order": assertCloudCompletedAtOrdering,
+      "archived-reference": assertArchivedReferencePresentationAndCurrentAccess,
+      "bundle-identity": assertHistoricalBundleIdentity
     };
     if (reviewCase !== "all") {
       assert(reviewCases[reviewCase], `unknown completion review case: ${reviewCase}`);
@@ -285,6 +421,8 @@ async function run() {
     await assertLocalCompletionDate(browser);
     await assertSnapshotBackedReentry(browser);
     await assertCloudCompletedAtOrdering(browser);
+    await assertArchivedReferencePresentationAndCurrentAccess(browser);
+    await assertHistoricalBundleIdentity(browser);
 
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     page.setDefaultTimeout(5000);
@@ -304,8 +442,17 @@ async function run() {
       assert.equal(await dialog.locator(selector).count(), 1, `completion review is missing ${selector}`);
     }
     assert((await dialog.locator("[data-review-output]").innerText()).includes("APPR-2026-0723"));
-    assert((await dialog.locator("[data-review-standards]").innerText()).includes("RULE-2026-0401"));
-    assert((await dialog.locator("[data-review-records]").innerText()).includes("점검 범위를 확정했습니다."));
+    assert((await dialog.locator("[data-review-standards]").innerText()).includes("계약·조달 운영지침"));
+    const reviewRecordsText = await dialog.locator("[data-review-records]").innerText();
+    assert(reviewRecordsText.includes("점검 범위를 확정했습니다."));
+    assert(reviewRecordsText.includes("진행 기록"), "completion review did not label raw progress records honestly");
+    assert(reviewRecordsText.includes("현장 사진 확인"), "completion review hid the proposed candidate label");
+    assert(reviewRecordsText.includes("현장 사진을 확인 요청했습니다."),
+      "completion review hid the proposed candidate basis");
+    assert(reviewRecordsText.includes("확인 전 후보"),
+      "completion review did not identify the candidate as unconfirmed");
+    assert.equal(reviewRecordsText.includes("확정 기록"), false,
+      "completion review placed proposed data under confirmed records");
     assert((await dialog.locator("[data-review-open-items]").innerText()).includes("현장 배포 확인"));
 
     await page.locator("[data-completion-date]").fill("2026-07-23");
@@ -333,6 +480,13 @@ async function run() {
     await page.waitForFunction((workId) => location.hash === `#workbench/${workId}`, targetWorkId);
     assert.equal(await page.locator("[data-testid='workbench']").getAttribute("data-work-id"), targetWorkId);
     assert((await page.locator(".workbench-readonly").innerText()).includes("완료 당시 기록"));
+    const completedCandidate = page.locator('[data-progress-candidate="candidate-proposed-review"]');
+    assert((await completedCandidate.innerText()).includes("현장 사진 확인"),
+      "completed work hid the candidate label");
+    assert((await completedCandidate.innerText()).includes("현장 사진을 확인 요청했습니다."),
+      "completed work hid the candidate basis");
+    assert.equal(await completedCandidate.locator("[data-confirm-candidate],[data-dismiss-candidate]").count(), 0,
+      "completed candidate exposes mutable controls");
     assert.equal(await page.locator("[data-completion-snapshot-notice]").count(), 0,
       "matching live work was falsely reported as diverged from its completion snapshot");
     for (const selector of [
@@ -353,11 +507,12 @@ async function run() {
     const targetCard = page.locator(`[data-cloud-bundle][data-bundle-id="${targetBundle.id}"]`);
     assert.equal(await targetCard.getAttribute("data-work-id"), targetWorkId);
     const cloudSummary = await targetCard.innerText();
-    for (const text of ["2026년 정기점검보수 기본계획 수립", "2026.07.23", "최종 결과물 있음", "기록 1건", "공식 기준 1건"]) {
+    for (const text of ["2026년 정기점검보수 기본계획 수립", "2026.07.23", "최종 결과물 있음", "기록 2건", "공식 기준 1건"]) {
       assert(cloudSummary.includes(text), `cloud bundle summary is missing ${text}`);
     }
     await targetCard.click();
-    await page.waitForFunction((workId) => location.hash === `#workbench/${workId}`, targetWorkId);
+    await page.waitForFunction((expectedHash) => location.hash === expectedHash,
+      `#workbench/${targetWorkId}/${targetBundle.id}`);
     assert.equal(await page.locator("[data-testid='workbench']").getAttribute("data-work-id"), targetWorkId);
 
     const overflow = await page.evaluate(() => ({

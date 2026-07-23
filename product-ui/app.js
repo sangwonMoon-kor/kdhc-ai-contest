@@ -61,6 +61,7 @@ const cache = { summary: null, forecast: null, briefing: null };
 async function loadSummary() { if (!cache.summary) cache.summary = await api("/api/summary"); return cache.summary; }
 async function loadForecast() { if (!cache.forecast) cache.forecast = await api("/api/forecast"); return cache.forecast; }
 async function loadBriefing() { if (!cache.briefing) cache.briefing = await api("/api/briefing"); return cache.briefing; }
+async function loadDocumentIndex() { return api("/api/documents"); }
 const workspaceModel = window.OnMemoryWorkspaceModel;
 const workbenchModel = window.OnMemoryWorkbenchModel;
 
@@ -74,6 +75,7 @@ let homeAttachmentFile = null;
 let homeAttachmentMessage = "";
 let engineDown = false;
 let activeCompletionReviewDispose = null;
+let activeWorkDateReviewDispose = null;
 
 function blankState() { return workspaceModel.createDemoState(); }
 function validWork(w) {
@@ -344,12 +346,28 @@ async function openEvidence(ref) {
   try {
     const id = String(ref.docId || ref);
     if (id.startsWith("okf:")) {
+      const access = workbenchModel.resolveReferenceAccess(
+        { docId: id },
+        { id, access: "full" }
+      );
+      if (!access.canReadBody) throw new Error("OKF evidence access denied");
       const r = await api("/api/okf/" + encodeURIComponent(id.slice(4)));
       body.innerHTML = `<div class="meta">공식 업무 지식${r.type ? " · " + esc(r.type) : ""}</div>
         <h3 style="margin-bottom:8px">${esc(r.label || id)}</h3>
         ${r.description ? `<p style="margin-bottom:10px">${esc(r.description)}</p>` : ""}
         ${r.body ? `<pre>${esc(r.body.slice(0, 4000))}</pre>` : ""}`;
     } else {
+      const documents = await loadDocumentIndex().catch(() => []);
+      const canonical = documents.find((document) => document && document.id === id) || null;
+      const access = workbenchModel.resolveReferenceAccess({ docId: id }, canonical);
+      if (!access.canReadBody) {
+        body.innerHTML = `<div class="meta">${esc(canonical && canonical.kind || "문서")}</div>
+          <h3 style="margin-bottom:8px">${esc(canonical && canonical.title || ref.label || id)}</h3>
+          <p class="reference-access-message">본문 열람 권한이 없습니다.</p>`;
+        return;
+      }
+      const boundaryCheck = workbenchModel.resolveReferenceAccess({ docId: id }, canonical);
+      if (!boundaryCheck.canReadBody) throw new Error("Document access denied");
       const r = await api("/api/documents/" + encodeURIComponent(id));
       const d = r.doc || {};
       body.innerHTML = `<div class="meta">${esc(d.kind || "문서")} · ${esc(d.date || "")} · ${esc(d.author || "")}</div>
@@ -361,7 +379,17 @@ async function openEvidence(ref) {
     body.innerHTML = `<p class="meta">근거를 불러오지 못했습니다${ref.label ? " — " + esc(ref.label) : ""}.</p>`;
   }
 }
-function evBtn(ev) { return `<button class="ev-btn" data-ev="${esc(ev.docId || "")}">근거 · ${esc(ev.label || ev.docId || "")}</button>`; }
+function evBtn(ev, documentById) {
+  const docId = ev && ev.docId || "";
+  const hasDocumentIndex = documentById && typeof documentById.get === "function";
+  const canonical = hasDocumentIndex && !String(docId).startsWith("okf:")
+    ? documentById.get(docId) || null
+    : (String(docId).startsWith("okf:") ? { id: docId, access: "full" } : null);
+  const access = hasDocumentIndex || String(docId).startsWith("okf:")
+    ? workbenchModel.resolveReferenceAccess({ docId }, canonical)
+    : null;
+  return `<button class="ev-btn" data-ev="${esc(docId)}"${access ? ` data-access="${esc(access.access)}"` : ""}>근거 · ${esc(ev.label || docId)}</button>`;
+}
 function bindEvidence(root) {
   $$("[data-ev]", root).forEach((b) => { b.onclick = () => openEvidence({ docId: b.dataset.ev, label: b.textContent }); });
 }
@@ -373,9 +401,13 @@ function parseHash() {
   if (LEGACY[h] && LEGACY[h] !== h) { location.replace(LEGACY[h]); h = LEGACY[h]; }
   const m = h.slice(1).split("/");
   try {
-    return { v: m[0] || "home", a: m[1] ? decodeURIComponent(m[1]) : null };
+    return {
+      v: m[0] || "home",
+      a: m[1] ? decodeURIComponent(m[1]) : null,
+      b: m[2] ? decodeURIComponent(m[2]) : null
+    };
   } catch (error) {
-    return { v: "invalid-route", a: null };
+    return { v: "invalid-route", a: null, b: null };
   }
 }
 function disposeActiveCompletionReview(returnFocus) {
@@ -383,14 +415,21 @@ function disposeActiveCompletionReview(returnFocus) {
   activeCompletionReviewDispose = null;
   if (dispose) dispose(returnFocus === true);
 }
+function disposeActiveWorkDateReview(returnFocus) {
+  const dispose = activeWorkDateReviewDispose;
+  activeWorkDateReviewDispose = null;
+  if (dispose) dispose(returnFocus === true);
+}
 function nav(hash) {
   disposeActiveCompletionReview(false);
+  disposeActiveWorkDateReview(false);
   if (location.hash === hash) route();
   else location.hash = hash;
 }
 async function route() {
   disposeActiveCompletionReview(false);
-  const { v, a } = parseHash();
+  disposeActiveWorkDateReview(false);
+  const { v, a, b } = parseHash();
   const isHome = v === "home";
   const active = isHome ? "home" : v === "schedule" ? "schedule" : v === "cloud" ? "cloud" : "work";
   const main = $("#view");
@@ -413,7 +452,7 @@ async function route() {
     else if (v === "schedule") await vCalendar(view);
     else if (v === "cloud") vCloud(view);
     else if (v === "work") await vList(view);
-    else if (v === "workbench") await vWorkbench(view, a);
+    else if (v === "workbench") await vWorkbench(view, a, b);
     else if (v === "draft") await vDraft(view, a);
     else if (v === "graph") await vGraph(view);
     else if (v === "vision") vVision(view);
@@ -792,6 +831,19 @@ function createWorkFrom(t, dueText, rangeCandidate) {
     departmentId: currentSection ? currentSection.departmentId : null,
     sectionId: currentSection ? currentSection.id : null,
     relations: [{ personId: S.currentPersonId, kind: "owner" }],
+    lifecycle: {
+      phase: "design",
+      designDeadlineISO: null,
+      completionDateISO: null,
+      completedAtISO: null,
+      completedBy: null
+    },
+    output: {
+      mode: "new",
+      templateId: null,
+      priorDocumentId: null,
+      finalDocumentId: null
+    },
     schedule: { startISO: null, endISO: null, milestones: [] },
     todos: [{ id: uid("t"), text: "기한·완료 조건 확인", done: false, candidate: false, evidence: [] }],
     records: [], sources: [], draft: { savedAt: null, values: null },
@@ -843,7 +895,11 @@ async function vList(main) {
   let works = workbenchModel.selectWorkList(S, workMode);
   const filtered = UI.listFilter === "repeat";
   if (filtered) works = works.filter((w) => w.repeat);
-  works.sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+  works.sort((a, b) => {
+    const aDate = workbenchModel.headlineFor(a, sim).dateISO || "9999";
+    const bDate = workbenchModel.headlineFor(b, sim).dateISO || "9999";
+    return aDate.localeCompare(bDate) || a.title.localeCompare(b.title) || a.id.localeCompare(b.id);
+  });
 
   main.innerHTML = `<div class="view">
     <h1 class="pg" tabindex="-1">내 업무</h1>
@@ -863,20 +919,20 @@ async function vList(main) {
   const box = $("#workCards");
   for (const w of works) {
     const nt = nextTodo(w);
-    const dd = ddayOf(w.due, sim);
     const headline = workbenchModel.headlineFor(w, sim);
+    const canonicalDateText = headline.dateISO
+      ? `${fmtD(headline.dateISO)}${headline.dday != null ? ` · ${ddayLabel(headline.dday)}` : ""}`
+      : "일정 미정";
     const b = document.createElement("button");
     b.className = "work-card";
     b.dataset.workId = w.id;
     b.dataset.workPhase = headline.phaseKey;
     b.innerHTML = `<span class="t">${esc(w.title)}
         ${w.repeat ? `<span class="badge repeat">반복</span>` : ""}
-        ${!w.due ? `<span class="badge nodue">기한 확인 필요</span>` : ""}
+        ${!headline.dateISO ? `<span class="badge nodue">날짜 확인 필요</span>` : ""}
         <span class="badge stage">${esc(headline.phaseLabel)}</span></span>
       <span class="meta"><span>지시: ${esc(w.requester || "—")}</span>
-        <span>${headline.isComplete ? "완료일" : "마감"}: <b>${headline.isComplete
-          ? fmtD(headline.dateISO)
-          : (w.due ? fmtD(w.due) + (dd != null ? " · " + ddayLabel(dd) : "") : esc(w.dueText || "기한 미정"))}</b></span>
+        <span>${headline.dateISO ? headline.dateLabel : "일정"}: <b>${canonicalDateText}</b></span>
         ${headline.isComplete ? "" : `<span>진행 ${progress(w)}%</span>`}</span>
       ${headline.isComplete ? "" : (nt ? `<span class="next">다음: ${esc(nt.text)}</span>` : `<span class="next">모든 할 일 완료 — ${esc(w.doneWhen)}</span>`)
       }${headline.isComplete ? "" : `<span class="prog"><i style="width:${progress(w)}%"></i></span>`}`;
@@ -1057,10 +1113,12 @@ function compareCompletionBundles(a, b) {
     || String(b && b.completedAtISO || "").localeCompare(String(a && a.completedAtISO || ""))
     || String(a && a.id || "").localeCompare(String(b && b.id || ""));
 }
-function completionBundleForWork(workId) {
-  return workbenchModel.selectCloudBundles(S)
+function completionBundleForWork(workId, bundleId) {
+  const bundles = workbenchModel.selectCloudBundles(S)
     .filter((bundle) => bundle && bundle.workId === workId)
-    .sort(compareCompletionBundles)[0] || null;
+    .sort(compareCompletionBundles);
+  if (bundleId) return bundles.find((bundle) => bundle.id === bundleId) || null;
+  return bundles[0] || null;
 }
 function completionSnapshotMatchesLive(liveWork, snapshot) {
   if (!liveWork || !snapshot) return false;
@@ -1103,7 +1161,8 @@ function vCloud(main) {
       button.onclick = () => {
         S.selectedWorkId = button.dataset.workId;
         saveState();
-        nav("#workbench/" + button.dataset.workId);
+        nav("#workbench/" + encodeURIComponent(button.dataset.workId)
+          + "/" + encodeURIComponent(button.dataset.bundleId));
       };
     });
     return;
@@ -1120,11 +1179,111 @@ function vCloud(main) {
 }
 
 /* ---------- 업무 작업대 ---------- */
-function openCompletionReview(work, references, output, opener) {
+function openWorkDateReview(work, headline, opener) {
   disposeActiveCompletionReview(false);
+  disposeActiveWorkDateReview(false);
+  const isDesign = headline.phaseKey === "design";
+  const field = isDesign ? "designDeadlineISO" : "completionDateISO";
+  const label = isDesign ? "설계 발송일" : "준공일";
+  const overlay = document.createElement("div");
+  overlay.className = "completion-review-backdrop";
+  overlay.innerHTML = `<section class="completion-review work-date-review" role="dialog" aria-modal="true"
+    aria-labelledby="work-date-review-title" aria-describedby="work-date-review-description"
+    data-work-date-dialog>
+    <div class="completion-review__header">
+      <p class="eyebrow">일정 확인</p>
+      <h2 id="work-date-review-title">${esc(label)} 확정</h2>
+      <p class="sub" id="work-date-review-description">확정하기 전에는 헤드라인 일정이 바뀌지 않습니다.</p>
+    </div>
+    <label class="completion-date-field">${esc(label)}
+      <input type="date" value="${esc(headline.dateISO || "")}" data-work-date-input>
+    </label>
+    <p class="completion-review__status" role="status" aria-live="polite"></p>
+    <div class="completion-review__actions">
+      <button class="btn ghost" type="button" data-cancel-work-date>취소</button>
+      <button class="btn" type="button" data-confirm-work-date>날짜 확정</button>
+    </div>
+  </section>`;
+  document.body.appendChild(overlay);
+
+  const dialog = $("[data-work-date-dialog]", overlay);
+  const input = $("[data-work-date-input]", dialog);
+  const status = $(".completion-review__status", dialog);
+  const cancel = $("[data-cancel-work-date]", dialog);
+  const confirm = $("[data-confirm-work-date]", dialog);
+  const focusables = () => $$('input:not([disabled]),button:not([disabled])', dialog);
+  let closed = false;
+  const close = (returnFocus) => {
+    if (closed) return;
+    closed = true;
+    if (activeWorkDateReviewDispose === dispose) activeWorkDateReviewDispose = null;
+    overlay.remove();
+    if (returnFocus !== false && opener && document.body.contains(opener)) opener.focus();
+  };
+  const dispose = (returnFocus) => close(returnFocus);
+  activeWorkDateReviewDispose = dispose;
+
+  dialog.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close(true);
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const items = focusables();
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+  cancel.onclick = () => close(true);
+  confirm.onclick = () => {
+    if (!isValidISODate(input.value)) {
+      status.textContent = `${label}을 확인해 주세요.`;
+      input.focus();
+      return;
+    }
+    const liveWork = getWork(work.id);
+    if (!liveWork || guardCompletedWork(liveWork)) {
+      close(false);
+      return;
+    }
+    liveWork.lifecycle = liveWork.lifecycle && typeof liveWork.lifecycle === "object"
+      ? liveWork.lifecycle
+      : {
+          phase: headline.phaseKey,
+          designDeadlineISO: null,
+          completionDateISO: null,
+          completedAtISO: null,
+          completedBy: null
+        };
+    liveWork.lifecycle[field] = input.value;
+    saveState();
+    close(false);
+    route();
+  };
+  input.focus();
+}
+
+function openCompletionReview(work, resolvedReferences, output, opener) {
+  disposeActiveCompletionReview(false);
+  disposeActiveWorkDateReview(false);
   const readiness = workbenchModel.completionReadiness(work);
-  const official = references.official || [];
+  const official = resolvedReferences.official || [];
   const records = Array.isArray(work.records) ? work.records : [];
+  const reviewCandidates = records.flatMap((record) => {
+    const candidates = record && record.analysis && Array.isArray(record.analysis.candidates)
+      ? record.analysis.candidates : [];
+    return candidates.map((candidate) => Object.assign({ sourceText: record.text }, candidate));
+  });
+  const confirmedCandidates = reviewCandidates.filter((candidate) => candidate.status === "confirmed");
+  const unconfirmedCandidates = reviewCandidates.filter((candidate) => candidate.status !== "confirmed");
   const overlay = document.createElement("div");
   overlay.className = "completion-review-backdrop";
   overlay.innerHTML = `<section class="completion-review" role="dialog" aria-modal="true"
@@ -1155,10 +1314,19 @@ function openCompletionReview(work, references, output, opener) {
           : '<p class="sub">연결된 공식 기준이 없습니다.</p>'}
       </section>
       <section class="completion-review__section" data-review-records>
-        <h3>확정 기록</h3>
+        <h3>진행 기록</h3>
         ${records.length
-          ? `<ul>${records.map((record) => `<li>${esc(record.text || "내용 없는 기록")}</li>`).join("")}</ul>`
-          : '<p class="sub">확정된 기록이 없습니다.</p>'}
+          ? `<p class="sub">사용자가 남긴 원문 기록입니다.</p>
+            <ul data-review-raw-records>${records.map((record) => `<li>${esc(record.text || "내용 없는 기록")}</li>`).join("")}</ul>`
+          : '<p class="sub">남긴 진행 기록이 없습니다.</p>'}
+        ${confirmedCandidates.length
+          ? `<h4>사용자가 확인한 후보</h4><ul data-review-confirmed-candidates>${confirmedCandidates.map((candidate) =>
+            `<li><strong>${esc(candidate.label || "이름 없는 후보")}</strong><span> · ${esc(candidate.basis || candidate.sourceText || "근거 없음")}</span></li>`).join("")}</ul>`
+          : ""}
+        ${unconfirmedCandidates.length
+          ? `<h4>확인 전 후보</h4><ul data-review-unconfirmed-candidates>${unconfirmedCandidates.map((candidate) =>
+            `<li><strong>${esc(candidate.label || "이름 없는 후보")}</strong><span> · ${esc(candidate.basis || candidate.sourceText || "근거 없음")}</span></li>`).join("")}</ul>`
+          : ""}
       </section>
       <section class="completion-review__section" data-review-open-items>
         <h3>미완료 후속 작업</h3>
@@ -1233,7 +1401,8 @@ function openCompletionReview(work, references, output, opener) {
         completedAtISO: new Date().toISOString(),
         completedBy: S.currentPersonId,
         completionDateISO: completionDateInput.value,
-        acknowledgeIncomplete: acknowledgement ? acknowledgement.checked : true
+        acknowledgeIncomplete: acknowledgement ? acknowledgement.checked : true,
+        resolvedReferences
       });
       S = result.state;
       saveState();
@@ -1246,8 +1415,19 @@ function openCompletionReview(work, references, output, opener) {
   completionDateInput.focus();
 }
 
-function workbenchReference(source, documentById) {
-  return Object.assign({}, documentById.get(source.docId) || {}, source);
+function workbenchReference(source, documentById, preserveArchivedPresentation) {
+  const canonical = documentById.get(source.docId) || null;
+  const presentation = preserveArchivedPresentation
+    ? Object.assign({}, canonical || {}, source)
+    : Object.assign({}, source, canonical || {});
+  const access = workbenchModel.resolveReferenceAccess(source, canonical);
+  presentation.docId = source.docId;
+  presentation.access = access.access;
+  presentation.currentAccessKnown = access.isKnown;
+  delete presentation.body;
+  delete presentation.text;
+  delete presentation.edges;
+  return presentation;
 }
 function referenceVersion(reference) {
   if (reference.version) return reference.version;
@@ -1255,13 +1435,16 @@ function referenceVersion(reference) {
   return match ? match[0] : null;
 }
 function referenceAccess(reference) {
-  return reference.access === "none" ? "none" : "full";
+  return reference && reference.access === "full" ? "full" : "none";
 }
 function referenceDetails(rows) {
   return `<dl class="reference-details">${rows.map(([label, value]) =>
     `<div><dt>${esc(label)}</dt><dd>${esc(value || "—")}</dd></div>`).join("")}</dl>`;
 }
 function referenceAction(reference) {
+  if (reference.authorType === "personal") {
+    return '<div class="reference-denied reference-local-note"><p>개인 메모 · 연결된 문서 본문 없음</p></div>';
+  }
   if (referenceAccess(reference) === "none") {
     return `<div class="reference-denied"><p>본문 열람 권한이 없습니다</p>
       <button class="btn ghost small" type="button" data-request-access="${esc(reference.docId)}">접근 요청</button></div>`;
@@ -1278,7 +1461,7 @@ function renderOfficialReference(reference) {
       ["발행 조직", reference.issuer || reference.issuingOrganization || reference.organization || reference.author],
       ["시행일", effectiveDate ? fmtD(effectiveDate) : null],
       ["버전", referenceVersion(reference)],
-      ["적용 근거", reference.applicationBasis || reference.basis || reference.role],
+      ["적용 근거", reference.rationale || reference.applicationBasis || reference.basis || reference.role],
       ["권한 상태", referenceAccess(reference) === "none" ? "접근 제한" : "열람 가능"]
     ])}
     ${referenceAction(reference)}
@@ -1298,7 +1481,7 @@ function renderMemoryReference(reference) {
       ["연도", year ? `${year}년` : null],
       ["원본 업무", reference.originalWork || reference.originalTask || reference.task],
       ["작성 주체", reference.createdBy || reference.drafter || reference.author],
-      ["연결 이유", reference.connectionReason || reference.role],
+      ["연결 이유", reference.rationale || reference.connectionReason || reference.role],
       ["확인 상태", status]
     ])}
     ${referenceAction(reference)}
@@ -1433,12 +1616,15 @@ function dismissProgressNoteCandidate(work, noteId, candidateId) {
   route();
 }
 
-async function vWorkbench(main, id) {
+async function vWorkbench(main, id, bundleId) {
   const sum = await loadSummary().catch(() => null);
   const fc = await loadForecast().catch(() => ({ items: [] }));
   if (sum) seedFromForecast(fc, sum.simDate);
   const liveWork = getWork(id);
-  const completionBundle = completionBundleForWork(id);
+  const completionBundle = completionBundleForWork(id, bundleId);
+  if (bundleId && !completionBundle) {
+    return vNotFound(main, "완료 보관 묶음을 찾을 수 없습니다", bundleId);
+  }
   const snapshot = completionBundle && completionBundle.workSnapshot;
   const hasUsableSnapshot = Boolean(snapshot && snapshot.id === id && validWork(snapshot)
     && snapshot.lifecycle && snapshot.lifecycle.phase === "done");
@@ -1466,14 +1652,20 @@ async function vWorkbench(main, id) {
   const headlineDday = ddayLabel(headline.dday);
   const [bf, documentIndex] = await Promise.all([
     loadBriefing().catch(() => null),
-    api("/api/documents").catch(() => [])
+    loadDocumentIndex().catch(() => [])
   ]);
   const nt = nextTodo(w);
   const cautions = bf && Array.isArray(bf.cautions) ? bf.cautions.slice(0, 2) : [];
   const documentById = new Map(documentIndex.map((document) => [document.id, document]));
   const references = workbenchModel.partitionReferences(w);
-  const officialReferences = references.official.map((source) => workbenchReference(source, documentById));
-  const memoryReferences = references.memory.map((source) => workbenchReference(source, documentById));
+  const officialPresentationSources = hasUsableSnapshot && Array.isArray(w.officialReferences)
+    ? w.officialReferences : references.official;
+  const memoryPresentationSources = hasUsableSnapshot && Array.isArray(w.memoryReferences)
+    ? w.memoryReferences : references.memory;
+  const officialReferences = officialPresentationSources.map((source) =>
+    workbenchReference(source, documentById, hasUsableSnapshot));
+  const memoryReferences = memoryPresentationSources.map((source) =>
+    workbenchReference(source, documentById, hasUsableSnapshot));
   const output = outputViewModel(w, references);
   const outputSources = output.mode === "recurring"
     ? [
@@ -1488,6 +1680,7 @@ async function vWorkbench(main, id) {
       ];
 
   main.innerHTML = `<div class="view" data-testid="workbench" data-work-id="${esc(w.id)}"
+    ${completionBundle ? `data-bundle-id="${esc(completionBundle.id)}"` : ""}
     data-work-source="${hasUsableSnapshot ? "completion-snapshot" : "live"}">
     <a class="wb-back" href="#work/list">← 내 업무</a>
     ${snapshotNotice ? `<p class="workbench-snapshot-notice" data-completion-snapshot-notice>${esc(snapshotNotice)}</p>` : ""}
@@ -1512,7 +1705,6 @@ async function vWorkbench(main, id) {
           <div class="inst">${esc(w.instruction || "원래 지시가 기록되지 않았습니다")}</div>
           <div class="kv">
             <span>지시자 <b>${esc(w.requester || "—")}</b></span>
-            <span>기한 <b>${w.due ? fmtD(w.due) + " (" + ddayLabel(ddayOf(w.due, sim)) + ")" : esc(w.dueText || "기한 미정")}</b></span>
             <span>단계 <b>${w.stageName ? esc(w.stageName) : "—"}</b>${w.stageId ? ` <button class="ev-btn" data-ev="okf:${esc(w.stageId)}">근거 · 단계 지식</button>` : ""}</span>
           </div>
         </div>
@@ -1529,7 +1721,7 @@ async function vWorkbench(main, id) {
             ? `<p class="sub workbench-readonly">완료 당시 기록을 읽기 전용으로 보여드립니다.</p>${nt ? `<div class="todo-line"><div class="tx"><b>${esc(nt.text)}</b></div></div>` : "<p>완료 당시 남은 일이 없습니다.</p>"}`
             : (nt ? `<div class="todo-line">
               <button class="todo-check" role="checkbox" aria-checked="false" data-td="${esc(nt.id)}" aria-label="완료: ${esc(nt.text)}">✓</button>
-              <div class="tx"><b>${esc(nt.text)}</b><div>${(nt.evidence || []).map(evBtn).join("") || `<span class="sub">연결된 근거 없음</span>`}
+              <div class="tx"><b>${esc(nt.text)}</b><div>${(nt.evidence || []).map((evidence) => evBtn(evidence, documentById)).join("") || `<span class="sub">연결된 근거 없음</span>`}
               ${nt.action === "draft" ? `<button class="ev-btn" id="goDraft1">기안 집중 화면 →</button>` : ""}
               ${nt.action === "check" ? `<button class="ev-btn" id="goCheck1">제출 전 점검 →</button>` : ""}</div></div>
             </div>` : `<p>남은 할 일이 없습니다 — 완료 조건(${esc(w.doneWhen)})을 확인하세요.</p>`)}
@@ -1545,7 +1737,7 @@ async function vWorkbench(main, id) {
                   <div class="ops"><button class="btn small" data-promote="${esc(t.id)}">반영</button><button class="btn ghost small" data-del="${esc(t.id)}">삭제</button></div></div>`
                 : `<div class="todo${t.done ? " done" : ""}">
                   <button class="todo-check" role="checkbox" aria-checked="${t.done}" data-td="${esc(t.id)}" aria-label="${t.done ? "완료 해제" : "완료"}: ${esc(t.text)}">✓</button>
-                  <div class="tx">${esc(t.text)}<div>${(t.evidence || []).map(evBtn).join("")}</div></div>
+                  <div class="tx">${esc(t.text)}<div>${(t.evidence || []).map((evidence) => evBtn(evidence, documentById)).join("")}</div></div>
                 </div>`)).join("")}
           </div>
         </div>
@@ -1629,7 +1821,7 @@ async function vWorkbench(main, id) {
           ? "기안 이어서 쓰기"
           : (output.mode === "recurring" ? "과거 문서 구조로 초안 열기" : "빈 초안 시작")}</button>`}
         ${cautions.length ? `<div class="blk-k workbench-cautions">제출 전 주의</div>` + cautions.map((c) => `
-          <div class="k-item">${esc(c.text)}${(c.evidence || []).slice(0, 2).map(evBtn).join("")}</div>`).join("") : ""}
+          <div class="k-item">${esc(c.text)}${(c.evidence || []).slice(0, 2).map((evidence) => evBtn(evidence, documentById)).join("")}</div>`).join("") : ""}
       </section>
 
       <section class="card workbench-section workbench-completion" data-workbench-section="completion" aria-labelledby="completion-title">
@@ -1705,8 +1897,13 @@ async function vWorkbench(main, id) {
   if (fileIn) fileIn.onchange = (e) => { if (e.target.files[0]) ingestFlow(w, e.target.files[0], null); };
   const ingestBtn = $("#ingestBtn");
   if (ingestBtn) ingestBtn.onclick = () => { const t = $("#pasteIn").value.trim(); if (t) ingestFlow(w, null, t); };
+  const addDateButton = $("[data-add-work-date]", main);
+  if (addDateButton) addDateButton.onclick = () => openWorkDateReview(w, headline, addDateButton);
   const completeButton = $("[data-complete-work]", main);
-  if (completeButton) completeButton.onclick = () => openCompletionReview(w, references, output, completeButton);
+  if (completeButton) completeButton.onclick = () => openCompletionReview(w, {
+    official: officialReferences,
+    memory: memoryReferences
+  }, output, completeButton);
 }
 
 /* ---------- 다음 담당자 메모(힌트) ---------- */

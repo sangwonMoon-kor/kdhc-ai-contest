@@ -96,7 +96,9 @@ async function assertWidth(browser, width, state) {
   const page = await browser.newPage({ viewport: { width, height: width === 390 ? 844 : 1080 } });
   page.setDefaultTimeout(5000);
   await page.addInitScript((fixture) => {
-    localStorage.setItem("jikmu.workbench.v1", JSON.stringify(fixture));
+    if (!localStorage.getItem("jikmu.workbench.v1")) {
+      localStorage.setItem("jikmu.workbench.v1", JSON.stringify(fixture));
+    }
     localStorage.removeItem("jikmu.ui.v1");
   }, state);
 
@@ -107,6 +109,40 @@ async function assertWidth(browser, width, state) {
   assert.equal(await completedTab.getAttribute("aria-selected"), "false");
   assert.equal(await page.locator('[data-work-phase="done"]').count(), 0);
   assert.equal(await page.locator('[data-work-id="work-maintenance-plan-completed"]').count(), 0, "completed work leaked into the active list");
+  if (width === 390) {
+    const listDimensions = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth
+    }));
+    assert(listDimensions.scrollWidth <= listDimensions.clientWidth,
+      `390px active work list overflows: ${listDimensions.scrollWidth} > ${listDimensions.clientWidth}`);
+  }
+
+  if (width === 1920) {
+    await page.locator("#newWork").click();
+    await page.waitForFunction(() => location.hash.startsWith("#workbench/w-new-"));
+    const created = await page.evaluate(() => {
+      const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      return stored.works.find((work) => work.id === stored.selectedWorkId);
+    });
+    assert.deepStrictEqual(created.lifecycle, {
+      phase: "design",
+      designDeadlineISO: null,
+      completionDateISO: null,
+      completedAtISO: null,
+      completedBy: null
+    }, "new work did not persist a complete v3 lifecycle");
+    assert.deepStrictEqual(created.output, {
+      mode: "new",
+      templateId: null,
+      priorDocumentId: null,
+      finalDocumentId: null
+    }, "new work did not persist a complete v3 output contract");
+    await page.locator(".wb-back").click();
+    await page.getByRole("heading", { name: "내 업무", exact: true }).waitFor();
+    assert.equal(await page.locator(`[data-work-id="${created.id}"]`).count(), 1,
+      "new work disappeared from the active list before reload");
+  }
 
   await openWork(page, "work-maintenance-plan-2026");
   await assertHeadline(page, {
@@ -130,6 +166,11 @@ async function assertWidth(browser, width, state) {
   });
 
   await page.locator(".wb-back").click();
+  const legacyDueCardText = await page.locator('[data-work-id="w-problem-recognition-m1"]').innerText();
+  assert(legacyDueCardText.includes("일정 미정"),
+    "active list did not use the canonical lifecycle date empty state");
+  assert.equal(/D(?:-|\+|‑)\d+/.test(legacyDueCardText), false,
+    "active list derived a D-day from legacy due");
   await openWork(page, "w-problem-recognition-m1");
   await assertHeadline(page, {
     title: "2026년 동절기 옥외 설비 동파 방지 점검 결과 보고",
@@ -138,6 +179,72 @@ async function assertWidth(browser, width, state) {
     dday: "",
     dateISO: null
   });
+  const missingDateHeadlineText = await page.locator(".workbench-headline").innerText();
+  assert.equal(/D(?:-|\+|‑)\d+/.test(missingDateHeadlineText), false,
+    "workbench headline context derived a D-day from legacy due");
+  if (width === 1920) {
+    const addDate = page.locator("[data-add-work-date]");
+    const headlineBeforeDateConfirmation = await page.locator(".workbench-headline").innerText();
+    await addDate.focus();
+    await addDate.click();
+    const dateDialog = page.locator('[role="dialog"][data-work-date-dialog]');
+    await dateDialog.waitFor();
+    assert.equal(await dateDialog.getAttribute("aria-modal"), "true");
+    assert(await dateDialog.getAttribute("aria-labelledby"), "work date dialog is missing an accessible name");
+    assert.equal(await page.locator(":focus").getAttribute("data-work-date-input"), "");
+    await page.locator("[data-work-date-input]").fill("2025-12-30");
+    assert.equal(await page.locator(".workbench-headline").innerText(), headlineBeforeDateConfirmation,
+      "headline changed before explicit date confirmation");
+    await page.keyboard.press("Escape");
+    assert.equal(await dateDialog.count(), 0, "Escape did not close the work date dialog");
+    assert.equal(await page.locator(":focus").getAttribute("data-add-work-date"), "",
+      "Escape did not return focus to the date opener");
+    assert.equal(await page.evaluate((workId) => {
+      const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      return stored.works.find((work) => work.id === workId).lifecycle.designDeadlineISO;
+    }, "w-problem-recognition-m1"), null, "Escape persisted an unconfirmed date");
+
+    await addDate.click();
+    await page.locator("[data-work-date-input]").fill("2025-12-30");
+    await page.locator("[data-cancel-work-date]").click();
+    assert.equal(await dateDialog.count(), 0, "cancel did not close the work date dialog");
+    assert.equal(await page.locator(":focus").getAttribute("data-add-work-date"), "",
+      "cancel did not return focus to the date opener");
+
+    await addDate.click();
+    await page.locator("[data-work-date-input]").fill("2025-12-30");
+    await page.locator("[data-confirm-work-date]").click();
+    await page.waitForFunction(() =>
+      document.querySelector("[data-date-iso]")?.getAttribute("datetime") === "2025-12-30");
+    assert.equal(await page.locator("[data-dday]").innerText(), "D+3", "overdue confirmed date did not render as D+N");
+    assert.equal(await page.evaluate((workId) => {
+      const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      return stored.works.find((work) => work.id === workId).lifecycle.designDeadlineISO;
+    }, "w-problem-recognition-m1"), "2025-12-30", "confirmed design date was not persisted");
+    await page.reload({ waitUntil: "networkidle" });
+    assert.equal(await page.locator("[data-dday]").innerText(), "D+3", "confirmed design date did not survive reload");
+
+    await page.evaluate((workId) => {
+      const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      const work = stored.works.find((item) => item.id === workId);
+      work.lifecycle.completionDateISO = null;
+      localStorage.setItem("jikmu.workbench.v1", JSON.stringify(stored));
+    }, "work-maintenance-contract-2026");
+    await page.goto(`${baseURL}/?data=fixture&date-reload=1#workbench/work-maintenance-contract-2026`, { waitUntil: "networkidle" });
+    await page.locator("[data-add-work-date]").click();
+    await page.locator("[data-work-date-input]").fill("2026-01-05");
+    await page.locator("[data-confirm-work-date]").click();
+    await page.waitForFunction(() =>
+      document.querySelector("[data-date-iso]")?.getAttribute("datetime") === "2026-01-05");
+    const contractLifecycle = await page.evaluate((workId) => {
+      const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+      return stored.works.find((work) => work.id === workId).lifecycle;
+    }, "work-maintenance-contract-2026");
+    assert.equal(contractLifecycle.completionDateISO, "2026-01-05",
+      "contract-or-later date confirmation did not persist completionDateISO");
+    assert.equal(contractLifecycle.designDeadlineISO, null,
+      "contract-or-later date confirmation wrote the design deadline field");
+  }
 
   await page.locator(".wb-back").click();
   await completedTab.click();
