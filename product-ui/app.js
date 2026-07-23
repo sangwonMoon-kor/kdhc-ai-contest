@@ -629,7 +629,7 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
 
   if (c.intent === "question") return renderAsk(resultBox, t, target);
 
-  if (personalCandidate && c.intent !== "draft") {
+  if (personalCandidate && c.intent !== "draft" && c.intent !== "instruction") {
     return renderPersonalScheduleCandidate(resultBox, personalCandidate);
   }
 
@@ -732,11 +732,17 @@ function confirmTarget(t, c, resultBox, sim) {
   chooseWork("어느 업무의 기안인가요?", (w) => { if (w) { S.selectedWorkId = w.id; saveState(); nav("#draft/" + w.id); } }, false);
 }
 function createWorkFrom(t, dueText, rangeCandidate) {
+  const currentPerson = (S.org && S.org.people || []).find((item) => item.id === S.currentPersonId) || null;
+  const currentSection = currentPerson && (S.org && S.org.sections || []).find((item) => item.id === currentPerson.sectionId) || null;
   const w = {
     id: uid("w-new-"), seedKey: null,
     title: t.length > 38 ? t.slice(0, 38) + "…" : t,
     instruction: t, requester: "직접 입력", due: null, dueText: dueText || null,
     stageId: null, stageName: "", doneWhen: "완료 조건 확인 필요", repeat: false,
+    departmentId: currentSection ? currentSection.departmentId : null,
+    sectionId: currentSection ? currentSection.id : null,
+    relations: [{ personId: S.currentPersonId, kind: "owner" }],
+    schedule: { startISO: null, endISO: null, milestones: [] },
     todos: [{ id: uid("t"), text: "기한·완료 조건 확인", done: false, candidate: false, evidence: [] }],
     records: [], sources: [], draft: { savedAt: null, values: null },
   };
