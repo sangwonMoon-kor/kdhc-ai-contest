@@ -4,7 +4,7 @@ const path = require("path");
 
 const root = path.resolve(__dirname, "..");
 const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
-const required = ["index.html", "style.css", "app.js", "intent.js", "extract.js", "source-baseline.json"];
+const required = ["index.html", "style.css", "app.js", "intent.js", "extract.js", "workspace-model.js", "workbench-model.js", "source-baseline.json"];
 const failures = [];
 
 for (const name of required) {
@@ -18,6 +18,8 @@ if (!failures.length) {
   if (!index.includes('<main id="view"')) failures.push("missing SPA view root");
   if (!(index.indexOf('src="intent.js"') < index.indexOf('src="app.js"'))) failures.push("intent.js must load before app.js");
   if (!(index.indexOf('src="workspace-model.js"') < index.indexOf('src="app.js"'))) failures.push("workspace-model.js must load before app.js");
+  if (!(index.indexOf('src="workspace-model.js"') < index.indexOf('src="workbench-model.js"')
+    && index.indexOf('src="workbench-model.js"') < index.indexOf('src="app.js"'))) failures.push("workbench-model.js must load after workspace-model.js and before app.js");
   for (const route of ["#home", "#work/list", "#schedule", "#cloud", "#workbench/", "#draft/"]) {
     if (!app.includes(route)) failures.push(`missing route ${route}`);
   }

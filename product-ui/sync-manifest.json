@@ -7,6 +7,7 @@
     "app.js",
     "home-model.js",
     "workspace-model.js",
+    "workbench-model.js",
     "api-client.js",
     "intent.js",
     "extract.js",
