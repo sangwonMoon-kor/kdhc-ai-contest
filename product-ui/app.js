@@ -144,6 +144,20 @@ function seedFromForecast(fc, sim) {
   saveState();
 }
 function getWork(id) { return S.works.find((w) => w.id === id) || null; }
+function isCompletedWork(work) {
+  return Boolean(work && workbenchModel.headlineFor(work, null).isComplete);
+}
+function guardCompletedWork(work, resultBox) {
+  if (!isCompletedWork(work)) return false;
+  const message = `${work.title}은(는) 완료된 업무입니다. 완료 당시 기록은 읽기 전용으로 확인할 수 있습니다.`;
+  if (resultBox) {
+    resultBox.innerHTML = `<div class="card" role="status"><p>${esc(message)}</p>
+      <a class="btn ghost small" href="#workbench/${esc(work.id)}" style="margin-top:10px">완료 업무 보기</a></div>`;
+  } else {
+    toast(message);
+  }
+  return true;
+}
 function progress(w) {
   const real = w.todos.filter((t) => !t.candidate);
   if (!real.length) return 0;
@@ -165,8 +179,10 @@ function selectedWork() {
 function setAction(a, msg) { lastAction = a; lastActionMessage = msg; toast(msg, a); }
 function undoLast() {
   if (!lastAction) return;
-  const a = lastAction; lastAction = null; lastActionMessage = "";
+  const a = lastAction;
   const w = getWork(a.workId);
+  if (guardCompletedWork(w)) return;
+  lastAction = null; lastActionMessage = "";
   if (a.type === "addRecord" && w) {
     w.records = w.records.filter((r) => r.id !== a.recId);
     if (a.candidateId) w.scheduleCandidates = (w.scheduleCandidates || []).filter((c) => c.id !== a.candidateId);
@@ -193,12 +209,15 @@ function undoLast() {
 function retarget(a) {
   if (!a || (a.type !== "addRecord" && a.type !== "addTodo")) return;
   const old = getWork(a.workId);
+  if (guardCompletedWork(old)) return;
   const payload = old && (a.type === "addRecord"
     ? old.records.find((r) => r.id === a.recId)
     : old.todos.find((t) => t.id === a.todoId));
   if (!payload) return;
   chooseWork(`‘${payload.text.slice(0, 24)}…’을(를) 어느 업무로 옮길까요?`, (w) => {
+    if (guardCompletedWork(w)) return;
     const source = getWork(a.workId);
+    if (guardCompletedWork(source)) return;
     const moved = source && (a.type === "addRecord"
       ? source.records.find((r) => r.id === a.recId)
       : source.todos.find((t) => t.id === a.todoId));
@@ -630,6 +649,8 @@ async function handleOmni(text, fixedWork, resultBox, sim) {
 
   if (c.intent === "question") return renderAsk(resultBox, t, target);
 
+  if (target && guardCompletedWork(target, resultBox)) return;
+
   if (personalCandidate && c.intent !== "draft" && c.intent !== "instruction") {
     return renderPersonalScheduleCandidate(resultBox, personalCandidate);
   }
@@ -680,6 +701,7 @@ function parseScheduleCandidate(text, sim) {
   return window.JikmuHomeModel.parseScheduleCandidate(text, sim);
 }
 function addScheduleCandidate(work, text, sim) {
+  if (isCompletedWork(work)) return null;
   const parsed = parseScheduleCandidate(text, sim);
   if (!parsed) return null;
   const candidate = Object.assign({ id: uid("sc") }, parsed);
@@ -689,7 +711,7 @@ function addScheduleCandidate(work, text, sim) {
 }
 function applyRecordOrTodo(t, kind, fixedWork, target, sim) {
   const apply = (w) => {
-    if (!w) return;
+    if (!w || guardCompletedWork(w)) return;
     if (kind === "record") {
       const rec = { id: uid("r"), ts: Date.now(), kind: "decision", text: t };
       w.records.push(rec);
@@ -711,6 +733,7 @@ function applyRecordOrTodo(t, kind, fixedWork, target, sim) {
 }
 function confirmScheduleCandidate(workId, candidateId) {
   const work = getWork(workId);
+  if (guardCompletedWork(work)) return;
   const candidate = work && (work.scheduleCandidates || []).find((item) => item.id === candidateId);
   if (!candidate || candidate.confirmed) return;
   candidate.confirmed = true;
@@ -730,7 +753,10 @@ function confirmScheduleCandidate(workId, candidateId) {
   route();
 }
 function confirmTarget(t, c, resultBox, sim) {
-  chooseWork("어느 업무의 기안인가요?", (w) => { if (w) { S.selectedWorkId = w.id; saveState(); nav("#draft/" + w.id); } }, false);
+  chooseWork("어느 업무의 기안인가요?", (w) => {
+    if (!w || guardCompletedWork(w)) return;
+    S.selectedWorkId = w.id; saveState(); nav("#draft/" + w.id);
+  }, false);
 }
 function createWorkFrom(t, dueText, rangeCandidate) {
   const currentPerson = (S.org && S.org.people || []).find((item) => item.id === S.currentPersonId) || null;
@@ -1180,7 +1206,7 @@ async function vWorkbench(main, id) {
 
 /* ---------- 다음 담당자 메모(힌트) ---------- */
 async function hintFlow(w, rec) {
-  if (!rec) return;
+  if (!rec || guardCompletedWork(w)) return;
   const box = $("#hintFlow");
   box.innerHTML = `<div class="k-item">다음 담당자 메모로 구조화하는 중…</div>`;
   try {
@@ -1243,6 +1269,7 @@ async function extractFileText(file) {
   throw new Error("지원하지 않는 형식입니다(." + ext + ") — 텍스트를 붙여넣어 주세요.");
 }
 async function ingestFlow(w, file, pastedText) {
+  if (guardCompletedWork(w)) return;
   const panel = $("#ingestPanel");
   panel.innerHTML = `<div class="k-item">문서를 읽는 중…</div>`;
   let text = pastedText;
@@ -1300,6 +1327,7 @@ async function ingestFlow(w, file, pastedText) {
 async function vDraft(main, id) {
   const w = getWork(id);
   if (!w) return vNotFound(main, "업무를 찾을 수 없습니다", id, true);
+  if (isCompletedWork(w)) return nav("#workbench/" + w.id);
   S.selectedWorkId = w.id; saveState();
   main.innerHTML = `<div class="view">
     <a class="wb-back" href="#workbench/${esc(w.id)}">← 같은 업무 작업대로</a>

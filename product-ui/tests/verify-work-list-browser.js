@@ -158,6 +158,30 @@ async function assertWidth(browser, width, state) {
     assert.equal(await page.locator(selector).count(), 0, `completed work exposes mutable control ${selector}`);
   }
 
+  const completedRecordCount = await page.evaluate((workId) => {
+    const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+    return stored.works.find((work) => work.id === workId).records.length;
+  }, "work-maintenance-plan-completed");
+  await page.goto(`${baseURL}/?data=fixture#home`, { waitUntil: "networkidle" });
+  await page.locator("#omniIn").fill("2025년 정기점검보수 기본계획 수립 일정은 2월로 확정");
+  await page.locator("#omni").evaluate((form) => form.requestSubmit());
+  const completedPick = page.locator('[data-pick="work-maintenance-plan-completed"]');
+  if (await completedPick.count()) await completedPick.click();
+  await page.waitForTimeout(50);
+  const afterGlobalRecordCount = await page.evaluate((workId) => {
+    const stored = JSON.parse(localStorage.getItem("jikmu.workbench.v1"));
+    return stored.works.find((work) => work.id === workId).records.length;
+  }, "work-maintenance-plan-completed");
+  assert.equal(afterGlobalRecordCount, completedRecordCount, "global input mutated a completed work");
+  assert((await page.locator("#homeResult").innerText()).includes("완료된 업무"), "global input guard does not explain why the work is read-only");
+
+  await page.goto(`${baseURL}/?data=fixture#draft/work-maintenance-plan-completed`, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => location.hash === "#workbench/work-maintenance-plan-completed");
+  assert.equal(await page.locator('[data-work-phase="done"]').count(), 1, "completed draft route did not resolve to the read-only workbench");
+  for (const selector of ["#dSave", "#dCheck", "#freeDraft", "[data-ph]"]) {
+    assert.equal(await page.locator(selector).count(), 0, `completed draft route exposes mutable control ${selector}`);
+  }
+
   const overflow = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     clientWidth: document.documentElement.clientWidth
