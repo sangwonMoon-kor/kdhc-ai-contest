@@ -371,6 +371,16 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .reference-connect textarea{width:100%;margin:8px 0;padding:10px;border:1px solid var(--line-strong);border-radius:10px;
   background:var(--surface);color:var(--ink);font-family:inherit;resize:vertical}
 .workbench-output-action,.workbench-output-note{margin-top:14px}
+.workbench-output-start{padding:14px 16px;border-radius:var(--r-md);background:var(--blue-soft)}
+.workbench-output-start>strong{display:block;font-size:.95rem}
+.workbench-output-start>p{margin-top:4px;color:var(--ink-2);font-size:.83rem}
+.output-source-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:9px;margin:12px 0 16px}
+.output-source{min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 8px;
+  padding:11px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2);font-size:.78rem}
+.output-source__badge{grid-column:1 / -1;width:max-content;padding:2px 7px;border-radius:999px;background:var(--surface);
+  color:var(--blue);font-size:.68rem;font-weight:750}
+.output-source__label{color:var(--muted)}
+.output-source strong{min-width:0;overflow-wrap:anywhere;font-size:.8rem}
 .workbench-cautions{margin-top:18px}
 .workbench-completion__criterion{margin-bottom:14px;padding:13px 15px;border-radius:var(--r-sm);background:var(--surface-2);font-weight:650}
 .workbench-completion>.sub{margin-bottom:0}
@@ -442,6 +452,11 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .ph.sch{background:var(--blue-soft);color:var(--blue);border-color:var(--blue)}
 .ph input{border:0;background:transparent;color:inherit;font:inherit;width:9em;outline:none}
 .draft-tools{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+#freeDraft{width:100%;margin-top:10px;padding:12px;border:1px solid var(--line-strong);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-family:inherit;line-height:1.6;resize:vertical}
+.tone-candidate-boundary{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--blue-soft)}
+.tone-candidate-boundary strong{display:block;font-size:.85rem}
+.tone-candidate-boundary p{margin-top:4px;color:var(--ink-2);font-size:.8rem}
 .f-item{border-left:3px solid var(--amber);background:var(--amber-soft);border-radius:var(--r-sm);
   padding:10px 13px;margin-top:10px;font-size:.88rem}
 .f-item.r{border-color:var(--red);background:var(--red-soft)}

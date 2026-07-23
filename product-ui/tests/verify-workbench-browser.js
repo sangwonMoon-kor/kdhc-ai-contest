@@ -15,6 +15,12 @@ const expectedSections = ["headline", "progress", "official", "memory", "output"
 function fixtureState() {
   const state = workspaceModel.createDemoState();
   const work = state.works[0];
+  work.stageId = "design-and-costing";
+  work.stageName = "설계·내역 작성";
+  work.output.templateId = "TPL-MAINTENANCE-REPORT";
+  work.output.priorDocumentId = "APPR-2025-0409";
+  const newWork = state.works.find((item) => item.id === "work-maintenance-contract-2026");
+  newWork.output.templateId = "TPL-COMPANY-BASIC";
   work.sources.push({
     docId: "RESTRICTED-2026",
     category: "official",
@@ -87,6 +93,20 @@ async function assertNoOverflow(page, width) {
     `${width}px workbench overflows: ${dimensions.scrollWidth} > ${dimensions.clientWidth}`);
 }
 
+async function assertToneCandidateRequiresExplicitApply(page, originalText) {
+  const input = page.locator("[data-ph]").first();
+  await input.fill(originalText);
+  await page.getByRole("button", { name: "공기업 문체 교정안 요청", exact: true }).click();
+  const boundary = page.locator(".tone-candidate-boundary");
+  await boundary.waitFor();
+  assert((await boundary.innerText()).includes("문체 교정 연결 준비됨"));
+  assert((await boundary.innerText()).includes("현재 초안은 변경되지 않았습니다."));
+  assert((await boundary.innerText()).includes("적용은 사용자가 선택합니다."));
+  assert.equal(await input.inputValue(), originalText, "tone request mutated the draft before explicit apply");
+  assert.equal(await page.getByRole("button", { name: "교정안 적용", exact: true }).count(), 0,
+    "tone boundary exposed an apply action without an API candidate");
+}
+
 async function run() {
   let server;
   let browser;
@@ -108,6 +128,30 @@ async function run() {
     assert.equal(await page.locator('[data-reference-category="official"] [data-doc-id="RULE-2026-0401"]').count(), 1);
     assert.equal(await page.locator('[data-reference-category="memory"] [data-doc-id="APPR-2025-0409"]').count(), 1);
     assert.equal(await page.locator('[data-reference-category="official"] [data-author-type="personal"]').count(), 0);
+
+    const recurringOutput = page.locator('[data-workbench-section="output"]');
+    const recurringOutputText = await recurringOutput.innerText();
+    for (const value of [
+      "과거 구조를 활용한 초안",
+      "회사 템플릿",
+      "TPL-MAINTENANCE-REPORT",
+      "과거 문서",
+      "APPR-2025-0409",
+      "공식 지침",
+      "2건"
+    ]) {
+      assert(recurringOutputText.includes(value), `recurring output missed ${value}`);
+    }
+    for (const source of ["template", "prior", "official"]) {
+      assert.equal(await recurringOutput.locator(`[data-output-source="${source}"]`).count(), 1,
+        `recurring output missed ${source} provenance`);
+    }
+    await recurringOutput.getByRole("button", { name: "과거 문서 구조로 초안 열기", exact: true }).click();
+    await page.waitForFunction(() => location.hash === "#draft/work-maintenance-plan-2026");
+    await page.locator('[data-testid="draft-document"]').waitFor();
+    await assertToneCandidateRequiresExplicitApply(page, "사용자가 작성한 원문");
+    await page.evaluate(() => { location.hash = "#workbench/work-maintenance-plan-2026"; });
+    await page.locator('[data-testid="workbench"]').waitFor();
 
     const official = page.locator('[data-doc-id="RULE-2026-0401"]');
     const officialText = await official.innerText();
@@ -254,6 +298,27 @@ async function run() {
     const memoryEmpty = page.locator('[data-workbench-section="memory"]');
     assert((await memoryEmpty.innerText()).includes("처음 진행하는 업무"));
     assert((await memoryEmpty.innerText()).includes("신규 초안"));
+    const newOutput = page.locator('[data-workbench-section="output"]');
+    const newOutputText = await newOutput.innerText();
+    for (const value of [
+      "공식 기준에서 시작하는 새 초안",
+      "처음 진행하는 업무",
+      "회사 템플릿",
+      "TPL-COMPANY-BASIC",
+      "공식 지침",
+      "0건",
+      "확인 필요"
+    ]) {
+      assert(newOutputText.includes(value), `new output missed ${value}`);
+    }
+    assert.equal(await newOutput.locator('[data-output-source="first-work"]').count(), 1);
+    assert.equal(await newOutput.locator('[data-output-source="template"]').count(), 1);
+    assert.equal(await newOutput.locator('[data-output-source="official"]').count(), 1);
+    await newOutput.getByRole("button", { name: "빈 초안 시작", exact: true }).click();
+    await page.waitForFunction(() => location.hash === "#draft/work-maintenance-contract-2026");
+    await page.locator("#freeDraft").waitFor();
+    await page.evaluate(() => { location.hash = "#workbench/work-maintenance-contract-2026"; });
+    await page.locator('[data-testid="workbench"]').waitFor();
 
     const completedState = fixtureState();
     const completedWork = completedState.works.find((item) => item.id === "work-maintenance-contract-2026");

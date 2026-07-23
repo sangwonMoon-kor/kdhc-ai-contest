@@ -1096,6 +1096,24 @@ function renderMemoryReference(reference) {
     ${referenceAction(reference)}
   </article>`;
 }
+function outputViewModel(work, references) {
+  const recurring = work.output && work.output.mode === "recurring";
+  return {
+    mode: recurring ? "recurring" : "new",
+    title: recurring ? "과거 구조를 활용한 초안" : "공식 기준에서 시작하는 새 초안",
+    templateId: work.output && work.output.templateId,
+    priorDocumentId: recurring ? work.output && work.output.priorDocumentId : null,
+    officialCount: references.official.length,
+    finalDocumentId: work.output && work.output.finalDocumentId
+  };
+}
+function renderOutputSource(kind, badge, label, value) {
+  return `<div class="output-source" data-output-source="${esc(kind)}">
+    <span class="output-source__badge">${esc(badge)}</span>
+    <span class="output-source__label">${esc(label)}</span>
+    <strong>${esc(value || "확인 필요")}</strong>
+  </div>`;
+}
 
 function progressCandidateTypeLabel(type) {
   return {
@@ -1232,6 +1250,18 @@ async function vWorkbench(main, id) {
   const references = workbenchModel.partitionReferences(w);
   const officialReferences = references.official.map((source) => workbenchReference(source, documentById));
   const memoryReferences = references.memory.map((source) => workbenchReference(source, documentById));
+  const output = outputViewModel(w, references);
+  const outputSources = output.mode === "recurring"
+    ? [
+        renderOutputSource("template", "회사 템플릿", "작성 형식", output.templateId),
+        renderOutputSource("prior", "과거 문서", "전년도 문서 구조", output.priorDocumentId),
+        renderOutputSource("official", "공식 지침", "적용 기준", `${output.officialCount}건${output.officialCount ? "" : " · 확인 필요"}`)
+      ]
+    : [
+        renderOutputSource("first-work", "처음 진행하는 업무", "과거 구조", "재사용 자료 없음"),
+        renderOutputSource("template", "회사 템플릿", "작성 형식", output.templateId),
+        renderOutputSource("official", "공식 지침", "적용 기준", `${output.officialCount}건${output.officialCount ? "" : " · 확인 필요"}`)
+      ];
 
   main.innerHTML = `<div class="view" data-testid="workbench" data-work-id="${esc(w.id)}">
     <a class="wb-back" href="#work/list">← 내 업무</a>
@@ -1356,11 +1386,22 @@ async function vWorkbench(main, id) {
         <div class="workbench-section__header">
           <div><p class="eyebrow">작성</p><h2 id="output-title">만들어야 할 결과물</h2></div>
         </div>
+        <div class="workbench-output-start" data-output-mode="${esc(output.mode)}">
+          <strong>${esc(output.title)}</strong>
+          <p>${output.mode === "recurring"
+            ? "회사 템플릿과 과거 문서 구조를 확인한 뒤 초안을 엽니다."
+            : (output.officialCount
+              ? "처음 진행하는 업무이므로 회사 템플릿과 연결된 공식 지침에서 시작합니다."
+              : "처음 진행하는 업무이므로 회사 템플릿에서 시작하고 공식 지침은 확인 필요로 남깁니다.")}</p>
+        </div>
+        <div class="output-source-list">${outputSources.join("")}</div>
         <div class="kv">
           <span>산출물 <b>${esc(w.title)}(안)</b></span>
           <span>임시 저장 <b>${w.draft && w.draft.savedAt ? fmtTs(w.draft.savedAt) : "없음"}</b></span>
         </div>
-        ${headline.isComplete ? '<p class="sub workbench-output-note">완료 당시 결과물 정보입니다.</p>' : `<button class="btn workbench-output-action" id="goDraft">기안 ${w.draft && w.draft.savedAt ? "이어서 쓰기" : "시작"}</button>`}
+        ${headline.isComplete ? '<p class="sub workbench-output-note">완료 당시 결과물 정보입니다.</p>' : `<button class="btn workbench-output-action" id="goDraft">${w.draft && w.draft.savedAt
+          ? "기안 이어서 쓰기"
+          : (output.mode === "recurring" ? "과거 문서 구조로 초안 열기" : "빈 초안 시작")}</button>`}
         ${cautions.length ? `<div class="blk-k workbench-cautions">제출 전 주의</div>` + cautions.map((c) => `
           <div class="k-item">${esc(c.text)}${(c.evidence || []).slice(0, 2).map(evBtn).join("")}</div>`).join("") : ""}
       </section>
@@ -1560,6 +1601,36 @@ async function ingestFlow(w, file, pastedText) {
 }
 
 /* ---------- 기안 집중 화면 ---------- */
+function toneCandidateAction() {
+  return `<button class="btn ghost" type="button" data-request-tone>공기업 문체 교정안 요청</button>
+    <div data-tone-boundary></div>`;
+}
+function bindToneCandidateBoundary(scope) {
+  // Future API contract: input { workId, text, officialSourceIds }; output { candidateText, changes, sourceIds }.
+  const request = $("[data-request-tone]", scope);
+  const boundary = $("[data-tone-boundary]", scope);
+  if (!request || !boundary) return;
+  request.onclick = () => {
+    boundary.innerHTML = `<div class="tone-candidate-boundary" role="status">
+      <strong>문체 교정 연결 준비됨</strong>
+      <p>현재 초안은 변경되지 않았습니다. 교정 엔진 연결 후 후보 문장을 이 영역에 표시하고, 적용은 사용자가 선택합니다.</p>
+    </div>`;
+  };
+}
+function renderFreeDraftEditor(body, work, isNewWork) {
+  body.innerHTML = `<div class="card">
+    <p>${isNewWork ? "처음 진행하는 업무의 빈 초안입니다." : "이 업무는 아직 단계가 정해지지 않아 과거 양식을 찾을 수 없습니다."}</p>
+    <p class="sub workbench-output-note">${isNewWork
+      ? "확인된 내용만 직접 작성하고 제출 전 점검을 활용할 수 있습니다."
+      : "아래에 초안을 직접 쓰고 제출 전 점검만 활용할 수 있습니다."}</p>
+    <textarea id="freeDraft" rows="8">${esc((work.draft && work.draft.freeText) || "")}</textarea>
+    <div class="draft-tools"><button class="btn ghost" id="dSave">임시 저장</button><button class="btn" id="dCheck">제출 전 점검</button>${toneCandidateAction()}</div>
+    <div id="checkOut" data-testid="precheck-results"></div>
+  </div>`;
+  $("#dSave").onclick = () => { work.draft = { savedAt: Date.now(), freeText: $("#freeDraft").value }; saveState(); toast("임시 저장했습니다."); };
+  $("#dCheck").onclick = () => runCheck($("#freeDraft").value, $("#checkOut"));
+  bindToneCandidateBoundary(body);
+}
 async function vDraft(main, id) {
   const w = getWork(id);
   if (!w) return vNotFound(main, "업무를 찾을 수 없습니다", id, true);
@@ -1571,14 +1642,9 @@ async function vDraft(main, id) {
     <div id="draftBody"><div class="card"><p class="sub">작년 양식을 불러오는 중…</p></div></div>
   </div>`;
   const body = $("#draftBody");
-  if (!w.stageId) {
-    body.innerHTML = `<div class="card"><p>이 업무는 아직 단계가 정해지지 않아 과거 양식을 찾을 수 없습니다.</p>
-      <p class="sub" style="margin-top:6px">아래에 초안을 직접 쓰고 제출 전 점검만 활용할 수 있습니다.</p>
-      <textarea id="freeDraft" rows="8" style="width:100%;margin-top:10px;border:1px solid var(--line-strong);border-radius:10px;padding:12px;font-family:inherit;background:var(--surface);color:var(--ink)">${esc((w.draft && w.draft.freeText) || "")}</textarea>
-      <div class="draft-tools"><button class="btn ghost" id="dSave">임시 저장</button><button class="btn" id="dCheck">제출 전 점검</button></div>
-      <div id="checkOut" data-testid="precheck-results"></div></div>`;
-    $("#dSave").onclick = () => { w.draft = { savedAt: Date.now(), freeText: $("#freeDraft").value }; saveState(); toast("임시 저장했습니다."); };
-    $("#dCheck").onclick = () => runCheck($("#freeDraft").value, $("#checkOut"));
+  const isNewWork = !w.output || w.output.mode !== "recurring";
+  if (isNewWork || !w.stageId) {
+    renderFreeDraftEditor(body, w, isNewWork);
     return;
   }
   try {
@@ -1603,6 +1669,7 @@ async function vDraft(main, id) {
       <div class="draft-tools">
         <button class="btn ghost" id="dSave">임시 저장</button>
         <button class="btn" id="dCheck">제출 전 점검</button>
+        ${toneCandidateAction()}
         <span class="sub" id="saveStamp">${w.draft && w.draft.savedAt ? "저장됨 " + fmtTs(w.draft.savedAt) : ""}</span>
       </div>
       <div id="checkOut" data-testid="precheck-results"></div>
@@ -1620,6 +1687,7 @@ async function vDraft(main, id) {
       }).join("")).join("\n");
       runCheck(text, $("#checkOut"));
     };
+    bindToneCandidateBoundary(body);
   } catch (e) {
     body.innerHTML = `<div class="card"><p>엔진 연결을 확인해 주세요.</p></div>`;
   }

@@ -129,6 +129,24 @@ async function waitForStableUi(page) {
   await wait(50);
 }
 
+async function assertToneCandidateRequiresExplicitApply(page) {
+  const input = page.locator("[data-ph]").first();
+  const previousText = await input.inputValue();
+  const originalText = "사용자가 입력한 금액 근거";
+  await input.fill(originalText);
+  await page.getByRole("button", { name: "공기업 문체 교정안 요청", exact: true }).click();
+  const boundary = page.locator(".tone-candidate-boundary");
+  await boundary.waitFor();
+  const boundaryText = await boundary.innerText();
+  assert(boundaryText.includes("문체 교정 연결 준비됨"), "tone request did not open the honest status boundary");
+  assert(boundaryText.includes("현재 초안은 변경되지 않았습니다."), "tone boundary claimed or implied draft mutation");
+  assert(boundaryText.includes("적용은 사용자가 선택합니다."), "tone boundary lost the explicit-apply contract");
+  assert.equal(await input.inputValue(), originalText, "tone request mutated the draft before explicit apply");
+  assert.equal(await page.getByRole("button", { name: "교정안 적용", exact: true }).count(), 0,
+    "tone boundary exposed an apply action without an API candidate");
+  await input.fill(previousText);
+}
+
 async function run() {
   let server;
   let browser;
@@ -152,6 +170,12 @@ async function run() {
       todos: [],
       records: [],
       sources: [],
+      output: {
+        mode: "new",
+        templateId: "TPL-COMPANY-BASIC",
+        priorDocumentId: null,
+        finalDocumentId: null
+      },
       draft: { savedAt: null, values: null }
     };
     const savedDraftWork = {
@@ -229,6 +253,13 @@ async function run() {
     }
     assert((await memorySection.innerText()).includes("분류 확인 필요"), "unclassified forecast sources lost their review status");
     assert((await outputSection.innerText()).includes("산출물 2026년 순환수 펌프 정비공사 추진 보고(안)"), "workbench output no longer uses its title-based display");
+    assert((await outputSection.innerText()).includes("과거 구조를 활용한 초안"), "recurring work did not expose its output starting mode");
+    for (const source of ["template", "prior", "official"]) {
+      assert.equal(await outputSection.locator(`[data-output-source="${source}"]`).count(), 1,
+        `recurring output missed ${source} provenance`);
+    }
+    assert.equal(await outputSection.getByRole("button", { name: "과거 문서 구조로 초안 열기", exact: true }).count(), 1,
+      "recurring output lost its existing draft route");
     assert.equal((await outputSection.innerText()).includes("결재 상신"), false, "workbench output conflated completion criteria with the output");
     assert((await completionSection.innerText()).includes("결재 상신"), "workbench completion section missed the done-when condition");
     assert.equal(await headlineSection.locator('[data-ev="okf:design-and-costing"]').count(), 1, "workbench headline missed its selected-stage OKF evidence control");
@@ -253,6 +284,19 @@ async function run() {
     const missingMemoryText = await missingDossier.locator('[data-workbench-section="memory"]').innerText();
     assert(missingMemoryText.includes("처음 진행하는 업무") && missingMemoryText.includes("신규 초안"), "missing memory did not show the first-work empty state");
     assert((await missingDossier.locator('[data-workbench-section="progress"]').innerText()).includes("첫 메모"), "missing records did not show the first-note guidance");
+    const missingOutput = missingDossier.locator('[data-workbench-section="output"]');
+    const missingOutputText = await missingOutput.innerText();
+    assert(missingOutputText.includes("공식 기준에서 시작하는 새 초안"), "new work did not expose its output starting mode");
+    assert(missingOutputText.includes("처음 진행하는 업무"), "new output missed first-work rationale");
+    assert(missingOutputText.includes("TPL-COMPANY-BASIC"), "new output missed its company template");
+    assert(missingOutputText.includes("공식 지침") && missingOutputText.includes("0건"), "new output missed its official-source count");
+    assert.equal(await missingOutput.getByRole("button", { name: "빈 초안 시작", exact: true }).count(), 1,
+      "new output missed its blank draft path");
+    await missingOutput.getByRole("button", { name: "빈 초안 시작", exact: true }).click();
+    await page.waitForFunction((id) => location.hash === "#draft/" + id, missingWork.id);
+    await page.locator("#freeDraft").waitFor();
+    await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, missingWork.id);
+    await page.waitForSelector(".workbench-dossier");
 
     await page.evaluate((id) => { location.hash = "#workbench/" + encodeURIComponent(id); }, savedDraftWork.id);
     await page.waitForSelector(".workbench-dossier");
@@ -324,6 +368,7 @@ async function run() {
     assertRouteWorkId(page, "draft", workId);
     const draft = page.locator('[data-testid="draft-document"]');
     await draft.waitFor();
+    await assertToneCandidateRequiresExplicitApply(page);
     const activeStatus = await assertDataStatus(page);
     if (activeStatus === "실제 엔진 연결") {
       const draftText = (await draft.innerText()).trim();
