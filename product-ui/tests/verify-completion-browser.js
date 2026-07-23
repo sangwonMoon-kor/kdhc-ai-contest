@@ -38,6 +38,13 @@ function completionFixture() {
       basis: "현장 사진을 확인 요청했습니다.",
       dateISO: null,
       status: "proposed"
+    }, {
+      id: "candidate-dismissed-review",
+      type: "reference",
+      label: "폐기한 참고 메모",
+      basis: "현재 업무와 무관해 건너뛰었습니다.",
+      dateISO: null,
+      status: "dismissed"
     }]
   )];
 
@@ -453,6 +460,16 @@ async function run() {
       "completion review did not identify the candidate as unconfirmed");
     assert.equal(reviewRecordsText.includes("확정 기록"), false,
       "completion review placed proposed data under confirmed records");
+    const proposedReviewText = await dialog.locator("[data-review-unconfirmed-candidates]").innerText();
+    assert(proposedReviewText.includes("현장 사진 확인"),
+      "completion review omitted the actually proposed candidate");
+    assert.equal(proposedReviewText.includes("폐기한 참고 메모"), false,
+      "completion review placed a dismissed candidate under 확인 전 후보");
+    const dismissedReview = dialog.locator("[data-review-dismissed-candidates]");
+    assert.equal(await dismissedReview.count(), 1,
+      "completion review did not separate dismissed candidates");
+    assert((await dismissedReview.innerText()).includes("폐기한 참고 메모"),
+      "completion review omitted the dismissed candidate label");
     assert((await dialog.locator("[data-review-open-items]").innerText()).includes("현장 배포 확인"));
 
     await page.locator("[data-completion-date]").fill("2026-07-23");

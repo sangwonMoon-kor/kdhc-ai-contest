@@ -1283,7 +1283,9 @@ function openCompletionReview(work, resolvedReferences, output, opener) {
     return candidates.map((candidate) => Object.assign({ sourceText: record.text }, candidate));
   });
   const confirmedCandidates = reviewCandidates.filter((candidate) => candidate.status === "confirmed");
-  const unconfirmedCandidates = reviewCandidates.filter((candidate) => candidate.status !== "confirmed");
+  const proposedCandidates = reviewCandidates.filter((candidate) =>
+    !["confirmed", "dismissed"].includes(candidate.status));
+  const dismissedCandidates = reviewCandidates.filter((candidate) => candidate.status === "dismissed");
   const overlay = document.createElement("div");
   overlay.className = "completion-review-backdrop";
   overlay.innerHTML = `<section class="completion-review" role="dialog" aria-modal="true"
@@ -1323,9 +1325,13 @@ function openCompletionReview(work, resolvedReferences, output, opener) {
           ? `<h4>사용자가 확인한 후보</h4><ul data-review-confirmed-candidates>${confirmedCandidates.map((candidate) =>
             `<li><strong>${esc(candidate.label || "이름 없는 후보")}</strong><span> · ${esc(candidate.basis || candidate.sourceText || "근거 없음")}</span></li>`).join("")}</ul>`
           : ""}
-        ${unconfirmedCandidates.length
-          ? `<h4>확인 전 후보</h4><ul data-review-unconfirmed-candidates>${unconfirmedCandidates.map((candidate) =>
+        ${proposedCandidates.length
+          ? `<h4>확인 전 후보</h4><ul data-review-unconfirmed-candidates>${proposedCandidates.map((candidate) =>
             `<li><strong>${esc(candidate.label || "이름 없는 후보")}</strong><span> · ${esc(candidate.basis || candidate.sourceText || "근거 없음")}</span></li>`).join("")}</ul>`
+          : ""}
+        ${dismissedCandidates.length
+          ? `<h4>건너뛴 후보</h4><ul data-review-dismissed-candidates>${dismissedCandidates.map((candidate) =>
+            `<li><strong>${esc(candidate.label || "이름 없는 후보")}</strong><span> · 건너뜀 · ${esc(candidate.basis || candidate.sourceText || "근거 없음")}</span></li>`).join("")}</ul>`
           : ""}
       </section>
       <section class="completion-review__section" data-review-open-items>
