@@ -14,5 +14,15 @@
   "scenarios": {
     "primary": "pump-maintenance",
     "simDate": "2026-01-02"
-  }
+  },
+  "documentIndex": [
+    {
+      "id": "DOC-FIXTURE-001",
+      "access": "full",
+      "kind": "전자결재",
+      "title": "2026년 순환수 펌프 정비 계획 보고",
+      "task": "설계·내역 작성",
+      "author": "김민준 과장"
+    }
+  ]
 }

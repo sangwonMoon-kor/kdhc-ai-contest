@@ -56,6 +56,20 @@ function response(body, ok = true, status = 200) {
   ];
   for (const [apiPath, value] of validShapes) assert.equal(normalizeResponse(apiPath, value), value);
 
+  const normalizedLegacyLiveDocuments = normalizeResponse("/api/documents", [
+    { id: "LEGACY-ALLOWED", title: "Legacy allowed document" },
+    { id: "EXPLICIT-DENIED", title: "Explicit denied document", access: "none" }
+  ], { legacyDocumentIndexGrant: true });
+  assert.equal(normalizedLegacyLiveDocuments[0].access, "full",
+    "authenticated live index presence did not normalize the legacy access grant");
+  assert.equal(normalizedLegacyLiveDocuments[1].access, "none",
+    "explicit live denial did not win over the legacy index grant");
+  assert.throws(
+    () => normalizeResponse("/api/documents", [{ id: "FIXTURE-MISSING-ACCESS" }]),
+    /documents access contract mismatch/,
+    "fixture/captured index accepted an implicit access value"
+  );
+
   const invalidShapes = [
     ["/api/forecast", { items: [{ name: "순환수 펌프 정비", task: "설계·내역 작성", stageId: "design-and-costing", month: 4, lastDate: "2025-04-09", dueDate: '\"><img src=x onerror=alert(1)>', dday: 97, docCount: 2, docs: ["APPR-2025-0409"] }] }, /forecast contract mismatch/],
     ["/api/graph", { nodes: [] }, /graph contract mismatch/],
@@ -79,6 +93,100 @@ function response(body, ok = true, status = 200) {
   assert.deepEqual(await fixture.request("/api/summary"), { docCount: 19, stats: { nodes: 193, edges: 938 } });
   assert(fixtureCalls.every((url) => String(url).startsWith("fixtures/")), "fixture mode attempted an API call");
   assert.equal(fixture.getStatus().activeMode, "fixture");
+
+  const fixtureOverlayCalls = [];
+  const fixtureWithOverlay = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
+    fixtureOverlayCalls.push(url);
+    if (url === "fixtures/manifest.json") {
+      return response({
+        contractVersion: 1,
+        documentIndex: [{
+          id: "DOC-FIXTURE-001",
+          access: "full",
+          kind: "전자결재",
+          title: "Captured ingest document"
+        }]
+      });
+    }
+    if (url === "fixtures/documents/index.json") {
+      return response([{ id: "BASE-DOC", access: "full", title: "Base document" }]);
+    }
+    throw new Error(`unexpected fixture overlay URL: ${url}`);
+  }});
+  const fixtureOverlayIndex = await fixtureWithOverlay.request("/api/documents");
+  assert.deepEqual(fixtureOverlayIndex.map((document) => [document.id, document.access]), [
+    ["BASE-DOC", "full"],
+    ["DOC-FIXTURE-001", "full"]
+  ], "fixture manifest document overlay was not merged into the canonical index");
+  assert.deepEqual(fixtureOverlayCalls, [
+    "fixtures/manifest.json",
+    "fixtures/documents/index.json"
+  ]);
+
+  const localOverlayCalls = [];
+  const fixtureWithLocalOverlay = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
+    localOverlayCalls.push(url);
+    if (url === "fixtures/manifest.json") return response({ contractVersion: 1, documentIndex: [] });
+    if (url === "fixtures/local-maintenance/ask/maintenance-plan.json") {
+      return response({
+        grounded: true,
+        answer: ["Local maintenance answer"],
+        knowledge: [],
+        docs: [{ id: "PROC-MAINT-31100" }]
+      });
+    }
+    if (url === "fixtures/documents/index.json") return response([]);
+    if (url === "fixtures/local-maintenance/manifest.json") {
+      return response({
+        contractVersion: 1,
+        localOnly: true,
+        documentIndex: [{
+          id: "PROC-MAINT-31100",
+          access: "full",
+          kind: "유지보수 절차",
+          title: "Local maintenance procedure"
+        }]
+      });
+    }
+    if (url === "fixtures/local-maintenance/documents/PROC-MAINT-31100.json") {
+      return response({
+        doc: { id: "PROC-MAINT-31100", title: "Local maintenance procedure", text: "PRIVATE LOCAL BODY" },
+        edges: []
+      });
+    }
+    throw new Error(`unexpected local overlay URL: ${url}`);
+  }});
+  await fixtureWithLocalOverlay.request("/api/ask", { question: "정기점검보수 기본계획 수립 절차" });
+  const localOverlayIndex = await fixtureWithLocalOverlay.request("/api/documents");
+  assert.deepEqual(localOverlayIndex.map((document) => [document.id, document.access]), [
+    ["PROC-MAINT-31100", "full"]
+  ], "available local-maintenance fixture was not advertised through an explicit canonical overlay");
+  assert(localOverlayCalls.includes("fixtures/local-maintenance/manifest.json"),
+    "local overlay availability did not verify the private manifest");
+  assert(localOverlayCalls.includes("fixtures/local-maintenance/documents/PROC-MAINT-31100.json"),
+    "local overlay availability did not verify the private document");
+
+  const unavailableLocalOverlayCalls = [];
+  const unavailableLocalOverlay = createApiClient({ mode: "fixture", fetchImpl: async (url) => {
+    unavailableLocalOverlayCalls.push(url);
+    if (url === "fixtures/manifest.json") return response({ contractVersion: 1, documentIndex: [] });
+    if (url === "fixtures/local-maintenance/ask/maintenance-plan.json") {
+      return response({
+        grounded: true,
+        answer: ["Local maintenance answer"],
+        knowledge: [],
+        docs: [{ id: "PROC-MAINT-31100" }]
+      });
+    }
+    if (url === "fixtures/documents/index.json") return response([]);
+    if (url === "fixtures/local-maintenance/manifest.json") return response({}, false, 404);
+    throw new Error(`unavailable local overlay requested unexpected URL: ${url}`);
+  }});
+  await unavailableLocalOverlay.request("/api/ask", { question: "정기점검보수 기본계획 수립 절차" });
+  assert.deepEqual(await unavailableLocalOverlay.request("/api/documents"), [],
+    "adapter advertised a local-maintenance document without its manifest/document overlay");
+  assert(unavailableLocalOverlayCalls.includes("fixtures/local-maintenance/manifest.json"),
+    "adapter did not verify local overlay availability before omitting it");
 
   const fixtureActionCalls = [];
   const fixtureAction = createApiClient({ mode: "fixture", fetchImpl: async (url, options = {}) => {
@@ -146,6 +254,29 @@ function response(body, ok = true, status = 200) {
   }});
   assert.equal((await live.request("/api/summary")).versionLabel, "v2.4");
   assert.deepEqual(liveCalls, ["/api/summary"]);
+
+  const liveDocumentCalls = [];
+  const liveDocuments = createApiClient({ mode: "live", fetchImpl: async (url) => {
+    liveDocumentCalls.push(url);
+    return response([
+      { id: "LIVE-LEGACY", title: "Legacy live document" },
+      { id: "LIVE-DENIED", title: "Denied live document", access: "none" }
+    ]);
+  }});
+  assert.deepEqual(
+    (await liveDocuments.request("/api/documents")).map((document) => [document.id, document.access]),
+    [["LIVE-LEGACY", "full"], ["LIVE-DENIED", "none"]]
+  );
+  assert.deepEqual(liveDocumentCalls, ["/api/documents"]);
+
+  const autoLiveDocuments = createApiClient({ mode: "auto", fetchImpl: async () => response([
+    { id: "AUTO-LEGACY", title: "Legacy auto-live document" },
+    { id: "AUTO-DENIED", title: "Denied auto-live document", access: "none" }
+  ]) });
+  assert.deepEqual(
+    (await autoLiveDocuments.request("/api/documents")).map((document) => [document.id, document.access]),
+    [["AUTO-LEGACY", "full"], ["AUTO-DENIED", "none"]]
+  );
 
   const autoCalls = [];
   const auto = createApiClient({ mode: "auto", fetchImpl: async (url) => {

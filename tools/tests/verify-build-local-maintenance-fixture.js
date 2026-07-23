@@ -86,6 +86,14 @@ function assertDocumentContract(value) {
   assert.equal(built.manifest.contractVersion, 1);
   assert.equal(built.manifest.localOnly, true);
   assert.equal(built.manifest.generatedAt, generatedAt);
+  assert.deepEqual(built.manifest.documentIndex, [{
+    id: "PROC-MAINT-31100",
+    access: "full",
+    kind: "유지보수 절차",
+    title: "정기점검보수 기본계획 수립 절차",
+    task: "기본계획 수립",
+    author: "보안 변환본 기반 로컬 시연"
+  }], "generated local fixture omitted its explicit canonical document index overlay");
   assert.equal(
     built.manifest.source.sha256,
     crypto.createHash("sha256").update(syntheticSource, "utf8").digest("hex")

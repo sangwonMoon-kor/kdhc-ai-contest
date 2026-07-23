@@ -58,6 +58,13 @@ function fields(value, message, required) {
   assert(object(value), `${message} must be an object`);
   Object.entries(required).forEach(([key, predicate]) => assert(predicate(value[key]), `${message}.${key} has an unexpected type`));
 }
+function normalizeCapturedDocumentIndex(documents) {
+  assert(Array.isArray(documents), "documents must be an array");
+  return documents.map((document, index) => {
+    assert(object(document) && string(document.id), `documents[${index}] must have an id`);
+    return { ...document, access: document.access === "none" ? "none" : "full" };
+  });
+}
 function validateResponses({ summary, forecast, briefing, graph, documents, askPump, askMissing, drafts, riskyCheck, cleanCheck, hintStage, hintCommit, ingestStage, ingestCommit, extract }) {
   assert(object(summary), "summary must be an object");
   assert(summary.version === 24 && summary.versionLabel === "v2.4", "summary must be v2.4");
@@ -90,7 +97,15 @@ function validateResponses({ summary, forecast, briefing, graph, documents, askP
   assert(graph.nodes.length === 193 && graph.edges.length === 938, "graph must match the captured 193-node/938-edge baseline");
   graph.nodes.forEach((node, index) => fields(node, `graph.nodes[${index}]`, { key: string, type: string, name: string }));
   graph.edges.forEach((edge, index) => fields(edge, `graph.edges[${index}]`, { from: string, to: string, rel: string }));
-  collection(documents, 19, "documents", (doc, message) => fields(doc, message, { id: string, kind: string, title: string, date: string, task: (value) => value === null || string(value), author: string }));
+  collection(documents, 19, "documents", (doc, message) => fields(doc, message, {
+    id: string,
+    access: (value) => value === "full" || value === "none",
+    kind: string,
+    title: string,
+    date: string,
+    task: (value) => value === null || string(value),
+    author: string
+  }));
   const validateAsk = (value, message, expected) => {
     fields(value, message, { question: string, intent: string, answer: Array.isArray, knowledge: Array.isArray, docs: Array.isArray, forecast: Array.isArray, entities: object, followups: Array.isArray, grounded: (item) => typeof item === "boolean", disclaimer: string });
     assert(value.grounded === expected.grounded, `${message}.grounded has an unexpected value`);
@@ -158,14 +173,15 @@ function collectEvidenceIds(value, docs, okf) {
   });
 }
 
-function buildManifest(summary, { engineCommit, generatedAt }) {
+function buildManifest(summary, { engineCommit, generatedAt, documentIndex = [] }) {
   return {
     contractVersion: 1,
     fixtureVersion: summary.versionLabel,
     generatedAt,
     engine: { repository: "creationy/jikmu-memory", commit: engineCommit },
     stats: { docCount: summary.docCount, nodes: summary.stats.nodes, edges: summary.stats.edges },
-    scenarios: { primary: "pump-maintenance", simDate: summary.simDate }
+    scenarios: { primary: "pump-maintenance", simDate: summary.simDate },
+    documentIndex
   };
 }
 
@@ -176,7 +192,7 @@ async function capture({ baseUrl, engineCommit, generatedAt, outRoot = defaultOu
   const forecast = await get("/api/forecast");
   const briefing = await get("/api/briefing");
   const graph = await get("/api/graph");
-  const documents = await get("/api/documents");
+  const documents = normalizeCapturedDocumentIndex(await get("/api/documents"));
   const askPump = await get("/api/ask", { question: "작년 펌프 정비 추진 보고 찾아줘" });
   const askMissing = await get("/api/ask", { question: "점심 뭐 먹지?" });
   const drafts = {};
@@ -254,7 +270,18 @@ async function capture({ baseUrl, engineCommit, generatedAt, outRoot = defaultOu
   put("documents/DOC-FIXTURE-001.json", { doc: ingestStage.doc, edges: [] });
   for (const [id, fixture] of documentFixtures) put(`documents/${encodeURIComponent(id)}.json`, fixture);
   for (const [id, fixture] of okfFixtures) put(`okf/${encodeURIComponent(id)}.json`, fixture);
-  put("manifest.json", buildManifest(summary, { engineCommit, generatedAt }));
+  put("manifest.json", buildManifest(summary, {
+    engineCommit,
+    generatedAt,
+    documentIndex: [{
+      id: ingestStage.doc.id,
+      access: "full",
+      kind: ingestStage.doc.kind,
+      title: ingestStage.doc.title,
+      task: ingestStage.doc.task,
+      author: ingestStage.doc.author
+    }]
+  }));
   console.log(`Captured fixtures from ${baseUrl} (${summary.versionLabel}, docs=${summary.docCount})`);
 }
 
@@ -273,4 +300,11 @@ if (require.main === module) {
   }
 }
 
-module.exports = { validateResponses, collectEvidenceIds, parseCliArgs, buildManifest, capture };
+module.exports = {
+  validateResponses,
+  collectEvidenceIds,
+  parseCliArgs,
+  buildManifest,
+  normalizeCapturedDocumentIndex,
+  capture
+};

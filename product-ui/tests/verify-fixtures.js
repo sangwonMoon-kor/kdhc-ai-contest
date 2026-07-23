@@ -45,11 +45,20 @@ if (!failures.length) {
   if (manifest.fixtureVersion !== "v2.4") failures.push("fixtureVersion must be v2.4");
   if (manifest.engine.repository !== "creationy/jikmu-memory") failures.push("wrong engine repository");
   if (manifest.engine.commit !== "e7dcfb17632560d1e660b2380cc0ccfaab0ac894") failures.push("wrong engine commit");
+  const manifestDocumentIndex = Array.isArray(manifest.documentIndex) ? manifest.documentIndex : [];
+  const ingestedOverlay = manifestDocumentIndex.find((document) => document && document.id === "DOC-FIXTURE-001");
+  if (!ingestedOverlay || ingestedOverlay.access !== "full") {
+    failures.push("manifest missing explicit DOC-FIXTURE-001 canonical access overlay");
+  }
   if (summary.docCount !== 19 || summary.stats.nodes !== 193 || summary.stats.edges !== 938) failures.push("unexpected v2.4 summary");
   if (!(forecast.items || []).some((item) => /펌프/.test(item.name))) failures.push("pump forecast missing");
   if (!ask.grounded || !(ask.docs || []).length) failures.push("grounded pump answer missing");
   if (!draft.ok || draft.stageId !== "design-and-costing") failures.push("design draft missing");
   if (!(check.count > 0)) failures.push("risk findings missing");
+  const documents = read("documents/index.json");
+  if (!documents.every((document) => document && ["full", "none"].includes(document.access))) {
+    failures.push("captured document index contains implicit access");
+  }
   const routeCases = [
     ["/api/summary", null],
     ["/api/forecast", null],

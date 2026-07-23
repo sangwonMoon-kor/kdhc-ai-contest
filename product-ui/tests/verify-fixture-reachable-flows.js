@@ -169,6 +169,19 @@ async function run() {
     assert((await page.locator("#ingestPanel [data-tr]").count()) > 0, "fixture ingest staging did not produce reviewable triples");
     await page.locator("#ingCommit").click();
     await page.waitForFunction(() => document.querySelector("#toast")?.textContent.includes("자료를 이 업무의 근거로 저장"));
+    const ingestedReference = page.locator('[data-doc-id="DOC-FIXTURE-001"]');
+    await ingestedReference.waitFor();
+    assert.equal(await ingestedReference.getAttribute("data-access"), "full",
+      "ingested fixture document was not added to the canonical access index");
+    await ingestedReference.locator('[data-ev="DOC-FIXTURE-001"]').click();
+    await page.locator("#drawer:not([hidden])").waitFor();
+    await page.waitForFunction(() => !document.querySelector("#drawerBody")?.textContent.includes("불러오는 중"));
+    const ingestedDrawerText = (await page.locator("#drawerBody").innerText()).trim();
+    assert(ingestedDrawerText.includes("2026년 순환수 펌프 정비 계획 보고"),
+      "ingested fixture evidence did not open its routed detail");
+    assert(ingestedDrawerText.includes("운영부와 정비 일정을 확인"),
+      "ingested fixture evidence drawer omitted its document body");
+    await page.locator("#drawerClose").click();
 
     assert.deepEqual(apiRequests, [], `fixture flows requested live API routes: ${apiRequests.join(" | ")}`);
     assert.deepEqual(fixtureBodyRequests, [], `fixture flows sent action bodies to fixture files: ${fixtureBodyRequests.join(" | ")}`);

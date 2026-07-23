@@ -42,6 +42,14 @@ assert.deepStrictEqual(
 );
 assert.deepStrictEqual(
   model.resolveReferenceAccess(
+    { docId: "implicit", access: "full" },
+    { id: "implicit", access: "legacy-present" }
+  ),
+  { docId: "implicit", access: "none", canReadBody: false, isKnown: true },
+  "model resolver accepted a non-normalized canonical access value"
+);
+assert.deepStrictEqual(
+  model.resolveReferenceAccess(
     { docId: "readable", access: "none" },
     { id: "readable", access: "full" }
   ),

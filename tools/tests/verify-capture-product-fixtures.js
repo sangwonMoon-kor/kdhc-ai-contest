@@ -3,7 +3,12 @@ const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
-const { validateResponses, parseCliArgs, buildManifest } = require("../capture-product-fixtures");
+const {
+  validateResponses,
+  parseCliArgs,
+  buildManifest,
+  normalizeCapturedDocumentIndex
+} = require("../capture-product-fixtures");
 
 const fixtureRoot = path.resolve(__dirname, "..", "..", "product-ui", "fixtures");
 const captureScript = path.resolve(__dirname, "..", "capture-product-fixtures.js");
@@ -36,6 +41,27 @@ assert.throws(() => validateResponses({ ...payloads(), forecast: { simDate: "202
 assert.throws(() => validateResponses({ ...payloads(), briefing: { generatedFrom: { docs: 19, edges: 938, version: 24 }, stages: [], cautions: [] } }));
 assert.throws(() => validateResponses({ ...payloads(), graph: { nodes: [], edges: [] } }));
 assert.throws(() => validateResponses({ ...payloads(), drafts: { "design-and-costing": read("draft/design-and-costing.json") } }));
+const missingAccessPayload = payloads();
+missingAccessPayload.documents = missingAccessPayload.documents.map((document, index) => {
+  const copy = { ...document };
+  if (index === 0) delete copy.access;
+  return copy;
+});
+assert.throws(
+  () => validateResponses(missingAccessPayload),
+  /documents\[0\]\.access/,
+  "capture validation accepted an implicit document access value"
+);
+
+const normalizedCapturedDocuments = normalizeCapturedDocumentIndex([
+  { id: "LEGACY-CAPTURED", title: "Legacy captured document" },
+  { id: "DENIED-CAPTURED", title: "Denied captured document", access: "none" }
+]);
+assert.deepEqual(
+  normalizedCapturedDocuments.map((document) => [document.id, document.access]),
+  [["LEGACY-CAPTURED", "full"], ["DENIED-CAPTURED", "none"]],
+  "capture boundary did not emit mandatory explicit access"
+);
 
 assert.deepEqual(parseCliArgs([
   "--base-url=http://127.0.0.1:8343",
@@ -48,11 +74,19 @@ assert.throws(() => parseCliArgs([`--engine-commit=${engineCommit}`]), /--genera
 assert.throws(() => parseCliArgs([`--engine-commit=${engineCommit}`, "--generated-at=yesterday"]), /ISO/i);
 
 const summary = payloads().summary;
-const firstBytes = Buffer.from(JSON.stringify(buildManifest(summary, { engineCommit, generatedAt }), null, 2) + "\n");
-const secondBytes = Buffer.from(JSON.stringify(buildManifest(summary, { engineCommit, generatedAt }), null, 2) + "\n");
+const documentIndex = [{
+  id: "DOC-FIXTURE-001",
+  access: "full",
+  kind: "전자결재",
+  title: "2026년 순환수 펌프 정비 계획 보고"
+}];
+const firstBytes = Buffer.from(JSON.stringify(buildManifest(summary, { engineCommit, generatedAt, documentIndex }), null, 2) + "\n");
+const secondBytes = Buffer.from(JSON.stringify(buildManifest(summary, { engineCommit, generatedAt, documentIndex }), null, 2) + "\n");
 assert(firstBytes.equals(secondBytes), "identical capture inputs must produce byte-identical manifests");
 assert.equal(JSON.parse(firstBytes).engine.commit, engineCommit);
 assert.equal(JSON.parse(firstBytes).generatedAt, generatedAt);
+assert.deepEqual(JSON.parse(firstBytes).documentIndex, documentIndex,
+  "capture manifest omitted the explicit ingested-document canonical overlay");
 
 function assertCliFailure(args, pattern) {
   const result = spawnSync(process.execPath, [captureScript, ...args], { encoding: "utf8" });

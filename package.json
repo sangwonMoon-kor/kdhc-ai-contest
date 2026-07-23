@@ -21,7 +21,7 @@
     "test:product-ui:schedule-browser": "node product-ui/tests/verify-schedule-browser.js",
     "test:product-ui:source": "node product-ui/tests/verify-source-contract.js",
     "test:product-ui:fixtures": "node product-ui/tests/verify-fixtures.js",
-    "test:product-ui:data-mode": "node product-ui/tests/verify-app-data-mode.js && node -e \"process.env.PRODUCT_UI_TEST_CLIENT='1'; require('./product-ui/tests/verify-app-data-mode-browser.js')\"",
+    "test:product-ui:data-mode": "node product-ui/tests/verify-app-data-mode.js && node -e \"process.env.PRODUCT_UI_TEST_CLIENT='1'; require('./product-ui/tests/verify-app-data-mode-browser.js')\" && node product-ui/tests/verify-api-access-browser.js",
     "test:product-ui:local-maintenance": "node product-ui/tests/verify-local-maintenance-demo.js",
     "test:product-ui:fixture-flows": "node product-ui/tests/verify-fixture-reachable-flows.js",
     "test:product-ui:capture": "node tools/tests/verify-capture-product-fixtures.js",

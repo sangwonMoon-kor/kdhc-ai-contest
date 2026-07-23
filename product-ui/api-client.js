@@ -85,10 +85,34 @@
     );
   }
 
-  function normalizeResponse(path, value) {
+  function normalizeDocumentIndex(value, options = {}) {
+    if (!Array.isArray(value)) throw new Error("documents contract mismatch");
+    return value.map((document) => {
+      if (!document || typeof document !== "object" || Array.isArray(document) || !nonEmptyString(document.id)) {
+        throw new Error("documents contract mismatch");
+      }
+      if (options.legacyDocumentIndexGrant) {
+        return Object.assign({}, document, {
+          access: document.access === "none" ? "none" : "full"
+        });
+      }
+      if (!["full", "none"].includes(document.access)) {
+        throw new Error("documents access contract mismatch");
+      }
+      return Object.assign({}, document);
+    });
+  }
+
+  function mergeDocumentIndexes(base, overlays) {
+    const merged = new Map();
+    normalizeDocumentIndex(base).forEach((document) => merged.set(document.id, document));
+    normalizeDocumentIndex(overlays || []).forEach((document) => merged.set(document.id, document));
+    return [...merged.values()];
+  }
+
+  function normalizeResponse(path, value, options = {}) {
     if (path === "/api/documents") {
-      if (!Array.isArray(value)) throw new Error("documents contract mismatch");
-      return value;
+      return normalizeDocumentIndex(value, options);
     }
     if (!value || typeof value !== "object" || Array.isArray(value)) {
       throw new Error(`response contract mismatch for ${path}`);
@@ -154,6 +178,8 @@
     let lastError = null;
     let manifestPromise = null;
     let hasAttemptedLive = false;
+    let localMaintenanceOverlayPromise = null;
+    let localMaintenanceAskAvailable = false;
 
     function status() {
       return {
@@ -202,19 +228,52 @@
       return manifestPromise;
     }
 
+    async function localMaintenanceDocumentOverlay() {
+      if (!localMaintenanceAskAvailable) return [];
+      if (!localMaintenanceOverlayPromise) {
+        localMaintenanceOverlayPromise = (async () => {
+          try {
+            const localManifest = await getJSON(`${fixtureBase}/local-maintenance/manifest.json`);
+            if (!localManifest || localManifest.contractVersion !== 1 || localManifest.localOnly !== true) return [];
+            const overlays = normalizeDocumentIndex(localManifest.documentIndex || []);
+            const overlay = overlays.find((document) => document.id === LOCAL_MAINTENANCE_DOCUMENT_ID);
+            if (!overlay) return [];
+            const detail = normalizeResponse(
+              `/api/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}`,
+              await getJSON(`${fixtureBase}/local-maintenance/documents/${LOCAL_MAINTENANCE_DOCUMENT_ID}.json`)
+            );
+            return detail.doc.id === LOCAL_MAINTENANCE_DOCUMENT_ID ? [overlay] : [];
+          } catch (error) {
+            return [];
+          }
+        })();
+      }
+      return localMaintenanceOverlayPromise;
+    }
+
     async function fixtureRequest(path, body) {
       try {
         const rel = fixturePath(path, body);
         if (!rel) throw new Error(`No fixture route for ${path}`);
-        await ensureManifest();
+        const manifest = await ensureManifest();
         let value;
+        let loadedLocalMaintenanceAsk = false;
         try {
           value = await getJSON(`${fixtureBase}/${rel}`);
+          loadedLocalMaintenanceAsk = rel === LOCAL_MAINTENANCE_ASK;
         } catch (error) {
           if (rel !== LOCAL_MAINTENANCE_ASK || error.message !== "HTTP 404") throw error;
           value = await getJSON(`${fixtureBase}/ask/not-found.json`);
         }
-        const data = normalizeResponse(path, value);
+        if (loadedLocalMaintenanceAsk) localMaintenanceAskAvailable = true;
+        let data = normalizeResponse(path, value);
+        if (path === "/api/documents") {
+          const overlays = [
+            ...(Array.isArray(manifest.documentIndex) ? manifest.documentIndex : []),
+            ...await localMaintenanceDocumentOverlay()
+          ];
+          data = mergeDocumentIndexes(data, overlays);
+        }
         activeMode = "fixture";
         source = "fixture";
         lastError = null;
@@ -231,7 +290,9 @@
 
     async function liveRequest(path, body) {
       if (!isLiveApiPath(path)) throw new Error(`Invalid live API path: ${path}`);
-      const data = normalizeResponse(path, await getJSON(path, body));
+      const data = normalizeResponse(path, await getJSON(path, body), {
+        legacyDocumentIndexGrant: path === "/api/documents"
+      });
       activeMode = "live";
       source = "live";
       lastError = null;
