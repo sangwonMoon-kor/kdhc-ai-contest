@@ -2,14 +2,21 @@
 
 Date: 2026-07-23
 Branch: `feature/on-memory-workbench`
-Implementation commit: `005b056` (`fix: close workbench final review findings`)
+Initial implementation commit: `005b056` (`fix: close workbench final review findings`)
+Important re-review commits:
+
+- `ec37026` (`fix: normalize canonical document access overlays`)
+- `0da9de0` (`fix: separate dismissed completion candidates`)
+
 Status: `DONE_WITH_CONCERNS`
 
 ## Outcome
 
-All ten final-review findings were addressed, and the requested adjacent regression coverage was added. The focused model/browser suites, regression suites, standalone data-mode contract, syntax checks, diff checks, and standalone sync contract all pass.
+The initial ten final-review findings and all three subsequent Important re-review findings were addressed. The focused model/browser suites, adapter and capture contracts, regression suites, standalone data-mode contract, syntax checks, diff checks, and standalone sync contract all pass.
 
-The status is `DONE_WITH_CONCERNS` only because the pre-existing standalone local-maintenance check cannot start without its generated `manifest.json`. That result is recorded separately below and was not hidden by an aggregate command.
+The earlier report revision stated that the generated local-maintenance fixture absence was the only remaining concern. A subsequent re-review identified three additional defects in live access normalization, fixture authorization overlays, and completion candidate status labeling. This revision supersedes that earlier claim; those defects are now fixed in the commits above.
+
+The current status remains `DONE_WITH_CONCERNS` only because the standalone local-maintenance browser check cannot start without its ignored, locally generated `manifest.json`. Its builder and adapter overlay contracts pass with controlled data, while the environmental standalone result is recorded separately below.
 
 No screenshots or goldens are included in the implementation commit. `verify-showcase-e2e.js` rewrote `product-ui/screenshots/showcase-golden.png` as a test side effect; the tracked file was restored after the passing run.
 
@@ -140,6 +147,58 @@ TDD evidence:
 - RED: the browser timed out waiting for the bundle-specific historical hash.
 - GREEN: `Completion browser contract passed: review, transition, read-only reentry, cloud bundle, dialog accessibility`.
 
+## Important re-review wave
+
+### R1. Live and auto document indexes normalize legacy access at the adapter boundary
+
+- Live `/api/documents` entries are cloned with explicit `access: "full"` when the authenticated canonical index contains them and the backend omitted access.
+- An explicit backend `access: "none"` remains denied.
+- Fixture/captured indexes do not receive the legacy grant and must already contain `full|none`.
+- Unknown IDs remain absent from the canonical index and fail closed.
+- `resolveReferenceAccess` was not loosened; it still authorizes only an exact canonical `access: "full"`.
+- Added an actual `JikmuApi` browser contract for fixture, live, and auto modes. In every mode, an indexed allowed document opens, an explicit denial and an unknown special-like `PROC-MAINT-*` ID expose no body and issue no detail request.
+
+TDD evidence:
+
+- RED (adapter): `authenticated live index presence did not normalize the legacy access grant`.
+- RED (actual browser): `live actual client did not grant a canonical indexed document`.
+- GREEN: `API client contract passed`.
+- GREEN: `Actual API-client access browser contract passed in fixture, live, and auto modes`.
+
+### R2. Fixture document overlays are explicit and availability-aware
+
+- The captured fixture manifest carries an explicit `DOC-FIXTURE-001` canonical overlay.
+- The fixture adapter merges manifest document overlays into the strict base index.
+- The capture boundary normalizes legacy authenticated index entries to explicit access, preserves explicit denial, validates `full|none`, and emits the ingested-document overlay.
+- The local-maintenance builder emits an explicit `PROC-MAINT-31100` index overlay in its ignored local manifest.
+- After the local maintenance ask fixture is successfully selected, the adapter verifies both the private local manifest and routed document detail before advertising the overlay. Missing or invalid private artifacts yield no entry.
+- Unknown special-like IDs are never synthesized.
+- The fixture ingest flow now opens `DOC-FIXTURE-001` through the real evidence drawer and verifies its body.
+- No files were created or changed in the external sibling `jikmu-memory` repository.
+
+TDD evidence:
+
+- RED (capture validation): `Missing expected exception: capture validation accepted an implicit document access value`.
+- RED (builder): `generated local fixture omitted its explicit canonical document index overlay`.
+- RED (fixture manifest): `manifest missing explicit DOC-FIXTURE-001 canonical access overlay`.
+- RED (fixture flow): `ingested fixture document was not added to the canonical access index`.
+- GREEN: `Capture response, CLI, and reproducibility validation passed`.
+- GREEN: `Local maintenance fixture builder contract passed`.
+- GREEN: `Fixture contract passed`.
+- GREEN: `Fixture reachable-flow E2E passed (graph, non-design draft, hint, scanned-PDF extract, ingest)`.
+- The unavailable-local-overlay unit case confirms that a missing private manifest produces no advertised canonical entry.
+
+### R3. Completion review renders dismissed candidates truthfully
+
+- Proposed candidates remain under “확인 전 후보”.
+- Dismissed candidates render separately under “건너뛴 후보” with their actual “건너뜀” status.
+- Confirmed candidates remain under the user-confirmed section.
+
+TDD evidence:
+
+- RED: `completion review placed a dismissed candidate under 확인 전 후보`.
+- GREEN: `Completion browser contract passed: review, transition, read-only reentry, cloud bundle, dialog accessibility`.
+
 ## Adjacent regression coverage
 
 - Workspace migration preserves all draft fields and deep-copies nested completion bundles.
@@ -168,6 +227,14 @@ node --check product-ui/tests/verify-work-list-browser.js
 node --check product-ui/tests/verify-workbench-browser.js
 node --check product-ui/tests/verify-workbench-model.js
 node --check product-ui/tests/verify-workspace-model.js
+node --check product-ui/api-client.js
+node --check product-ui/tests/verify-api-client.js
+node --check product-ui/tests/verify-api-access-browser.js
+node --check product-ui/tests/verify-fixture-reachable-flows.js
+node --check tools/build-local-maintenance-fixture.js
+node --check tools/capture-product-fixtures.js
+node --check tools/tests/verify-build-local-maintenance-fixture.js
+node --check tools/tests/verify-capture-product-fixtures.js
 ```
 
 ### Focused model/browser contracts
@@ -195,6 +262,8 @@ Schedule browser contract passed
 Home model contract passed
 API client contract passed
 Fixture contract passed
+Local maintenance fixture builder contract passed
+Capture response, CLI, and reproducibility validation passed
 Fixture reachable-flow E2E passed (graph, non-design draft, hint, scanned-PDF extract, ingest)
 Showcase E2E passed (active data: 시연용 샘플 데이터; fixture API requests: 0)
 ```
@@ -214,6 +283,7 @@ Result: exit 0.
 ```text
 App data-mode contract passed
 App data-mode browser contract passed
+Actual API-client access browser contract passed in fixture, live, and auto modes
 ```
 
 ### Standalone sync contract
@@ -228,9 +298,9 @@ Result: exit 0, within the required 120-second ceiling.
 
 ```text
 UI sync hardened contract passed
-real 61.39
-user 39.76
-sys 16.05
+real 62.67
+user 40.37
+sys 16.39
 ```
 
 ### Known local-maintenance fixture absence
@@ -247,7 +317,7 @@ Result: exit 1 before exercising application behavior.
 AssertionError [ERR_ASSERTION]: local maintenance fixture missing: manifest.json; run tools/build-local-maintenance-fixture.js first
 ```
 
-This is the known generated-fixture absence called out in the task. The fixture builder was not run because it is outside the final-review change scope and would introduce generated artifacts.
+This is the known generated-fixture absence called out in the task. The private fixture was not generated or committed. Its builder contract and controlled adapter overlay tests pass independently.
 
 ## Files changed
 
@@ -264,6 +334,23 @@ This is the known generated-fixture absence called out in the task. The fixture 
 - `product-ui/workbench-model.js`
 - `product-ui/workspace-model.js`
 
+Important re-review additions/updates:
+
+- `package.json`
+- `product-ui/api-client.js`
+- `product-ui/app.js`
+- `product-ui/fixtures/manifest.json`
+- `product-ui/tests/verify-api-access-browser.js`
+- `product-ui/tests/verify-api-client.js`
+- `product-ui/tests/verify-completion-browser.js`
+- `product-ui/tests/verify-fixture-reachable-flows.js`
+- `product-ui/tests/verify-fixtures.js`
+- `product-ui/tests/verify-workbench-model.js`
+- `tools/build-local-maintenance-fixture.js`
+- `tools/capture-product-fixtures.js`
+- `tools/tests/verify-build-local-maintenance-fixture.js`
+- `tools/tests/verify-capture-product-fixtures.js`
+
 ## Remaining concern
 
-Only the absent generated local-maintenance `manifest.json` remains. No final-review finding is knowingly deferred.
+The earlier “only fixture absence remains” statement was premature because it preceded the Important re-review. At the current HEAD, all three re-review defects are fixed and no review finding is knowingly deferred. The only remaining concern is environmental: the ignored local-maintenance `manifest.json` has not been generated, so its standalone browser check exits before application behavior.
