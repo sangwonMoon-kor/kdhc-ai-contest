@@ -15,6 +15,7 @@ const useTestClient = process.env.PRODUCT_UI_TEST_CLIENT === "1";
 const testClient = String.raw`
 (function () {
   const pending = [];
+  const requests = [];
   const webSaves = [];
   let rejectNextWebSave = false;
   let onStatus = function () {};
@@ -54,6 +55,7 @@ const testClient = String.raw`
       onStatus(status);
       return {
         request: function (apiPath, body) {
+          requests.push(apiPath);
           if (apiPath === "/api/ask") {
             return new Promise(function (resolve, reject) {
               pending.push({ question: body.question, resolve: resolve, reject: reject });
@@ -80,6 +82,19 @@ const testClient = String.raw`
     resolveAsk: function (question, answer) {
       take(question).resolve({ grounded: true, answer: [answer], docs: [] });
     },
+    resolveGroundedAsk: function (question, answer, evidence) {
+      take(question).resolve({
+        grounded: true,
+        answer: [answer],
+        docs: [],
+        knowledge: [{
+          text: "저장된 웹 근거를 사용한 답변",
+          status: "웹출처",
+          confidence: 0.5,
+          evidence: evidence
+        }]
+      });
+    },
     resolveWebAsk: function (question, answer, evidence, results) {
       take(question).resolve({
         grounded: false,
@@ -91,6 +106,7 @@ const testClient = String.raw`
     rejectAsk: function (question, message) {
       take(question).reject(new Error(message));
     },
+    requests: function () { return requests.slice(); },
     webSaves: function () { return JSON.parse(JSON.stringify(webSaves)); },
     rejectNextWebSave: function () { rejectNextWebSave = true; }
   };
@@ -319,6 +335,38 @@ async function run() {
       question: webQuestion,
       results: webResults
     }], "web save request did not preserve the exact question and search results");
+
+    const persistedWebQuestion = "저장된 웹 근거 찾아줘";
+    await ask(askPage, persistedWebQuestion);
+    await askPage.evaluate(function (question) {
+      window.__appBoundaryTest.resolveGroundedAsk(question, "저장된 웹 근거 답변입니다.", [
+        { docId: "web:https://example.com/persisted", label: "저장된 안전한 출처", text: "저장된 안전한 웹 근거", web: true, url: "https://example.com/persisted" },
+        { docId: "web:javascript:alert(1)", label: "저장된 위험한 출처", text: "저장된 위험한 웹 근거", web: true, url: "javascript:alert(1)" }
+      ]);
+    }, persistedWebQuestion);
+    const persistedPanel = askPage.locator('[data-testid="grounded-answer"]');
+    await persistedPanel.getByText("저장된 웹 근거 답변입니다.", { exact: true }).waitFor();
+    const safePersistedEvidence = persistedPanel.locator('a.ev-btn[href="https://example.com/persisted"]');
+    assert.equal(await safePersistedEvidence.count(), 1, "persisted safe web evidence was not rendered as an external link");
+    assert.equal(await safePersistedEvidence.getAttribute("target"), "_blank", "persisted web evidence link does not open externally");
+    assert.equal(await safePersistedEvidence.getAttribute("rel"), "noopener noreferrer", "persisted web evidence link lacks opener isolation");
+    assert.equal((await safePersistedEvidence.innerText()).includes("웹출처 · 미검증"), true, "persisted web evidence lacks its web/unverified label");
+
+    const unsafePersistedEvidence = persistedPanel.locator(".ev-btn").filter({ hasText: "저장된 위험한 출처" });
+    assert.equal(await unsafePersistedEvidence.count(), 1, "persisted unsafe web evidence lost its visible label");
+    assert.equal(await unsafePersistedEvidence.evaluate(function (element) { return element.tagName; }), "SPAN", "persisted unsafe web evidence is interactive");
+    assert.equal((await unsafePersistedEvidence.innerText()).includes("웹출처 · 미검증"), true, "persisted unsafe web evidence lacks its web/unverified label");
+    assert.equal(await unsafePersistedEvidence.locator("a").count(), 0, "persisted unsafe web evidence was rendered as an anchor");
+    assert.equal(await unsafePersistedEvidence.getAttribute("data-ev"), null, "persisted unsafe web evidence was wired as a document reference");
+    const documentRequestsBeforeUnsafeClick = await askPage.evaluate(function () {
+      return window.__appBoundaryTest.requests().filter(function (apiPath) { return apiPath.startsWith("/api/documents/"); }).length;
+    });
+    await unsafePersistedEvidence.click();
+    await askPage.waitForTimeout(20);
+    assert.equal(await askPage.locator("#drawer").getAttribute("hidden"), "", "persisted unsafe web evidence opened the document drawer");
+    assert.equal(await askPage.evaluate(function () {
+      return window.__appBoundaryTest.requests().filter(function (apiPath) { return apiPath.startsWith("/api/documents/"); }).length;
+    }), documentRequestsBeforeUnsafeClick, "persisted unsafe web evidence requested a document");
 
     const failedWebQuestion = "웹에서 저장 실패 근거 찾아줘";
     await ask(askPage, failedWebQuestion);

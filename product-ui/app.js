@@ -399,6 +399,13 @@ async function openEvidence(ref) {
   }
 }
 function evBtn(ev, documentById) {
+  if (ev && ev.web === true) {
+    const href = safeExternalUrl(ev.url);
+    const content = `근거 · ${esc(ev.label || ev.url || "웹 출처")} <span>웹출처 · 미검증</span>`;
+    return href
+      ? `<a class="ev-btn" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${content}</a>`
+      : `<span class="ev-btn">${content}</span>`;
+  }
   const docId = ev && ev.docId || "";
   const hasDocumentIndex = documentById && typeof documentById.get === "function";
   const canonical = hasDocumentIndex && !String(docId).startsWith("okf:")
