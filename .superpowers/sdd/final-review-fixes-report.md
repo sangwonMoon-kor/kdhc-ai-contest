@@ -8,11 +8,15 @@ Important re-review commits:
 - `ec37026` (`fix: normalize canonical document access overlays`)
 - `0da9de0` (`fix: separate dismissed completion candidates`)
 
+Final access-boundary implementation commit:
+
+- `005617e` (`fix: make document access merging deny dominant`)
+
 Status: `DONE_WITH_CONCERNS`
 
 ## Outcome
 
-The initial ten final-review findings and all three subsequent Important re-review findings were addressed. The focused model/browser suites, adapter and capture contracts, regression suites, standalone data-mode contract, syntax checks, diff checks, and standalone sync contract all pass.
+The initial ten final-review findings, the three Important re-review findings, and the final three access-boundary findings were addressed. The focused model/browser suites, adapter and capture contracts, regression suites, standalone data-mode contract, syntax checks, diff checks, and standalone sync contract all pass.
 
 The earlier report revision stated that the generated local-maintenance fixture absence was the only remaining concern. A subsequent re-review identified three additional defects in live access normalization, fixture authorization overlays, and completion candidate status labeling. This revision supersedes that earlier claim; those defects are now fixed in the commits above.
 
@@ -152,7 +156,8 @@ TDD evidence:
 ### R1. Live and auto document indexes normalize legacy access at the adapter boundary
 
 - Live `/api/documents` entries are cloned with explicit `access: "full"` when the authenticated canonical index contains them and the backend omitted access.
-- An explicit backend `access: "none"` remains denied.
+- An exact explicit `access: "full"` remains full and an exact explicit `access: "none"` remains denied.
+- No other explicit value is trusted. `null`, empty strings, `restricted`, and unknown/future enums normalize to `none`.
 - Fixture/captured indexes do not receive the legacy grant and must already contain `full|none`.
 - Unknown IDs remain absent from the canonical index and fail closed.
 - `resolveReferenceAccess` was not loosened; it still authorizes only an exact canonical `access: "full"`.
@@ -171,7 +176,7 @@ TDD evidence:
 - The fixture adapter merges manifest document overlays into the strict base index.
 - The capture boundary normalizes legacy authenticated index entries to explicit access, preserves explicit denial, validates `full|none`, and emits the ingested-document overlay.
 - The local-maintenance builder emits an explicit `PROC-MAINT-31100` index overlay in its ignored local manifest.
-- After the local maintenance ask fixture is successfully selected, the adapter verifies both the private local manifest and routed document detail before advertising the overlay. Missing or invalid private artifacts yield no entry.
+- After the local maintenance ask fixture is successfully selected, the adapter reads the private access-bearing manifest. A full grant must also verify the routed detail before it is advertised; a denial returns metadata without touching detail. A missing manifest or missing full-grant detail yields no entry.
 - Unknown special-like IDs are never synthesized.
 - The fixture ingest flow now opens `DOC-FIXTURE-001` through the real evidence drawer and verifies its body.
 - No files were created or changed in the external sibling `jikmu-memory` repository.
@@ -198,6 +203,54 @@ TDD evidence:
 
 - RED: `completion review placed a dismissed candidate under 확인 전 후보`.
 - GREEN: `Completion browser contract passed: review, transition, read-only reentry, cloud bundle, dialog accessibility`.
+
+## Final access-boundary wave
+
+### F1. Compatibility trust applies only to an omitted access property
+
+- The live/auto adapter checks property presence, not truthiness or enum inequality.
+- A genuinely absent property receives the authenticated legacy compatibility grant.
+- Exact `full` remains full; exact `none` remains none.
+- Every other explicit value, including `null`, `""`, `restricted`, and a future enum, normalizes to `none`.
+- The capture boundary applies the same rule before emitting mandatory `full|none`.
+- Strict fixture and capture validation reject missing or invalid explicit access in persisted artifacts.
+
+TDD evidence:
+
+- RED (adapter): `legacy grant trusted an explicit unknown access value`.
+- RED (capture): `capture boundary trusted an explicit unknown access value`; the observed actual result incorrectly mapped both `null` and `restricted` to `full`.
+- GREEN: `API client contract passed`.
+- GREEN: `Capture response, CLI, and reproducibility validation passed`.
+
+### F2. Duplicate and overlay merges are unique and deny-dominant
+
+- Runtime normalization collapses repeated IDs to one canonical entry.
+- Capture normalization emits one entry per ID.
+- A denial in either duplicate or overlay layer dominates a full grant, independent of order.
+- An overlay may add a missing ID, but cannot elevate an existing `none`.
+- Same-access duplicates also collapse, so array lookup and map lookup cannot disagree about which entry is canonical.
+
+TDD evidence:
+
+- RED (runtime duplicates): `live normalization returned duplicate IDs or allowed a conflicting duplicate`.
+- RED (capture duplicates): `capture boundary emitted duplicate IDs or allowed a conflicting duplicate`.
+- RED (isolated cross-layer merge): after temporarily removing deny-dominant cross-layer merging, the focused contract failed with `base none cannot be elevated by overlay full`; restoring the implementation returned the suite to green.
+- GREEN: `API client contract passed`.
+- GREEN: `Capture response, CLI, and reproducibility validation passed`.
+- Fixture validation also asserts that the persisted captured index contains no duplicate IDs.
+
+### F3. Denied private local metadata never triggers a detail request
+
+- The local overlay resolver validates the access-bearing manifest entry before any private document request.
+- Exact `none` returns canonical denial metadata without fetching detail/body.
+- A missing manifest or missing full-grant detail is not advertised.
+- Exact `full` may verify the routed detail before advertising readable access.
+
+TDD evidence:
+
+- RED: `denied local overlay fetched private document detail`.
+- GREEN: `API client contract passed`.
+- The controlled request-count assertion records zero requests to `local-maintenance/documents/PROC-MAINT-31100.json` for an `access: "none"` overlay.
 
 ## Adjacent regression coverage
 
@@ -270,6 +323,8 @@ Showcase E2E passed (active data: 시연용 샘플 데이터; fixture API reques
 
 The first manual regression invocation used stale filenames for the API/reachable scripts and produced `MODULE_NOT_FOUND`; it was immediately rerun with the repository's actual `verify-api-client.js` and `verify-fixture-reachable-flows.js` names, shown passing above. This was an invocation error, not a product-test failure.
 
+During the final access-boundary wave, the first combined fixture-flow launch encountered `EADDRINUSE` on computed port `9229`, which was owned by an unrelated `workerd` listener. A fresh standalone invocation selected another port and passed with the output shown above.
+
 ### Standalone data-mode contract
 
 Command:
@@ -298,9 +353,9 @@ Result: exit 0, within the required 120-second ceiling.
 
 ```text
 UI sync hardened contract passed
-real 62.67
-user 40.37
-sys 16.39
+real 77.82
+user 44.45
+sys 19.56
 ```
 
 ### Known local-maintenance fixture absence
@@ -353,4 +408,4 @@ Important re-review additions/updates:
 
 ## Remaining concern
 
-The earlier “only fixture absence remains” statement was premature because it preceded the Important re-review. At the current HEAD, all three re-review defects are fixed and no review finding is knowingly deferred. The only remaining concern is environmental: the ignored local-maintenance `manifest.json` has not been generated, so its standalone browser check exits before application behavior.
+The earlier “only fixture absence remains” statement was premature because it preceded the subsequent review waves. At the current HEAD, the Important re-review defects and final access-boundary defects are fixed, and no review finding is knowingly deferred. The only remaining concern is environmental: the ignored local-maintenance `manifest.json` has not been generated, so its standalone browser check exits before application behavior.
