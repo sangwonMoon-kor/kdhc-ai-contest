@@ -12,6 +12,10 @@ Final access-boundary implementation commit:
 
 - `005617e` (`fix: make document access merging deny dominant`)
 
+Cross-layer ordering implementation commit:
+
+- `d54e953` (`fix: gate local detail on effective access`)
+
 Status: `DONE_WITH_CONCERNS`
 
 ## Outcome
@@ -176,7 +180,7 @@ TDD evidence:
 - The fixture adapter merges manifest document overlays into the strict base index.
 - The capture boundary normalizes legacy authenticated index entries to explicit access, preserves explicit denial, validates `full|none`, and emits the ingested-document overlay.
 - The local-maintenance builder emits an explicit `PROC-MAINT-31100` index overlay in its ignored local manifest.
-- After the local maintenance ask fixture is successfully selected, the adapter reads the private access-bearing manifest. A full grant must also verify the routed detail before it is advertised; a denial returns metadata without touching detail. A missing manifest or missing full-grant detail yields no entry.
+- After the local maintenance ask fixture is successfully selected, the adapter reads the private access-bearing manifest. Base index, top-level manifest, and local manifest metadata are merged deny-dominantly before any detail decision. Only an exact effective full grant may verify the routed detail; a denial returns metadata without touching detail. A missing manifest or missing full-grant detail yields no entry.
 - Unknown special-like IDs are never synthesized.
 - The fixture ingest flow now opens `DOC-FIXTURE-001` through the real evidence drawer and verifies its body.
 - No files were created or changed in the external sibling `jikmu-memory` repository.
@@ -245,12 +249,33 @@ TDD evidence:
 - Exact `none` returns canonical denial metadata without fetching detail/body.
 - A missing manifest or missing full-grant detail is not advertised.
 - Exact `full` may verify the routed detail before advertising readable access.
+- This direct local-manifest rule is now also evaluated after base and top-level layers are merged, as documented below.
 
 TDD evidence:
 
 - RED: `denied local overlay fetched private document detail`.
 - GREEN: `API client contract passed`.
 - The controlled request-count assertion records zero requests to `local-maintenance/documents/PROC-MAINT-31100.json` for an `access: "none"` overlay.
+
+### F4. Effective cross-layer access is computed before a private detail probe
+
+- Local manifest discovery now returns metadata only; it cannot fetch document detail.
+- Base index, top-level manifest overlay, and local manifest metadata are normalized, validated, deduplicated, and merged deny-dominantly.
+- The adapter then reads the single effective `PROC-MAINT-31100` entry.
+- Effective `none` returns denial metadata with zero private-detail requests.
+- Invalid top-level access fails the index contract before any private-detail request.
+- Only effective exact `full` can call the separate cached detail-availability probe.
+- If local metadata is absent, the special local document is removed even if another layer mentioned the ID, preserving the “missing local fixture is not advertised” contract.
+
+TDD evidence:
+
+- RED: `base none dominates local full: private detail was requested before effective access`.
+- GREEN: `API client contract passed`.
+- Added green request-count cases for:
+  - base `none` + local `full` → final `none`, zero detail requests;
+  - top-level overlay `none` + local `full` → final `none`, zero detail requests;
+  - invalid top-level `restricted` + local `full` → `documents access contract mismatch`, zero detail requests.
+- Existing direct local `none`, missing local manifest, and full local probe cases remain in the same passing contract.
 
 ## Adjacent regression coverage
 
@@ -408,4 +433,4 @@ Important re-review additions/updates:
 
 ## Remaining concern
 
-The earlier “only fixture absence remains” statement was premature because it preceded the subsequent review waves. At the current HEAD, the Important re-review defects and final access-boundary defects are fixed, and no review finding is knowingly deferred. The only remaining concern is environmental: the ignored local-maintenance `manifest.json` has not been generated, so its standalone browser check exits before application behavior.
+The earlier “only fixture absence remains” statement was premature because it preceded the subsequent review waves. At the current HEAD, the Important re-review defects, final access-boundary defects, and cross-layer ordering defect are fixed, and no review finding is knowingly deferred. The only remaining concern is environmental: the ignored local-maintenance `manifest.json` has not been generated, so its standalone browser check exits before application behavior.
