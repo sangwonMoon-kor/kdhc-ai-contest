@@ -52,7 +52,7 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
   const legacy = { v: 1, works: [legacyWork()], selectedWorkId: "work-1" };
   const homeState = loadHomeState(legacy);
   const migrated = plain(homeState.loadState());
-  assert.equal(migrated.v, 2, "v1 state migrates to workspace v2");
+  assert.equal(migrated.v, 3, "v1 state migrates to workspace v3");
   assert.equal(migrated.currentPersonId, "person-kim-hannan");
   assert.equal(migrated.currentRoleId, "role-maintenance-planning");
   assert.equal(migrated.selectedWorkId, "work-1");
@@ -65,7 +65,7 @@ function plain(value) { return JSON.parse(JSON.stringify(value)); }
 {
   const homeState = loadHomeState("{broken json");
   const recovered = plain(homeState.loadState());
-  assert.equal(recovered.v, 2, "damaged storage recovers with a v2 demo state");
+  assert.equal(recovered.v, 3, "damaged storage recovers with a v3 demo state");
   assert(Array.isArray(recovered.works));
   assert(Array.isArray(recovered.personalSchedules));
 }

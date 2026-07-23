@@ -32,7 +32,7 @@
   function baseState(context) {
     const resolved = context || createDemoContext();
     return {
-      v: 2,
+      v: 3,
       currentPersonId: resolved.currentPersonId,
       currentRoleId: resolved.currentRoleId,
       org: clone(resolved.org),
@@ -45,7 +45,8 @@
         rules: [],
         actionLog: []
       }],
-      selectedWorkId: null
+      selectedWorkId: null,
+      completionBundles: []
     };
   }
 
@@ -65,10 +66,62 @@
       departmentId: "dept-plant",
       sectionId: "section-maintenance",
       relations: [{ personId: context.currentPersonId, kind: "owner" }],
+      lifecycle: {
+        phase: "design",
+        designDeadlineISO: "2026-07-30",
+        completionDateISO: null,
+        completedAtISO: null,
+        completedBy: null
+      },
+      output: {
+        mode: "recurring",
+        templateId: null,
+        priorDocumentId: null,
+        finalDocumentId: null
+      },
       schedule: {
         startISO: "2026-01-05",
         endISO: "2026-03-31",
         milestones: [{ id: "scope", dateISO: "2026-01-23", label: "점검 범위 확정" }]
+      },
+      todos: [],
+      records: [],
+      sources: [
+        { docId: "RULE-2026-0401", role: "업무 지침", category: "official", access: "full" },
+        { docId: "APPR-2025-0409", role: "전년도 기안", category: "memory", year: 2025, access: "full" },
+        { docId: "tip-inspection-order", role: "개인 확인 메모", category: "memory", authorType: "personal", access: "full" }
+      ],
+      draft: { savedAt: null, values: null }
+    }, {
+      id: "work-maintenance-contract-2026",
+      title: "2026년 정기점검보수 계약 후 시공 관리",
+      instruction: "계약 후 시공 일정을 관리합니다.",
+      requester: "정비기획과",
+      due: "2026-09-18",
+      stageId: "maintenance-construction",
+      stageName: "시공 관리",
+      doneWhen: "시공 완료 확인",
+      repeat: false,
+      departmentId: "dept-plant",
+      sectionId: "section-maintenance",
+      relations: [{ personId: context.currentPersonId, kind: "owner" }],
+      lifecycle: {
+        phase: "construction",
+        designDeadlineISO: null,
+        completionDateISO: "2026-09-18",
+        completedAtISO: null,
+        completedBy: null
+      },
+      output: {
+        mode: "new",
+        templateId: null,
+        priorDocumentId: null,
+        finalDocumentId: null
+      },
+      schedule: {
+        startISO: null,
+        endISO: "2026-09-18",
+        milestones: []
       },
       todos: [],
       records: [],
@@ -92,6 +145,32 @@
     return [{ personId: context.currentPersonId, kind: "owner" }];
   }
 
+  function migrateLifecycle(work) {
+    const source = work.lifecycle && typeof work.lifecycle === "object" ? work.lifecycle : {};
+    const phase = ["design", "contract", "construction", "completion", "done"].includes(source.phase)
+      ? source.phase
+      : "design";
+    return {
+      phase,
+      designDeadlineISO: source.designDeadlineISO || null,
+      completionDateISO: source.completionDateISO || null,
+      completedAtISO: source.completedAtISO || null,
+      completedBy: source.completedBy || null
+    };
+  }
+
+  function migrateOutput(work) {
+    const source = work.output && typeof work.output === "object" ? work.output : {};
+    return {
+      mode: source.mode === "new" || source.mode === "recurring"
+        ? source.mode
+        : (work.repeat ? "recurring" : "new"),
+      templateId: source.templateId || null,
+      priorDocumentId: source.priorDocumentId || null,
+      finalDocumentId: source.finalDocumentId || null
+    };
+  }
+
   function migrateWork(work, context) {
     const migrated = Object.assign({}, clone(work));
     migrated.todos = Array.isArray(migrated.todos) ? migrated.todos : [];
@@ -100,12 +179,15 @@
     migrated.departmentId = migrated.departmentId || context.org.departments[0].id;
     migrated.sectionId = migrated.sectionId || context.org.sections[0].id;
     migrated.relations = normalizeRelationList(migrated.relations, context);
-    const schedule = migrated.schedule && typeof migrated.schedule === "object" ? migrated.schedule : {};
-    migrated.schedule = {
-      startISO: typeof schedule.startISO === "string" ? schedule.startISO : (typeof migrated.calendarStart === "string" ? migrated.calendarStart : null),
-      endISO: typeof schedule.endISO === "string" ? schedule.endISO : (typeof migrated.due === "string" ? migrated.due : null),
-      milestones: Array.isArray(schedule.milestones) ? clone(schedule.milestones) : []
-    };
+    if (!migrated.schedule || typeof migrated.schedule !== "object") {
+      migrated.schedule = {
+        startISO: typeof migrated.calendarStart === "string" ? migrated.calendarStart : null,
+        endISO: typeof migrated.due === "string" ? migrated.due : null,
+        milestones: []
+      };
+    }
+    migrated.lifecycle = migrateLifecycle(migrated);
+    migrated.output = migrateOutput(migrated);
     return migrated;
   }
 
@@ -119,6 +201,7 @@
     migrated.personalSchedules = Array.isArray(raw.personalSchedules) ? clone(raw.personalSchedules) : [];
     migrated.roleLibraries = Array.isArray(raw.roleLibraries) ? clone(raw.roleLibraries) : migrated.roleLibraries;
     migrated.selectedWorkId = typeof raw.selectedWorkId === "string" ? raw.selectedWorkId : null;
+    migrated.completionBundles = Array.isArray(raw.completionBundles) ? clone(raw.completionBundles) : [];
     return migrated;
   }
 
@@ -142,6 +225,19 @@
       departmentId: context.org.departments[0].id,
       sectionId: context.org.sections[0].id,
       relations: [{ personId: context.currentPersonId, kind: "owner" }],
+      lifecycle: {
+        phase: "design",
+        designDeadlineISO: null,
+        completionDateISO: null,
+        completedAtISO: null,
+        completedBy: null
+      },
+      output: {
+        mode: "recurring",
+        templateId: null,
+        priorDocumentId: null,
+        finalDocumentId: null
+      },
       schedule: { startISO: null, endISO: due, milestones: [] },
       todos: [],
       records: [],
