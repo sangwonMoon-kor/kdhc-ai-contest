@@ -149,7 +149,7 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .is-home .app-content{padding-top:4px}
 .home-shell{width:min(1510px,calc(100% - 48px));min-height:calc(100vh - 56px);margin:28px auto;
   display:grid;grid-template-columns:190px minmax(0,1fr);gap:28px;align-items:stretch}
-.home-content{position:relative;min-width:0;display:flex;flex-direction:column;gap:18px;padding:0}
+.home-content{position:relative;min-width:0;display:flex;flex-direction:column;gap:36px;padding:0}
 .home-data-status{position:absolute;top:10px;right:24px;z-index:1;white-space:nowrap;box-shadow:0 6px 18px rgba(36,42,55,.05)}
 .home-rail,.home-compose,.home-calendar-panel{background:var(--home-panel);border:1px solid rgba(255,255,255,.96);
   box-shadow:0 22px 55px rgba(36,42,55,.08),inset 0 0 0 1px rgba(45,55,75,.025);backdrop-filter:blur(22px)}
@@ -164,11 +164,12 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-rail nav a span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 .home-rail nav a.is-current{background:rgba(255,255,255,.82);color:var(--home-red-deep);box-shadow:0 8px 20px rgba(233,16,28,.09),inset 0 0 0 1px rgba(242,13,24,.07)}
 .home-rail nav a.is-current span{position:static;width:auto;height:auto;overflow:visible;clip:auto;white-space:normal}
-.home-compose{border-radius:44px;min-height:158px;padding:24px 30px}
-.home-compose .omni{height:100%;min-height:108px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:1fr auto;
+.home-capture-stack{min-width:0;display:flex;flex-direction:column;gap:12px}
+.home-compose{border-radius:34px;min-height:112px;padding:18px 26px}
+.home-compose .omni{height:100%;min-height:74px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:1fr auto;
   align-items:center;column-gap:16px;margin:0}
 .home-compose .omni input[type="text"]{grid-column:1 / 3;grid-row:1;width:100%;min-width:0;border:0;background:transparent;
-  color:var(--home-ink);font:inherit;font-size:1.28rem;letter-spacing:-.025em;padding:4px 10px;box-shadow:none}
+  color:var(--home-ink);font:inherit;font-size:1.12rem;letter-spacing:-.025em;padding:4px 10px;box-shadow:none}
 .home-compose .omni input[type="text"]::placeholder{color:#333944;opacity:1}
 .home-compose .omni input[type="text"]:focus{outline:0}
 .home-compose:focus-within{outline:3px solid var(--home-red-deep);outline-offset:3px}
@@ -177,9 +178,9 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-attach svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .home-send{grid-column:3;grid-row:1 / 3;display:flex;align-items:center;gap:13px;color:var(--home-red-deep);font-weight:750;font-size:1rem;
   border-radius:999px;padding:8px 4px 8px 8px;transition:transform 140ms cubic-bezier(.23,1,.32,1),color 160ms ease}
-.home-send svg{width:66px;height:66px;padding:18px;border-radius:50%;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;
+.home-send svg{width:56px;height:56px;padding:15px;border-radius:50%;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;
   stroke-linejoin:round;background:linear-gradient(150deg,#ff252e 12%,var(--home-red) 54%,#c9000b 100%);
-  box-shadow:0 10px 20px rgba(236,7,20,.22),inset 0 0 0 5px rgba(255,255,255,.38)}
+  box-shadow:0 8px 16px rgba(236,7,20,.18),inset 0 0 0 4px rgba(255,255,255,.34)}
 .home-feedback{min-height:38px;padding:0 54px;display:flex;align-items:center;gap:14px;color:#252a33;font-size:.92rem}
 .home-feedback.is-empty{color:var(--home-muted);font-size:.82rem}
 .home-feedback-check{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#16b635;color:#fff;font-weight:800;flex:none}
@@ -188,10 +189,13 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-feedback-divider{width:1px;height:15px;background:#cfd3da}
 .home-feedback button{color:var(--home-red-deep);font-weight:700;transition:transform 140ms cubic-bezier(.23,1,.32,1),color 160ms ease}
 .home-calendar-panel{border-radius:44px;padding:25px 24px 19px;min-width:0}
-.home-calendar-toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto auto minmax(180px,1fr);align-items:center;gap:14px;padding:0 18px 17px}
+.home-calendar-toolbar{display:grid;grid-template-columns:minmax(175px,1fr) auto minmax(120px,1fr);align-items:center;gap:16px;padding:0 18px 17px}
 .home-calendar-toolbar h1{font-size:1.42rem;letter-spacing:-.04em;outline:none}
 .home-calendar-range{font-weight:650;color:#2e333c;white-space:nowrap}
-.home-calendar-controls{display:flex;gap:10px}
+.home-calendar-tools{display:flex;align-items:center;gap:10px}
+.home-calendar-today{min-height:38px;padding:0 14px;border:1px solid var(--home-line);border-radius:10px;background:rgba(255,255,255,.76);
+  color:#2e333c;font-weight:700;transition:transform 140ms cubic-bezier(.23,1,.32,1),border-color 160ms ease,background-color 160ms ease}
+.home-calendar-controls{display:flex;gap:8px}
 .home-calendar-controls button{width:42px;height:42px;border:1px solid var(--home-line);border-radius:12px;background:rgba(255,255,255,.72);
   display:grid;place-items:center;transition:transform 140ms cubic-bezier(.23,1,.32,1),border-color 160ms ease,background-color 160ms ease}
 .home-calendar-controls svg,.home-calendar-all svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -207,7 +211,7 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-weekdays span:last-child{border-right:0}
 .home-calendar-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:relative;border-bottom:1px solid var(--home-line)}
 .home-calendar-week:last-child{border-bottom:0}
-.home-calendar-day{z-index:0;border-right:1px solid var(--home-line);padding:12px 0 0;text-align:center;min-width:0}
+.home-calendar-day{z-index:0;border-right:1px solid var(--home-line);padding:10px 0 0 10px;text-align:left;min-width:0}
 .home-calendar-day:nth-of-type(7n){border-right:0}
 .home-calendar-day time{display:inline-grid;place-items:center;min-width:34px;height:34px;border-radius:50%;font-size:.94rem;font-weight:570}
 .home-calendar-day.is-sunday time{color:var(--home-red-deep)}
@@ -224,6 +228,7 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-event--candidate{border-style:dashed;color:#815e05;background:#fffaf0}
 .home-event-dot{width:8px;height:8px;border-radius:50%;background:var(--home-red);flex:none}
 .home-event--memo .home-event-dot,.home-event--personal .home-event-dot,.home-event--candidate .home-event-dot{background:var(--home-green)}
+.home-event-checkbox{width:11px;height:11px;border:1.5px solid currentColor;border-radius:3px;flex:none}
 .home-event-symbol{font-weight:900;color:var(--home-green);flex:none}
 .home-event-status{margin-left:auto;color:#8a680e;font-size:.66rem;font-weight:750;white-space:nowrap}
 .home-calendar-legend{display:flex;align-items:center;gap:28px;padding:15px 26px 0;color:#343943;font-size:.82rem}
@@ -231,14 +236,14 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 .home-calendar-legend i{width:18px;height:18px;border-radius:5px;background:#ffdedb}
 .home-calendar-legend .legend-memo{background:#ccefc9}
 .home-calendar-legend .legend-candidate{background:#fff1c9;border:1px dashed #d7b85c}
-.home-rail a:active,.home-attach:active,.home-send:active,.home-feedback button:active,.home-calendar-controls button:active,
+.home-rail a:active,.home-attach:active,.home-send:active,.home-feedback button:active,.home-calendar-today:active,.home-calendar-controls button:active,
 .home-calendar-all:active,.home-calendar-event:active{transform:scale(.97)}
 
 @media (hover:hover) and (pointer:fine){
   .home-rail nav a:hover{color:var(--home-red-deep);background:rgba(255,255,255,.72);transform:translateY(-1px)}
   .home-attach:hover{color:var(--home-red);background:rgba(242,13,24,.05)}
   .home-send:hover{color:var(--home-red-deep)}
-  .home-calendar-controls button:hover{border-color:rgba(242,13,24,.24);background:#fff}
+  .home-calendar-today:hover,.home-calendar-controls button:hover{border-color:rgba(242,13,24,.24);background:#fff}
   .home-calendar-all:hover{color:var(--home-red-deep);transform:translateX(2px)}
   .home-calendar-event:hover{border-color:rgba(242,13,24,.22);box-shadow:0 6px 14px rgba(34,39,51,.08)}
 }
@@ -528,15 +533,16 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 /* ---- 모바일 ---- */
 @media (max-width:1000px){
   .home-shell{width:min(920px,calc(100% - 32px));min-height:auto;margin:16px auto 24px;grid-template-columns:1fr;gap:16px}
-  .home-content{padding:30px 0 0;gap:14px}
+  .home-content{padding:30px 0 0;gap:24px}
   .home-data-status{top:0;right:12px}
   .home-rail{min-height:86px;border-radius:30px;padding:13px 18px;flex-direction:row;align-items:center;gap:20px}
   .home-rail-brand{padding:0;flex:none}
   .home-rail nav{flex:1;flex-direction:row;justify-content:flex-end;gap:8px}
   .home-rail nav a{width:58px;min-height:58px;justify-content:center;padding:8px}
   .home-rail nav a.is-current span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-  .home-calendar-toolbar{grid-template-columns:1fr auto auto}
-  .home-calendar-all{grid-column:3}
+  .home-calendar-toolbar{grid-template-columns:1fr auto}
+  .home-calendar-tools{grid-column:1 / -1;grid-row:2;justify-content:flex-end}
+  .home-calendar-all{grid-column:2;grid-row:1}
 }
 @media (max-width:640px){
   .objects{grid-template-columns:1fr}
@@ -552,8 +558,8 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
   .home-rail nav{gap:2px}
   .home-rail nav a{width:46px;min-height:48px;border-radius:16px}
   .home-rail nav a svg{width:24px;height:24px}
-  .home-compose{border-radius:28px;min-height:132px;padding:18px 16px}
-  .home-compose .omni{min-height:96px;grid-template-columns:auto minmax(0,1fr) auto;column-gap:8px}
+  .home-compose{border-radius:28px;min-height:110px;padding:14px 16px}
+  .home-compose .omni{min-height:80px;grid-template-columns:auto minmax(0,1fr) auto;column-gap:8px}
   .home-compose .omni input[type="text"]{font-size:1.02rem;padding:4px}
   .home-send{gap:0;padding:4px}
   .home-send span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
@@ -562,12 +568,14 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
   .home-feedback{min-height:34px;padding:0 10px;gap:9px;font-size:.78rem;overflow:hidden}
   .home-feedback>span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .home-calendar-panel{border-radius:28px;padding:18px 12px 14px}
-  .home-calendar-toolbar{grid-template-columns:1fr auto;gap:8px;padding:0 4px 14px}
+  .home-calendar-toolbar{grid-template-columns:1fr;gap:10px;padding:0 4px 14px}
   .home-calendar-toolbar h1{font-size:1.16rem}
-  .home-calendar-range{grid-column:1;font-size:.78rem}
-  .home-calendar-controls{grid-column:2;grid-row:1 / 3}
+  .home-calendar-tools{grid-column:1;grid-row:2;display:grid;grid-template-columns:auto minmax(0,1fr) auto;width:100%;gap:8px}
+  .home-calendar-range{grid-column:2;text-align:center;font-size:.78rem}
+  .home-calendar-controls{grid-column:3}
   .home-calendar-controls button{width:38px;height:38px}
   .home-calendar-all{display:none}
+  .home-calendar-today{min-height:36px;padding:0 11px}
   .home-calendar-scroll{max-height:420px}
   .home-calendar-inner{min-width:780px}
   .home-calendar-legend{gap:14px;padding:13px 6px 0;font-size:.72rem;flex-wrap:wrap}
@@ -625,6 +633,6 @@ main.home-main{width:100%;max-width:none;margin:0;padding:0;outline:none;flex:1 
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
-  .home-rail a:active,.home-attach:active,.home-send:active,.home-feedback button:active,.home-calendar-controls button:active,
+  .home-rail a:active,.home-attach:active,.home-send:active,.home-feedback button:active,.home-calendar-today:active,.home-calendar-controls button:active,
   .home-calendar-all:active,.home-calendar-event:active{transform:none}
 }

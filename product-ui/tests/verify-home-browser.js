@@ -253,6 +253,21 @@ async function run() {
       return Boolean(calendar && capture && (calendar.compareDocumentPosition(capture) & Node.DOCUMENT_POSITION_FOLLOWING));
     });
     assert.equal(homeOrder, true, "calendar does not precede the capture stack");
+    const desktopHierarchy = await page.evaluate(function () {
+      const calendar = document.querySelector(".home-calendar-panel").getBoundingClientRect();
+      const capture = document.querySelector(".home-capture-stack").getBoundingClientRect();
+      const compose = document.querySelector(".home-compose").getBoundingClientRect();
+      return {
+        sectionGap: Math.round(capture.top - calendar.bottom),
+        composeHeight: Math.round(compose.height)
+      };
+    });
+    assert(desktopHierarchy.sectionGap >= 34 && desktopHierarchy.sectionGap <= 38,
+      `desktop section gap is not 36px: ${desktopHierarchy.sectionGap}`);
+    assert(desktopHierarchy.composeHeight >= 106 && desktopHierarchy.composeHeight <= 120,
+      `desktop capture card is not visually secondary: ${desktopHierarchy.composeHeight}`);
+    assert.equal(await page.locator('[data-calendar-kind="personal"] .home-event-checkbox').count(), 1,
+      "personal schedule lacks its to-do indicator");
     assert.equal(await page.locator("[data-calendar-date]").count(), 14, "home calendar must render exactly 14 dates");
     assert.equal(await page.locator("[data-calendar-date]").first().getAttribute("data-calendar-date"), "2025-12-28", "calendar does not start from summary.simDate week");
     assert.equal(await page.locator('[data-calendar-date="2026-01-02"]').getAttribute("aria-current"), "date", "simulation date is not exposed as current date");
@@ -341,6 +356,20 @@ async function run() {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await goHome(page);
+    const mobileHierarchy = await page.evaluate(function () {
+      const calendar = document.querySelector(".home-calendar-panel").getBoundingClientRect();
+      const capture = document.querySelector(".home-capture-stack").getBoundingClientRect();
+      const scroll = document.querySelector(".home-calendar-scroll");
+      return {
+        sectionGap: Math.round(capture.top - calendar.bottom),
+        calendarScrollWidth: scroll.scrollWidth,
+        calendarClientWidth: scroll.clientWidth
+      };
+    });
+    assert(mobileHierarchy.sectionGap >= 22 && mobileHierarchy.sectionGap <= 26,
+      `mobile section gap is not 24px: ${mobileHierarchy.sectionGap}`);
+    assert(mobileHierarchy.calendarScrollWidth > mobileHierarchy.calendarClientWidth,
+      "mobile calendar no longer owns its horizontal overflow");
     const overflow = await page.evaluate(function () {
       return { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth };
     });

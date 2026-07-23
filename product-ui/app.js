@@ -665,7 +665,11 @@ function homeEventLabel(event2) {
 
 function renderHomeEvent(event2, column, span, row) {
   const status = event2.kind === "candidate" ? '<span class="home-event-status">후보 · 미확인</span>' : "";
-  const icon = event2.kind === "memo" ? '<span class="home-event-symbol" aria-hidden="true">▤</span>' : '<span class="home-event-dot" aria-hidden="true"></span>';
+  const icon = event2.kind === "personal"
+    ? '<span class="home-event-checkbox" aria-hidden="true"></span>'
+    : event2.kind === "memo"
+      ? '<span class="home-event-symbol" aria-hidden="true">▤</span>'
+      : '<span class="home-event-dot" aria-hidden="true"></span>';
   return `<button type="button" class="home-calendar-event home-event--${esc(event2.kind)}${homeEventClass(event2)}"
     style="grid-column:${column} / span ${span};grid-row:${row}"
     data-calendar-kind="${esc(event2.kind)}" data-work-id="${esc(event2.workId)}" data-event-id="${esc(event2.id)}"
